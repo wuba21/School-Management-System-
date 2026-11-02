@@ -89,6 +89,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+# Custom Authentication User Model
+AUTH_USER_MODEL = 'accounts.User'
+
 # Database Configuration
 # Uses environment variables to prevent hard-coding credentials.
 # Supports both PostgreSQL (production/LAN standard) and SQLite (initial local fallback).
