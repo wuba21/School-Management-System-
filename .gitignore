@@ -1,0 +1,43 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Django local configuration & secret keys
+.env
+.env.local
+local_settings.py
+
+# Database (local SQLite dev databases if used)
+*.sqlite3
+*.db
+
+# Media uploads (user profile pictures, student photos, document attachments)
+media/
+uploads/
+
+# Collected static files for production
+staticfiles/
+
+# Logs
+*.log
+logs/
+
+# IDE and Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+.DS_Store
