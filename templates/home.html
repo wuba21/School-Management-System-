@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}System Home & Diagnostics{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Hero Banner -->
+    <div class="col-12">
+        <div class="hero-card">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 mb-2 rounded-pill fw-medium">
+                        Step 3 Complete &bull; System Foundation Active
+                    </span>
+                    <h1 class="h2 fw-bold text-dark mb-1">Smart School Management and Academic Information System</h1>
+                    <p class="text-secondary mb-0">
+                        Tailored for Majang Zone Secondary School, Gambella Region, Ethiopia (Grades 9–12)
+                    </p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-6 fw-normal">
+                        &#10003; Django 6.1 Backend Running
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Diagnostic Summary Cards -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Active Timezone</span>
+                <h4 class="fw-bold mt-2 text-dark">{{ timezone }}</h4>
+                <p class="text-muted small mb-0">Configured for East Africa Time (EAT)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Target Grade Levels</span>
+                <h4 class="fw-bold mt-2 text-primary">Grades 9 – 12</h4>
+                <p class="text-muted small mb-0">General & Senior Streams</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Target Population</span>
+                <h4 class="fw-bold mt-2 text-dark">1,000 – 2,000</h4>
+                <p class="text-muted small mb-0">Enrolled Students & Staff</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Network Profile</span>
+                <h4 class="fw-bold mt-2 text-success">Local Area Network</h4>
+                <p class="text-muted small mb-0">20+ Offline Computer Lab PCs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular Applications Registered in Django -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title fw-bold mb-0 text-dark">Registered Modular Applications (11 Apps)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+                    {% for app in registered_apps %}
+                    <div class="col">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge bg-secondary">{{ forloop.counter }}</span>
+                                    <span class="fw-bold text-dark font-monospace">{{ app.name }}</span>
+                                </div>
+                                <p class="text-muted small mb-0">{{ app.description }}</p>
+                            </div>
+                            <div class="mt-2 text-end">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">Installed</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next Steps Banner -->
+    <div class="col-12">
+        <div class="card border-primary border-opacity-25 bg-primary-subtle text-primary-emphasis">
+            <div class="card-body py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h6 class="fw-bold mb-1">Coming Next in Step 4:</h6>
+                    <p class="mb-0 small">Implementation of the Custom User Model, Role-Based Access Control (Principal, Registrar, Teacher, SysAdmin), and Authentication Views.</p>
+                </div>
+                <a href="{% url 'admin:index' %}" class="btn btn-primary btn-sm px-3">
+                    Access Django Admin &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
