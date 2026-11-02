@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Report Generation{% endblock %}
+{% block page_title %}Official Reports, Broadsheets & Transcripts{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Interface Preview:</strong> Report generation hub. All reports are formatted with clean CSS print stylesheets (`@media print`) for standard A4 paper printing.
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Student Report Cards -->
+    <div class="col-md-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-person-fill text-primary"></i>
+                    <span>Student Report Cards</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Generate individual printable term report cards with subject scores, conduct marks, ranks, and teacher remarks.</p>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Select Section</label>
+                    <select class="form-select form-select-sm">
+                        <option>Grade 10-A (52 Students)</option>
+                        <option>Grade 10-B (48 Students)</option>
+                        <option>Grade 11-A Natural Science</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm w-100" disabled>
+                    <i class="bi bi-printer me-1"></i> Generate Printable PDF Batch
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Broadsheet -->
+    <div class="col-md-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-table text-success"></i>
+                    <span>Master Class Broadsheet</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Tabular summary sheet listing all enrolled students side-by-side with their individual subject marks for faculty review.</p>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Select Exam Cycle</label>
+                    <select class="form-select form-select-sm">
+                        <option>2026/2027 – Semester 1 Midterm</option>
+                        <option>2026/2027 – Semester 1 Final</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Preview Broadsheet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Year Official Transcripts -->
+    <div class="col-md-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-award-fill text-amber"></i>
+                    <span>Official Transcripts</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Official longitudinal multi-year academic transcripts for graduating Grade 12 students and transfer requests.</p>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Student Admission Number</label>
+                    <input type="text" class="form-control form-control-sm" placeholder="e.g. SSMS/2026/0001">
+                </div>
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    <i class="bi bi-file-earmark-text me-1"></i> Generate Transcript
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

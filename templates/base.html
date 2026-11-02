@@ -4,54 +4,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Smart School Management System{% endblock %} - SSMS</title>
+    <title>{% block title %}Dashboard{% endblock %} - SSMS | Majang Secondary School</title>
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Offline Local Vendor CSS (Self-contained for school LAN) -->
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
     
-    <!-- Custom Project Styles -->
+    <!-- Custom Project Master Styles -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-    <!-- Navigation Header -->
-    <nav class="navbar navbar-expand-lg navbar-ssms sticky-top">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
+<div class="app-wrapper">
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 1. LEFT SIDEBAR NAVIGATION (Dark Navy-Slate) -->
+    <aside class="app-sidebar" id="appSidebar">
+        <!-- Sidebar Brand Header -->
+        <div class="sidebar-header">
+            <a href="{% url 'dashboard' %}" class="sidebar-brand">
                 <span class="fs-4">🏫</span>
-                <span>SSMS | Majang Secondary School</span>
+                <div class="d-flex flex-column">
+                    <span class="lh-1">SSMS</span>
+                    <span class="text-xs text-muted fw-normal" style="font-size: 0.65rem; color: #94a3b8 !important;">Majang Secondary</span>
+                </div>
             </a>
-            
-            <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <span class="ms-auto sidebar-brand-badge">Grades 9-12</span>
+        </div>
 
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'home' %}">Overview</a>
-                    </li>
-                </ul>
+        <!-- Scrollable Navigation Items -->
+        <nav class="sidebar-nav">
+            <!-- MAIN -->
+            <div class="nav-section-title">Main</div>
+            <a href="{% url 'dashboard' %}" class="nav-link-custom {% if active_menu == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
 
-                <div class="d-flex align-items-center gap-3">
-                    <span class="badge badge-active py-2 px-3 rounded-pill text-xs">
-                        ⚡ Offline LAN Mode
-                    </span>
-                    <a href="{% url 'admin:index' %}" class="btn btn-outline-light btn-sm px-3" target="_blank">
-                        Django Admin
-                    </a>
+            <!-- MANAGEMENT -->
+            <div class="nav-section-title">Management</div>
+            <a href="{% url 'students_list' %}" class="nav-link-custom {% if active_menu == 'students' %}active{% endif %}">
+                <i class="bi bi-mortarboard-fill"></i>
+                <span>Students</span>
+            </a>
+            <a href="{% url 'teachers_list' %}" class="nav-link-custom {% if active_menu == 'teachers' %}active{% endif %}">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Teachers</span>
+            </a>
+            <a href="{% url 'academics_years' %}" class="nav-link-custom {% if active_menu == 'academics_years' %}active{% endif %}">
+                <i class="bi bi-calendar3"></i>
+                <span>Academic Years</span>
+            </a>
+            <a href="{% url 'academics_grades' %}" class="nav-link-custom {% if active_menu == 'academics_grades' %}active{% endif %}">
+                <i class="bi bi-diagram-3-fill"></i>
+                <span>Grades & Sections</span>
+            </a>
+            <a href="{% url 'academics_subjects' %}" class="nav-link-custom {% if active_menu == 'academics_subjects' %}active{% endif %}">
+                <i class="bi bi-book-half"></i>
+                <span>Subjects</span>
+            </a>
+
+            <!-- ACADEMIC -->
+            <div class="nav-section-title">Academic</div>
+            <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
+                <i class="bi bi-calendar-check-fill"></i>
+                <span>Attendance</span>
+            </a>
+            <a href="{% url 'examinations_index' %}" class="nav-link-custom {% if active_menu == 'examinations' %}active{% endif %}">
+                <i class="bi bi-file-earmark-text-fill"></i>
+                <span>Examinations</span>
+            </a>
+            <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
+                <i class="bi bi-clipboard2-data-fill"></i>
+                <span>Results</span>
+            </a>
+            <a href="{% url 'promotion_index' %}" class="nav-link-custom {% if active_menu == 'promotion' %}active{% endif %}">
+                <i class="bi bi-arrow-up-right-circle-fill"></i>
+                <span>Promotion</span>
+            </a>
+            <a href="{% url 'timetable_index' %}" class="nav-link-custom {% if active_menu == 'timetable' %}active{% endif %}">
+                <i class="bi bi-clock-history"></i>
+                <span>Timetable</span>
+            </a>
+
+            <!-- REPORTS -->
+            <div class="nav-section-title">Reports</div>
+            <a href="{% url 'reports_students' %}" class="nav-link-custom {% if active_menu == 'reports_students' %}active{% endif %}">
+                <i class="bi bi-file-person"></i>
+                <span>Student Reports</span>
+            </a>
+            <a href="{% url 'reports_academic' %}" class="nav-link-custom {% if active_menu == 'reports_academic' %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Academic Reports</span>
+            </a>
+            <a href="{% url 'reports_attendance' %}" class="nav-link-custom {% if active_menu == 'reports_attendance' %}active{% endif %}">
+                <i class="bi bi-file-earmark-check"></i>
+                <span>Attendance Reports</span>
+            </a>
+
+            <!-- INTELLIGENCE -->
+            <div class="nav-section-title">Intelligence</div>
+            <a href="{% url 'ai_assistant_chat' %}" class="nav-link-custom {% if active_menu == 'ai_assistant' %}active{% endif %}">
+                <i class="bi bi-robot"></i>
+                <span>AI School Assistant</span>
+            </a>
+            <a href="{% url 'ai_analytics' %}" class="nav-link-custom {% if active_menu == 'ai_analytics' %}active{% endif %}">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Academic Analysis</span>
+            </a>
+
+            <!-- SYSTEM -->
+            <div class="nav-section-title">System</div>
+            <a href="{% url 'system_users' %}" class="nav-link-custom {% if active_menu == 'system_users' %}active{% endif %}">
+                <i class="bi bi-people-fill"></i>
+                <span>User Management</span>
+            </a>
+            <a href="{% url 'system_settings' %}" class="nav-link-custom {% if active_menu == 'system_settings' %}active{% endif %}">
+                <i class="bi bi-gear-fill"></i>
+                <span>Settings</span>
+            </a>
+            <a href="{% url 'system_audit' %}" class="nav-link-custom {% if active_menu == 'system_audit' %}active{% endif %}">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>Audit Logs</span>
+            </a>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div>Majang Zone, Gambella</div>
+            <div class="text-xs" style="font-size: 0.7rem; opacity: 0.7;">Offline LAN Deployment</div>
+        </div>
+    </aside>
+
+    <!-- 2. MAIN APPLICATION WORKSPACE -->
+    <div class="app-main">
+        <!-- Top Sticky Navbar -->
+        <header class="app-navbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="navbar-toggle-btn" id="sidebarToggleBtn" type="button" aria-label="Toggle navigation">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="page-title-badge">
+                    <span>{% block page_title %}Dashboard{% endblock %}</span>
                 </div>
             </div>
-        </div>
-    </nav>
 
-    <!-- Main Content Container -->
-    <main class="container py-4 flex-grow-1">
-        <!-- Django Flash Messages -->
-        {% if messages %}
-            <div class="row mb-3">
-                <div class="col-12">
+            <div class="d-flex align-items-center gap-3">
+                <!-- Local LAN Mode Status Indicator -->
+                <div class="lan-status-pill" title="System running over school local area network without external internet dependency">
+                    <span class="lan-pulse-dot"></span>
+                    <span>Local LAN Mode</span>
+                </div>
+
+                <!-- Notifications Bell Icon -->
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-secondary position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="System Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size: 0.65rem;">
+                            3
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-0" style="min-width: 280px;">
+                        <li class="p-3 border-bottom bg-light">
+                            <h6 class="mb-0 fw-bold small">System Notifications</h6>
+                            <span class="text-muted text-xs" style="font-size: 0.7rem;">Local School Network</span>
+                        </li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'attendance_index' %}"><i class="bi bi-check2-circle text-success me-2"></i>Morning attendance submitted</a></li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'examinations_index' %}"><i class="bi bi-exclamation-circle text-warning me-2"></i>Midterm marks entry open</a></li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'system_audit' %}"><i class="bi bi-shield-check text-info me-2"></i>Daily backup completed</a></li>
+                    </ul>
+                </div>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="user-profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar-circle">
+                            <span>A</span>
+                        </div>
+                        <div class="d-none d-md-flex flex-column text-start">
+                            <span class="fw-semibold small text-dark lh-1">Administrator</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">System Admin</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted small ms-1"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1">
+                        <li class="px-3 py-2 border-bottom">
+                            <p class="mb-0 fw-semibold small">Administrator Account</p>
+                            <p class="mb-0 text-muted text-xs" style="font-size: 0.75rem;">admin@majangschool.edu.et</p>
+                        </li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'system_users' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'system_settings' %}"><i class="bi bi-sliders me-2"></i>System Settings</a></li>
+                        <li><a class="dropdown-item py-2 small" href="{% url 'admin:index' %}" target="_blank"><i class="bi bi-gear me-2"></i>Django Administration</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item py-2 small text-danger" href="{% url 'login' %}"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Body -->
+        <main class="content-canvas">
+            <!-- Django Messages / Alerts Container -->
+            {% if messages %}
+                <div class="mb-3">
                     {% for message in messages %}
                         <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
                             {{ message }}
@@ -59,28 +217,31 @@
                         </div>
                     {% endfor %}
                 </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Global Footer -->
+        <footer class="app-footer">
+            <div>
+                <strong>Smart School Management System (SSMS)</strong> &bull; Majang Zone, Gambella Region, Ethiopia
             </div>
-        {% endif %}
+            <div>
+                Grades 9–12 &bull; Version 1.0 (LAN Build)
+            </div>
+        </footer>
+    </div>
 
-        {% block content %}
-        {% endblock %}
-    </main>
+</div>
 
-    <!-- Footer -->
-    <footer class="ssms-footer py-3">
-        <div class="container text-center">
-            <p class="mb-1 fw-semibold">Smart School Management and Academic Information System (SSMS)</p>
-            <p class="mb-0 text-muted small">
-                Majang Zone, Gambella Region, Ethiopia &bull; Designed for Offline Local Area Network (LAN) Operations &bull; Grades 9–12
-            </p>
-        </div>
-    </footer>
+<!-- Offline Vendor JavaScript -->
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
 
-    <!-- Bootstrap 5 JavaScript Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
-    <!-- Custom Project JavaScript -->
-    <script src="{% static 'js/main.js' %}"></script>
-    {% block extra_js %}{% endblock %}
+<!-- Project Master JavaScript -->
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
 </body>
 </html>

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Executive Dashboard{% endblock %}
+{% block page_title %}Dashboard & Academic Overview{% endblock %}
+
+{% block content %}
+<!-- Sample Data Disclaimer -->
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Sample Data Preview:</strong> The statistics, charts, and metrics shown on this dashboard are preview data provided for user interface testing and verification. They will be populated from the database as real student and teacher records are entered.
+    </div>
+</div>
+
+<!-- Top Metrics Row (5 Cards) -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Total Students -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Total Students</div>
+                <div class="metric-value text-primary">1,420</div>
+                <div class="metric-subtitle">Grades 9 through 12</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Total Teachers -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Total Teachers</div>
+                <div class="metric-value text-dark">58</div>
+                <div class="metric-subtitle">Assigned staff members</div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-person-workspace"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Active Academic Year -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Academic Year</div>
+                <div class="metric-value text-dark" style="font-size: 1.35rem;">2026/2027</div>
+                <div class="metric-subtitle">2018/2019 E.C. (Sem 1)</div>
+            </div>
+            <div class="metric-icon-box metric-icon-amber">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Attendance Overview -->
+    <div class="col-xl col-md-6 col-sm-6">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Today's Attendance</div>
+                <div class="metric-value text-success">94.2%</div>
+                <div class="metric-subtitle">1,338 present today</div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 5: Examination Overview -->
+    <div class="col-xl col-md-6 col-sm-6">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Examination Cycle</div>
+                <div class="metric-value text-dark" style="font-size: 1.25rem;">Sem 1 Midterm</div>
+                <div class="metric-subtitle text-primary">Mark entry active</div>
+            </div>
+            <div class="metric-icon-box metric-icon-purple">
+                <i class="bi bi-journal-text"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Enrollment Distribution -->
+    <div class="col-lg-7">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-line-fill text-primary"></i>
+                    <span>Student Enrollment by Grade & Stream</span>
+                </div>
+                <span class="badge bg-light text-secondary border">Sample Data</span>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="enrollmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Weekly Attendance Trajectory -->
+    <div class="col-lg-5">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up text-success"></i>
+                    <span>Weekly Attendance Trend (%)</span>
+                </div>
+                <span class="badge bg-light text-secondary border">Monday – Friday</span>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Operational Highlights & Quick Navigation -->
+<div class="row g-4">
+    <!-- Section Quick Status -->
+    <div class="col-lg-8">
+        <div class="card-ssms mb-0">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-collection-fill text-primary"></i>
+                    <span>Grade Level Offerings (Majang Secondary School)</span>
+                </div>
+                <a href="{% url 'academics_grades' %}" class="btn btn-outline-secondary btn-sm py-1 px-2">View All Sections</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms">
+                    <thead>
+                        <tr>
+                            <th>Grade Level</th>
+                            <th>Stream</th>
+                            <th>Sections</th>
+                            <th>Estimated Capacity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">Grade 9</td>
+                            <td>General Secondary</td>
+                            <td>9-A, 9-B, 9-C, 9-D</td>
+                            <td>420 Students</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Grade 10</td>
+                            <td>General Secondary</td>
+                            <td>10-A, 10-B, 10-C</td>
+                            <td>380 Students</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Grade 11</td>
+                            <td>Natural Science</td>
+                            <td>11-A, 11-B</td>
+                            <td>200 Students</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Grade 11</td>
+                            <td>Social Science</td>
+                            <td>11-C</td>
+                            <td>130 Students</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Grade 12</td>
+                            <td>Natural Science</td>
+                            <td>12-A, 12-B</td>
+                            <td>180 Students</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Shortcuts & System Notices -->
+    <div class="col-lg-4">
+        <div class="card-ssms mb-0">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    <span>Quick Administration Actions</span>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="{% url 'attendance_index' %}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2">
+                    <span class="small"><i class="bi bi-calendar-check me-2 text-primary"></i>Take Today's Attendance</span>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+                <a href="{% url 'results_index' %}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2">
+                    <span class="small"><i class="bi bi-pencil-square me-2 text-primary"></i>Enter Examination Marks</span>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+                <a href="{% url 'students_list' %}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2">
+                    <span class="small"><i class="bi bi-person-plus me-2 text-primary"></i>Register New Student</span>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+                <a href="{% url 'reports_students' %}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2">
+                    <span class="small"><i class="bi bi-printer me-2 text-primary"></i>Print Class Report Cards</span>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+                <a href="{% url 'ai_assistant_chat' %}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2">
+                    <span class="small"><i class="bi bi-robot me-2 text-primary"></i>Ask AI School Assistant</span>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Enrollment Bar Chart
+    const ctxEnrollment = document.getElementById('enrollmentChart');
+    if (ctxEnrollment && window.Chart) {
+        new Chart(ctxEnrollment, {
+            type: 'bar',
+            data: {
+                labels: ['Grade 9', 'Grade 10', 'Grade 11 (Nat)', 'Grade 11 (Soc)', 'Grade 12 (Nat)', 'Grade 12 (Soc)'],
+                datasets: [{
+                    label: 'Students Enrolled',
+                    data: [410, 380, 200, 130, 180, 120],
+                    backgroundColor: [
+                        '#2563eb',
+                        '#3b82f6',
+                        '#0d9488',
+                        '#14b8a6',
+                        '#4f46e5',
+                        '#6366f1'
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Weekly Attendance Line Chart
+    const ctxAttendance = document.getElementById('attendanceChart');
+    if (ctxAttendance && window.Chart) {
+        new Chart(ctxAttendance, {
+            type: 'line',
+            data: {
+                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                datasets: [{
+                    label: 'Attendance Rate (%)',
+                    data: [95.5, 96.0, 93.8, 94.5, 91.2],
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#16a34a',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        min: 80,
+                        max: 100,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            callback: function(val) { return val + '%'; },
+                            font: { size: 11 }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Results & Marks Entry{% endblock %}
+{% block page_title %}Examination Marks Entry & Results Processing{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Interface Preview:</strong> Score recording table with automated numerical boundary checks (0 to Max Marks).
+    </div>
+</div>
+
+<div class="card-ssms">
+    <div class="card-header flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clipboard2-data-fill text-primary"></i>
+            <span>Marks Entry Sheet: Mathematics (Grade 10-A)</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-secondary border">Midterm Exam (Max: 30)</span>
+            <span class="badge bg-light text-secondary border">Passing: 15.0</span>
+        </div>
+    </div>
+
+    <!-- Mark Table Preview -->
+    <div class="table-responsive">
+        <table class="table table-ssms">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Admission No.</th>
+                    <th>Student Full Name</th>
+                    <th style="width: 140px;">Score Obtained</th>
+                    <th style="width: 100px;">Absent?</th>
+                    <th>Teacher Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="font-monospace text-primary">SSMS/2026/0001</td>
+                    <td class="fw-bold">Chaltu Tolessa Gemechu</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" value="26.5" min="0" max="30" step="0.5">
+                    </td>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox">
+                        </div>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" value="Excellent problem-solving in Algebra"></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="font-monospace text-primary">SSMS/2026/0002</td>
+                    <td class="fw-bold">Amanuel Kebede Desta</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" value="21.0" min="0" max="30" step="0.5">
+                    </td>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox">
+                        </div>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" value="Good progress"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center">
+        <span class="text-muted small">Marks auto-save drafts locally. Submit when finalized.</span>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" disabled>Save Draft</button>
+            <button class="btn btn-primary btn-sm" disabled>Submit to Registrar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

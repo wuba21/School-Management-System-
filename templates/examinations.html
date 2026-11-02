@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Examinations{% endblock %}
+{% block page_title %}Examinations & Assessment Structure{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Interface Preview:</strong> Showing the examination management dashboard and assessment weight configurations approved by the curriculum.
+    </div>
+</div>
+
+<div class="card-ssms">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-text-fill text-primary"></i>
+            <span>Examination Cycles (2026/2027 Academic Year)</span>
+        </div>
+        <button class="btn btn-primary btn-sm" disabled>
+            <i class="bi bi-plus-circle me-1"></i> New Exam Session
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-ssms">
+            <thead>
+                <tr>
+                    <th>Exam Cycle Name</th>
+                    <th>Semester</th>
+                    <th>Assessment Weight</th>
+                    <th>Scheduled Window</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-bold">Continuous Assessment (Quizzes & Tests)</td>
+                    <td>Semester 1</td>
+                    <td><span class="badge bg-primary">30%</span></td>
+                    <td>Sep 15, 2026 – Jan 10, 2027</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Open for Marks</span></td>
+                    <td class="text-end"><button class="btn btn-outline-secondary btn-sm py-0" disabled>Manage</button></td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Semester 1 Midterm Examination</td>
+                    <td>Semester 1</td>
+                    <td><span class="badge bg-primary">20%</span></td>
+                    <td>Nov 10, 2026 – Nov 20, 2026</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Open for Marks</span></td>
+                    <td class="text-end"><button class="btn btn-outline-secondary btn-sm py-0" disabled>Manage</button></td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Semester 1 Final Examination</td>
+                    <td>Semester 1</td>
+                    <td><span class="badge bg-primary">50%</span></td>
+                    <td>Jan 15, 2027 – Jan 25, 2027</td>
+                    <td><span class="badge bg-secondary-subtle text-secondary border">Upcoming</span></td>
+                    <td class="text-end"><button class="btn btn-outline-secondary btn-sm py-0" disabled>Manage</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

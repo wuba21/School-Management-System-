@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Smart School Management System (SSMS)</title>
+    
+    <!-- Offline Local Vendor CSS -->
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="d-flex align-items-center justify-content-center min-vh-100" style="background-color: #f1f5f9;">
+
+<div class="container" style="max-width: 440px;">
+    <!-- School System Identity Card -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+        <!-- Top Navy Accent Banner -->
+        <div class="p-4 text-center text-white" style="background-color: #0f172a;">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-25 rounded-circle p-3 mb-2">
+                <span class="fs-1">🏫</span>
+            </div>
+            <h4 class="fw-bold mb-1">SSMS Portal</h4>
+            <p class="mb-0 small text-light opacity-75">
+                Majang Zone Secondary School &bull; Grades 9–12
+            </p>
+            <div class="mt-2">
+                <span class="badge bg-secondary bg-opacity-50 text-white rounded-pill px-3 py-1 font-monospace" style="font-size: 0.7rem;">
+                    Local LAN Offline Mode
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <h5 class="fw-bold text-dark mb-1">Staff Authentication</h5>
+            <p class="text-muted small mb-4">Enter your institutional credentials to access your administrative workspace.</p>
+
+            <!-- Alerts Container -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show small py-2" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Login Form (UI Component - Backend Auth in Next Step) -->
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                
+                <!-- Username / Email Field -->
+                <div class="mb-3">
+                    <label for="usernameInput" class="form-label small fw-semibold text-secondary">Username or Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted border-end-0">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="usernameInput" name="username" placeholder="e.g. principal_kebede or teacher_abebe" required autofocus>
+                    </div>
+                </div>
+
+                <!-- Password Field with Show/Hide Toggle -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="passwordInput" class="form-label small fw-semibold text-secondary mb-0">Password</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted border-end-0">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <input type="password" class="form-control border-start-0 border-end-0" id="passwordInput" name="password" placeholder="••••••••" required>
+                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePasswordBtn" title="Show/Hide Password">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMeCheck" name="remember_me">
+                        <label class="form-check-label small text-secondary" for="rememberMeCheck">
+                            Remember this terminal
+                        </label>
+                    </div>
+                    <a href="{% url 'dashboard' %}" class="small text-primary text-decoration-none">Explore as Guest</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    Sign In to School Portal &rarr;
+                </button>
+            </form>
+        </div>
+
+        <div class="card-footer bg-light border-top text-center py-3">
+            <span class="text-muted small">
+                For account assistance, contact your School System Administrator.
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Offline Vendor JavaScript -->
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>

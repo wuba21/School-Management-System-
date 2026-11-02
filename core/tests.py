@@ -244,3 +244,81 @@ class DatabaseIntegrityAndModelTests(TestCase):
         self.assertEqual(log.actor.username, 'teacher_abebe')
         self.assertEqual(log.action, 'UPDATE')
         self.assertIn('192.168.1.55', str(log.ip_address))
+
+
+class UITemplateAndNavigationTests(TestCase):
+    """
+    Test suite verifying that all UI templates, sidebar navigation routes,
+    login page, and static assets render cleanly with HTTP 200.
+    """
+
+    def setUp(self):
+        self.client = TestCase.client_class()
+
+    def test_login_page_renders_cleanly(self):
+        """Verify the login page renders with all required form controls."""
+        response = self.client.get('/login/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'SSMS Portal')
+        self.assertContains(response, 'Staff Authentication')
+        self.assertContains(response, 'usernameInput')
+        self.assertContains(response, 'passwordInput')
+        self.assertContains(response, 'togglePasswordBtn')
+        self.assertContains(response, 'rememberMeCheck')
+
+    def test_dashboard_renders_with_kpis_and_charts(self):
+        """Verify the dashboard page renders with KPI metrics and Chart.js canvases."""
+        response = self.client.get('/dashboard/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Total Students')
+        self.assertContains(response, 'Total Teachers')
+        self.assertContains(response, 'Academic Year')
+        self.assertContains(response, 'Today\'s Attendance')
+        self.assertContains(response, 'enrollmentChart')
+        self.assertContains(response, 'attendanceChart')
+        self.assertContains(response, 'Sample Data Preview')
+
+    def test_all_sidebar_navigation_routes(self):
+        """Verify every single sidebar navigation item resolves and loads with HTTP 200."""
+        routes = [
+            '/',
+            '/dashboard/',
+            '/students/',
+            '/teachers/',
+            '/academics/years/',
+            '/academics/grades/',
+            '/academics/subjects/',
+            '/attendance/',
+            '/examinations/',
+            '/results/',
+            '/promotion/',
+            '/timetable/',
+            '/reports/students/',
+            '/reports/academic/',
+            '/reports/attendance/',
+            '/ai-assistant/',
+            '/ai-assistant/analytics/',
+            '/users/',
+            '/settings/',
+            '/audit/',
+        ]
+        for url in routes:
+            with self.subTest(route=url):
+                response = self.client.get(url)
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                    f"Expected HTTP 200 for route '{url}', got {response.status_code}"
+                )
+
+    def test_static_asset_links_in_base_template(self):
+        """Verify that offline vendor assets (Bootstrap, Icons, Chart.js) are referenced."""
+        response = self.client.get('/dashboard/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'vendor/bootstrap/css/bootstrap.min.css')
+        self.assertContains(response, 'vendor/bootstrap-icons/bootstrap-icons.css')
+        self.assertContains(response, 'vendor/bootstrap/js/bootstrap.bundle.min.js')
+        self.assertContains(response, 'vendor/chartjs/chart.umd.min.js')
+        self.assertContains(response, 'css/styles.css')
+        self.assertContains(response, 'js/main.js')
+

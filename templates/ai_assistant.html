@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}AI School Assistant{% endblock %}
+{% block page_title %}Offline AI School Assistant{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-robot fs-5 text-primary"></i>
+    <div>
+        <strong>Local Intelligence Engine:</strong> This conversational assistant executes 100% locally on the school server. No internet access is required, and no student data is ever sent to external cloud APIs.
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card-ssms mb-0 d-flex flex-column" style="height: 520px;">
+            <div class="card-header bg-white">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fs-5">🤖</span>
+                    <div>
+                        <div class="fw-bold small mb-0">SSMS Academic Intelligence Assistant</div>
+                        <div class="text-xs text-muted" style="font-size: 0.7rem;">Grounded on Majang Zone Secondary School Policy & Curriculum</div>
+                    </div>
+                </div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Ready (Offline)</span>
+            </div>
+
+            <!-- Chat Messages Log Canvas -->
+            <div class="card-body overflow-y-auto flex-grow-1 p-3 bg-light" id="chatMessages">
+                <!-- System Greeting Bubble -->
+                <div class="d-flex gap-2 mb-3">
+                    <div class="user-avatar-circle bg-primary flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                        AI
+                    </div>
+                    <div class="p-3 bg-white border rounded-3 shadow-sm" style="max-width: 80%;">
+                        <p class="mb-1 fw-semibold small text-dark">Hello! I am your local School Assistant.</p>
+                        <p class="mb-0 small text-muted">
+                            I can answer questions regarding school policies, examination timetables, curriculum streaming, and academic performance rules for Grades 9–12.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sample Question Bubble -->
+                <div class="d-flex gap-2 mb-3 justify-content-end">
+                    <div class="p-3 bg-primary text-white rounded-3 shadow-sm" style="max-width: 80%;">
+                        <p class="mb-0 small">
+                            What are the promotion criteria from Grade 10 to Grade 11?
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sample Answer Bubble -->
+                <div class="d-flex gap-2 mb-3">
+                    <div class="user-avatar-circle bg-primary flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                        AI
+                    </div>
+                    <div class="p-3 bg-white border rounded-3 shadow-sm" style="max-width: 85%;">
+                        <p class="mb-2 small text-dark fw-semibold">
+                            According to the Majang Secondary School Academic Policy:
+                        </p>
+                        <ul class="small text-muted ps-3 mb-2">
+                            <li>Minimum overall semester average of <strong>50.0%</strong> across all subjects.</li>
+                            <li>Maximum of <strong>2 failing subjects</strong> (scores below 50%).</li>
+                            <li>Students entering Grade 11 must select either the <strong>Natural Science</strong> or <strong>Social Science</strong> stream.</li>
+                        </ul>
+                        <div class="text-xs text-muted fst-italic" style="font-size: 0.7rem;">
+                            *Note: Final promotion decisions are reviewed and approved by the School Principal.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="p-3 bg-white border-top">
+                <!-- Suggested Prompt Chips -->
+                <div class="d-flex gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-light text-secondary border px-2 py-1 small" style="cursor: pointer;">
+                        📋 Midterm Exam Dates
+                    </span>
+                    <span class="badge bg-light text-secondary border px-2 py-1 small" style="cursor: pointer;">
+                        📊 Attendance Absence Limit
+                    </span>
+                    <span class="badge bg-light text-secondary border px-2 py-1 small" style="cursor: pointer;">
+                        🔬 Grade 11 Natural Science Subjects
+                    </span>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Ask a question about school schedules, subjects, or rules..." disabled title="Full NLP execution will be wired in Step 20">
+                    <button class="btn btn-primary" type="button" disabled>
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Capabilities Overview -->
+    <div class="col-lg-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span>Safety & Ethical Standards</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="fw-bold small text-dark mb-2">Advisory Role Only</h6>
+                <p class="text-muted small mb-3">
+                    The AI engine never makes autonomous administrative decisions. It assists teachers and administrators with summaries and early-warning signals.
+                </p>
+
+                <h6 class="fw-bold small text-dark mb-2">Planned Analytics Models (Phase 7):</h6>
+                <div class="d-flex flex-column gap-2">
+                    <div class="p-2 border rounded small bg-light">
+                        <strong>Early-Warning Risk Classifier:</strong> Identifies students with declining continuous assessment scores before finals.
+                    </div>
+                    <div class="p-2 border rounded small bg-light">
+                        <strong>Attendance Clustering:</strong> Detects repetitive absence patterns (e.g. chronic Monday or Friday skips).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

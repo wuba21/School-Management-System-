@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Management{% endblock %}
+{% block page_title %}Teacher Profiles & Subject Allocations{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Interface Preview:</strong> Showing the teacher roster and teaching allocation interface for Majang Secondary School. 
+    </div>
+</div>
+
+<div class="card-ssms">
+    <div class="card-header flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-person-badge-fill text-primary"></i>
+            <span>Teaching Faculty Directory</span>
+            <span class="badge bg-secondary-subtle text-secondary border ms-2">58 Faculty Members</span>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" disabled title="Will be implemented in Step 6">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Faculty Member
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-ssms">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Teacher Full Name</th>
+                    <th>Gender</th>
+                    <th>Academic Qualification</th>
+                    <th>Specialization</th>
+                    <th>Assigned Classes (2026/2027)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="font-monospace fw-semibold text-primary">EMP-1001</td>
+                    <td class="fw-bold">Abebe Bikila Desta</td>
+                    <td>Male</td>
+                    <td>B.Ed in Mathematics</td>
+                    <td>Mathematics</td>
+                    <td><span class="badge bg-light text-dark border">Grade 10-A, 10-B, 11-A (Nat)</span></td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                </tr>
+                <tr>
+                    <td class="font-monospace fw-semibold text-primary">EMP-1002</td>
+                    <td class="fw-bold">Selamawit Tadesse Haile</td>
+                    <td>Female</td>
+                    <td>M.Sc in Applied Physics</td>
+                    <td>Physics</td>
+                    <td><span class="badge bg-light text-dark border">Grade 11-A, 11-B, 12-A (Nat)</span></td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                </tr>
+                <tr>
+                    <td class="font-monospace fw-semibold text-primary">EMP-1003</td>
+                    <td class="fw-bold">Kassahun Wolde Gebre</td>
+                    <td>Male</td>
+                    <td>B.A. in History Education</td>
+                    <td>History</td>
+                    <td><span class="badge bg-light text-dark border">Grade 9-A, 9-B, 11-C (Soc)</span></td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                </tr>
+                <tr>
+                    <td class="font-monospace fw-semibold text-primary">EMP-1004</td>
+                    <td class="fw-bold">Rahel Getachew Assefa</td>
+                    <td>Female</td>
+                    <td>B.Sc in Chemistry</td>
+                    <td>Chemistry</td>
+                    <td><span class="badge bg-light text-dark border">Grade 10-A, 10-C, 12-B (Nat)</span></td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

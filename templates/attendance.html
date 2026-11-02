@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management{% endblock %}
+{% block page_title %}Daily & Period Attendance Tracking{% endblock %}
+
+{% block content %}
+<div class="sample-data-disclaimer">
+    <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+    <div>
+        <strong>Interface Preview:</strong> Rapid attendance entry grid. In the live module (Step 9), all enrolled students default to <em>Present</em>, allowing teachers to record a full class of 50 students in under 30 seconds.
+    </div>
+</div>
+
+<div class="card-ssms">
+    <div class="card-header flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-check-fill text-primary"></i>
+            <span>Roll-Call Entry Sheet</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-secondary border">Section: Grade 10-A</span>
+            <span class="badge bg-light text-secondary border">Date: Today</span>
+        </div>
+    </div>
+
+    <!-- Attendance Controls -->
+    <div class="p-3 border-bottom bg-light">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Select Class Section</label>
+                <select class="form-select form-select-sm">
+                    <option selected>Grade 10-A (General)</option>
+                    <option>Grade 10-B (General)</option>
+                    <option>Grade 11-A (Natural Science)</option>
+                    <option>Grade 11-C (Social Science)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Session Type</label>
+                <select class="form-select form-select-sm">
+                    <option selected>Full Day (Daily)</option>
+                    <option>Morning Period</option>
+                    <option>Afternoon Period</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Date</label>
+                <input type="date" class="form-control form-control-sm" value="2026-11-02">
+            </div>
+            <div class="col-md-3 text-end pt-4">
+                <button class="btn btn-primary btn-sm px-3" type="button" disabled title="Will be active in Step 9">
+                    <i class="bi bi-check-all me-1"></i> Save Attendance
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Grid Preview -->
+    <div class="table-responsive">
+        <table class="table table-ssms">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Admission No.</th>
+                    <th>Student Full Name</th>
+                    <th>Attendance Status</th>
+                    <th>Remarks / Excuse</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="font-monospace text-primary">SSMS/2026/0001</td>
+                    <td class="fw-bold">Chaltu Tolessa Gemechu</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="status_1" id="p_1" checked>
+                            <label class="btn btn-outline-success" for="p_1">Present</label>
+                            <input type="radio" class="btn-check" name="status_1" id="a_1">
+                            <label class="btn btn-outline-danger" for="a_1">Absent</label>
+                            <input type="radio" class="btn-check" name="status_1" id="l_1">
+                            <label class="btn btn-outline-warning" for="l_1">Late</label>
+                            <input type="radio" class="btn-check" name="status_1" id="e_1">
+                            <label class="btn btn-outline-info" for="e_1">Excused</label>
+                        </div>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" placeholder="Optional notes..."></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="font-monospace text-primary">SSMS/2026/0002</td>
+                    <td class="fw-bold">Amanuel Kebede Desta</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="status_2" id="p_2" checked>
+                            <label class="btn btn-outline-success" for="p_2">Present</label>
+                            <input type="radio" class="btn-check" name="status_2" id="a_2">
+                            <label class="btn btn-outline-danger" for="a_2">Absent</label>
+                            <input type="radio" class="btn-check" name="status_2" id="l_2">
+                            <label class="btn btn-outline-warning" for="l_2">Late</label>
+                            <input type="radio" class="btn-check" name="status_2" id="e_2">
+                            <label class="btn btn-outline-info" for="e_2">Excused</label>
+                        </div>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" placeholder="Optional notes..."></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
