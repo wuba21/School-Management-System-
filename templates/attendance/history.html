@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance History{% endblock %}
+{% block page_title %}Student Attendance History & Audit Log{% endblock %}
+
+{% block content %}
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="bi bi-journal-text text-primary"></i>
+            <span class="fw-bold">Individual Attendance Marks Log</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                {{ page_obj.paginator.count }} {{ page_obj.paginator.count|pluralize:"Record,Records" }}
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'attendance_index' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-grid-fill me-1"></i> Dashboard
+            </a>
+            <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-calendar3 me-1"></i> Sessions
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="p-3 border-bottom bg-light">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-muted mb-1">Search Student</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search by name or admission number..." value="{{ search_q }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="PRESENT" {% if status_filter == 'PRESENT' %}selected{% endif %}>Present</option>
+                    <option value="ABSENT" {% if status_filter == 'ABSENT' %}selected{% endif %}>Absent</option>
+                    <option value="LATE" {% if status_filter == 'LATE' %}selected{% endif %}>Late</option>
+                    <option value="EXCUSED" {% if status_filter == 'EXCUSED' %}selected{% endif %}>Excused</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">From Date</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-muted mb-1">To Date</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-6 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel-fill me-1"></i> Filter
+                </button>
+                <a href="{% url 'attendance_history' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Date</th>
+                    <th>Admission No</th>
+                    <th>Student Full Name</th>
+                    <th>Classroom</th>
+                    <th>Type / Subject</th>
+                    <th>Attendance Status</th>
+                    <th>Reason / Excuse</th>
+                    <th class="text-end pe-3">Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold">{{ r.attendance_session.date|date:"Y-m-d" }}</td>
+                    <td>
+                        <a href="{% url 'student_attendance_detail' r.student_enrollment.student.id %}" class="font-monospace text-primary fw-semibold text-decoration-none">
+                            {{ r.student_enrollment.student.admission_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ r.student_enrollment.student.full_name }}</div>
+                    </td>
+                    <td>
+                        <span class="small fw-semibold text-dark">{{ r.attendance_session.class_offering.display_name }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ r.attendance_session.get_session_type_display }}</span>
+                        {% if r.attendance_session.subject %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">{{ r.attendance_session.subject.code }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'PRESENT' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle-fill me-1"></i>Present
+                        </span>
+                        {% elif r.status == 'ABSENT' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-x-circle-fill me-1"></i>Absent
+                        </span>
+                        {% elif r.status == 'LATE' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-clock-history me-1"></i>Late
+                        </span>
+                        {% elif r.status == 'EXCUSED' %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                            <i class="bi bi-shield-check me-1"></i>Excused
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="small">{{ r.reason|default:"-" }}</span>
+                    </td>
+                    <td class="text-end pe-3 small text-muted">
+                        {{ r.recorded_by.username|default:"Staff" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                        No attendance history records match your search criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="small text-muted">
+            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </div>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for p in page_obj.paginator.page_range %}
+                {% if p == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ p }}{% if search_q %}&q={{ search_q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ p }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

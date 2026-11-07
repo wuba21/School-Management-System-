@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Dashboard{% endblock %}
+{% block page_title %}Student Attendance Operations & Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rate-badge {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Control Bar -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-calendar-check-fill text-primary me-2"></i>Attendance Overview
+        </h5>
+        <p class="text-muted small mb-0">
+            Academic Year: <span class="fw-semibold text-dark">{{ current_year.name|default:"Active Academic Year" }}</span>
+            &bull; Date: <span class="fw-semibold text-primary">{{ query_date|date:"l, F j, Y" }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <input type="date" name="date" class="form-control form-control-sm" value="{{ query_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+            {% if query_date != today %}
+            <a href="{% url 'attendance_index' %}" class="btn btn-outline-secondary btn-sm" title="Reset to Today">
+                <i class="bi bi-arrow-clockwise"></i> Today
+            </a>
+            {% endif %}
+        </form>
+
+        {% if can_create or is_teacher or is_management %}
+        <a href="{% url 'attendance_session_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Roll-Call Session
+        </a>
+        {% endif %}
+
+        {% if is_management %}
+        <a href="{% url 'attendance_alerts' %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Attendance Alerts
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Primary KPI Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Enrolled Students</div>
+                <div class="metric-value text-dark">{{ metrics.total_students }}</div>
+                <div class="metric-subtitle">Active classroom enrollments</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Present ({{ query_date|date:"M j" }})</div>
+                <div class="metric-value text-success">{{ metrics.today_present }}</div>
+                <div class="metric-subtitle">
+                    +{{ metrics.today_late }} late &bull; 
+                    <span class="fw-bold text-success">{{ metrics.today_rate }}%</span>
+                </div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Absent ({{ query_date|date:"M j" }})</div>
+                <div class="metric-value text-danger">{{ metrics.today_absent }}</div>
+                <div class="metric-subtitle">{{ metrics.today_excused }} excused absences</div>
+            </div>
+            <div class="metric-icon-box metric-icon-red" style="background-color: #fef2f2; color: #dc2626;">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Cumulative Rate</div>
+                <div class="metric-value {% if metrics.overall_rate >= 85 %}text-success{% elif metrics.overall_rate >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ metrics.overall_rate }}%
+                </div>
+                <div class="metric-subtitle">Academic year average</div>
+            </div>
+            <div class="metric-icon-box metric-icon-amber">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Quick Classes Bar (If Teacher Logged In) -->
+{% if is_teacher and teacher_classes %}
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-mortarboard-fill text-primary"></i>
+            <span>My Assigned Classrooms</span>
+        </div>
+        <span class="badge bg-light text-secondary border">Direct Roll-Call Shortcuts</span>
+    </div>
+    <div class="p-3">
+        <div class="row g-3">
+            {% for offering in teacher_classes %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="border rounded-3 p-3 bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-dark">{{ offering.display_name }}</div>
+                        <div class="small text-muted">Max: {{ offering.max_capacity }} students</div>
+                    </div>
+                    <a href="{% url 'attendance_session_create' %}?class_offering={{ offering.id }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i> Take Attendance
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Section -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="card-ssms h-100 mb-0">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up text-primary"></i>
+                    <span>7-Day Attendance Trend (%)</span>
+                </div>
+                <span class="badge bg-light text-secondary border">School-wide Daily Performance</span>
+            </div>
+            <div class="p-3">
+                <div style="height: 260px; position: relative;">
+                    <canvas id="attendanceTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card-ssms h-100 mb-0">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-fill text-primary"></i>
+                    <span>Grade-Level Comparison</span>
+                </div>
+                <span class="badge bg-light text-secondary border">Grades 9-12</span>
+            </div>
+            <div class="p-3">
+                <div style="height: 260px; position: relative;">
+                    <canvas id="gradeAttendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Attendance Sessions Table -->
+<div class="card-ssms">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-primary"></i>
+            <span>Recent Attendance Roll-Calls</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-secondary btn-sm">
+                View All Sessions <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Date</th>
+                    <th>Classroom</th>
+                    <th>Type / Subject</th>
+                    <th>Recorded By</th>
+                    <th class="text-center">Present / Total</th>
+                    <th class="text-center">Rate</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in recent_sessions %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold">{{ session.date|date:"Y-m-d" }}</td>
+                    <td>
+                        <span class="fw-bold text-dark">{{ session.class_offering.display_name }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ session.get_session_type_display }}</span>
+                        {% if session.subject %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">{{ session.subject.code }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if session.recorded_by %}
+                        <span class="small fw-semibold text-secondary">{{ session.recorded_by.full_name }}</span>
+                        {% else %}
+                        <span class="text-muted small italic">Staff Account</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center font-monospace">
+                        <span class="text-success fw-bold">{{ session.present_count }}</span> / {{ session.total_records }}
+                    </td>
+                    <td class="text-center font-monospace">
+                        <span class="badge {% if session.attendance_percentage >= 85 %}bg-success-subtle text-success border border-success-subtle{% elif session.attendance_percentage >= 75 %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                            {{ session.attendance_percentage }}%
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        {% if session.is_closed %}
+                        <span class="badge bg-secondary-subtle text-secondary border">
+                            <i class="bi bi-lock-fill me-1"></i>Closed
+                        </span>
+                        {% elif session.status == 'SUBMITTED' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check2 me-1"></i>Recorded
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-hourglass-split me-1"></i>Open
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'attendance_session_detail' session.id %}" class="btn btn-outline-secondary" title="View Summary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if session.is_editable %}
+                            <a href="{% url 'attendance_take' session.id %}" class="btn btn-outline-primary" title="Record / Edit Attendance">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="bi bi-calendar-x fs-3 d-block mb-2 text-secondary"></i>
+                        No attendance roll-calls recorded for the selected criteria.
+                        <div class="mt-2">
+                            <a href="{% url 'attendance_session_create' %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Initiate First Session
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 7-day trend chart
+    const trendCtx = document.getElementById('attendanceTrendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ metrics.trend_dates|safe }},
+                datasets: [{
+                    label: 'Attendance Rate (%)',
+                    data: {{ metrics.trend_rates|safe }},
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1e3a8a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            callback: function(val) { return val + '%'; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Grade-level chart
+    const gradeCtx = document.getElementById('gradeAttendanceChart');
+    if (gradeCtx) {
+        const gradeLabels = [{% for g in metrics.grades_data %}"{{ g.grade_name }}",{% endfor %}];
+        const gradeRates = [{% for g in metrics.grades_data %}{{ g.rate }},{% endfor %}];
+
+        new Chart(gradeCtx, {
+            type: 'bar',
+            data: {
+                labels: gradeLabels,
+                datasets: [{
+                    label: 'Rate (%)',
+                    data: gradeRates,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            callback: function(val) { return val + '%'; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

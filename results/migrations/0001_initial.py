@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Student Mark',
                 'verbose_name_plural': 'Student Marks',
                 'ordering': ['student_enrollment', 'exam_subject'],
-                'constraints': [models.UniqueConstraint(fields=('student_enrollment', 'exam_subject'), name='unique_student_mark_per_exam_subject'), models.CheckConstraint(condition=models.Q(('marks_obtained__gte', 0.0)), name='check_marks_obtained_non_negative')],
+                'constraints': [models.UniqueConstraint(fields=('student_enrollment', 'exam_subject'), name='unique_student_mark_per_exam_subject'), models.CheckConstraint(check=models.Q(('marks_obtained__gte', 0.0)), name='check_marks_obtained_non_negative')],
             },
         ),
     ]

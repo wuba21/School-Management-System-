@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Transcript: {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Academic Transcript & History{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ student.full_name }}</h5>
+            <span class="badge bg-primary">{{ student.admission_number }}</span>
+        </div>
+        <p class="text-muted small mb-0">
+            Gender: <strong>{{ student.gender|default:"Not specified" }}</strong>
+            &bull; Current Status: <span class="badge bg-success-subtle text-success">Active Enrolled</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'published_results' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Gradebook
+        </a>
+    </div>
+</div>
+
+<!-- Longitudinal Examination History Cards -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-clock-history text-primary me-2"></i>Examination Cycles & Cumulative Performance
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Examination Cycle</th>
+                        <th>Academic Year</th>
+                        <th>Semester</th>
+                        <th class="text-center">Total Marks</th>
+                        <th class="text-center">Average %</th>
+                        <th class="text-center">Grade</th>
+                        <th class="text-center">Class Rank</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Report Card</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sum in summaries %}
+                    <tr>
+                        <td>
+                            <strong>{{ sum.examination.name }}</strong>
+                            <div class="small text-muted">{{ sum.examination.exam_type.name|default:"General" }}</div>
+                        </td>
+                        <td>{{ sum.examination.academic_year.name }}</td>
+                        <td>Semester {{ sum.examination.semester }}</td>
+                        <td class="text-center">
+                            {{ sum.total_marks_obtained }} / {{ sum.total_max_marks }}
+                        </td>
+                        <td class="text-center fw-bold {% if sum.is_passing %}text-success{% else %}text-danger{% endif %}">
+                            {{ sum.average_mark }}%
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border fw-bold">{{ sum.overall_grade|default:"&mdash;" }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if sum.rank %}
+                                <span class="badge bg-warning text-dark">#{{ sum.rank }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if sum.status == 'PUBLISHED' %}
+                                <span class="badge bg-success">Published</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Calculated</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'student_report_card' sum.examination.id student.id %}" class="btn btn-outline-primary" title="View Report Card">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a href="{% url 'student_report_card' sum.examination.id student.id %}?format=pdf" class="btn btn-outline-danger" title="Download PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No examination summaries recorded for this student yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Historical Subject Marks -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-journal-text text-primary me-2"></i>Subject-Level Historical Performance
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Examination</th>
+                        <th>Subject</th>
+                        <th class="text-center">Marks Obtained</th>
+                        <th class="text-center">Percentage</th>
+                        <th class="text-center">Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in all_marks %}
+                    <tr>
+                        <td>
+                            <strong>{{ m.exam_subject.examination.name }}</strong>
+                            <div class="small text-muted">{{ m.exam_subject.examination.academic_year.name }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ m.exam_subject.subject.code }}</span> {{ m.exam_subject.subject.name }}
+                        </td>
+                        <td class="text-center">
+                            {% if m.is_absent %}
+                                <span class="badge bg-warning text-dark">Absent</span>
+                            {% elif m.marks_obtained is not None %}
+                                <strong>{{ m.marks_obtained }}</strong> / {{ m.exam_subject.max_marks }}
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if m.percentage is not None %}
+                                <span class="fw-bold {% if m.is_passing %}text-success{% else %}text-danger{% endif %}">{{ m.percentage }}%</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if m.is_absent %}
+                                <span class="badge bg-secondary">Excused</span>
+                            {% elif m.is_passing %}
+                                <span class="badge bg-success-subtle text-success">Pass</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger">Fail</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ m.remarks|default:"" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No individual subject marks found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

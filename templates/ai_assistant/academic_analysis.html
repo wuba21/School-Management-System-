@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Performance Analysis - AI Assistant{% endblock %}
+{% block page_title %}AI Academic Performance & Diagnostic Analysis{% endblock %}
+
+{% block content %}
+<!-- Filtering Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Grade Level</label>
+                {{ form.grade }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1 fw-bold">Class Section</label>
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1 mt-4">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-funnel me-1"></i> Analyze
+                </button>
+                <a href="{% url 'ai_academic_analysis' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Subjects Requiring Attention (Priority Insights) -->
+{% if attention_subjects %}
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white border-start border-4 border-warning">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="fw-bold text-dark mb-0">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Curriculum Priority: Subjects Requiring Educational Support
+        </h6>
+        <div class="small text-muted">Identified via statistical pass-rate thresholds (&lt; 60%) or mean scores below standard pass marks.</div>
+    </div>
+    <div class="card-body p-3">
+        <div class="row g-3">
+            {% for item in attention_subjects %}
+            <div class="col-md-6 col-lg-4">
+                <div class="p-3 border rounded-3 bg-light h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-dark">{{ item.subject_name }}</span>
+                        <span class="badge bg-secondary">{{ item.grade_name }}</span>
+                    </div>
+                    <div class="small text-danger fw-bold mb-1">
+                        <i class="bi bi-x-circle me-1"></i>Pass Rate: {{ item.pass_rate }}% (Avg: {{ item.average_score }} / {{ item.max_marks }})
+                    </div>
+                    <div class="small text-muted mb-2 fst-italic">{{ item.attention_reason }}</div>
+                    {% if item.recommendations %}
+                    <div class="mt-2 pt-2 border-top">
+                        <div class="small fw-semibold text-primary mb-1">Pedagogical Suggestions:</div>
+                        <ul class="small text-muted ps-3 mb-0" style="font-size: 0.8rem;">
+                            {% for rec in item.recommendations %}
+                            <li>{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Chronological Trend Chart & Class Section Matrix -->
+<div class="row g-4 mb-4">
+    <!-- Trend Chart -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-graph-up text-primary me-2"></i>Assessment Performance Trajectory
+                </h6>
+                <div class="small text-muted">Chronological mean score across exam milestones</div>
+            </div>
+            <div class="card-body p-3">
+                <div style="height: 260px;">
+                    <canvas id="examTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Section Comparisons -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-bar-chart-steps text-success me-2"></i>Class Section Ranking & Variance
+                </h6>
+                <div class="small text-muted">Academic achievement benchmark across class sections</div>
+            </div>
+            <div class="card-body p-0">
+                {% if class_matrix %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Rank</th>
+                                <th>Class Offering</th>
+                                <th>Class Mean</th>
+                                <th>Pass Rate</th>
+                                <th>Range</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for c in class_matrix %}
+                            <tr>
+                                <td class="fw-bold text-muted">#{{ c.rank }}</td>
+                                <td class="fw-semibold text-dark">{{ c.class_name }}</td>
+                                <td class="fw-bold text-primary">{{ c.class_average }}%</td>
+                                <td>
+                                    <span class="badge {% if c.pass_rate >= 70 %}bg-success{% elif c.pass_rate >= 50 %}bg-primary{% else %}bg-danger{% endif %}">
+                                        {{ c.pass_rate }}%
+                                    </span>
+                                </td>
+                                <td class="text-muted" style="font-size: 0.75rem;">{{ c.lowest_score }} – {{ c.highest_score }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">No class offering records found for this selection.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Subject Diagnostics Matrix -->
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="bi bi-table text-primary me-2"></i>Master Subject Diagnostic Broadsheet
+            </h6>
+            <div class="small text-muted">Evaluated statistical indicators: mean, median, dispersion (Std Dev), and pass rates</div>
+        </div>
+        <span class="badge bg-light text-dark border">{{ total_analyzed_subjects }} Subjects Analyzed</span>
+    </div>
+    <div class="card-body p-0">
+        {% if subject_stats %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Grade</th>
+                        <th>Examination</th>
+                        <th>Sat Count</th>
+                        <th>Mean</th>
+                        <th>Median</th>
+                        <th>Max / Min</th>
+                        <th>Std Dev</th>
+                        <th>Pass Rate</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    {% for s in subject_stats %}
+                    <tr>
+                        <td class="fw-bold text-dark">{{ s.subject_name }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ s.grade_name }}</span></td>
+                        <td class="text-muted">{{ s.examination_name }}</td>
+                        <td>{{ s.sat_count }} / {{ s.total_enrolled }}</td>
+                        <td class="fw-bold text-primary">{{ s.average_score }}</td>
+                        <td>{{ s.median_score }}</td>
+                        <td class="text-muted" style="font-size: 0.75rem;">{{ s.max_score }} / {{ s.min_score }}</td>
+                        <td>&plusmn;{{ s.std_dev }}</td>
+                        <td>
+                            <span class="badge {% if s.pass_rate >= 70 %}bg-success{% elif s.pass_rate >= 50 %}bg-primary{% else %}bg-danger{% endif %}">
+                                {{ s.pass_rate }}%
+                            </span>
+                        </td>
+                        <td>
+                            {% if s.needs_attention %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Attention
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-check me-1"></i>Normal
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">No examination subjects matching active filters.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawTrends = {{ trends_json|safe }};
+    const ctx = document.getElementById('examTrendChart');
+    if (ctx && rawTrends.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: rawTrends.map(t => t.examination_name),
+                datasets: [
+                    {
+                        label: 'Average Score (%)',
+                        data: rawTrends.map(t => t.average_score),
+                        borderColor: '#2563EB',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                    },
+                    {
+                        label: 'Pass Rate (%)',
+                        data: rawTrends.map(t => t.pass_rate),
+                        borderColor: '#10B981',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { callback: v => v + '%' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    } else if (ctx) {
+        ctx.parentNode.innerHTML = '<div class="p-4 text-center text-muted small">No longitudinal examination milestones recorded.</div>';
+    }
+});
+</script>
+{% endblock %}

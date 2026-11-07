@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ exam_subject.subject.name }} ({{ exam_subject.grade.name }})</h5>
+            <span class="badge bg-warning text-dark"><i class="bi bi-shield-check"></i> Verification Pending</span>
+        </div>
+        <p class="text-muted small mb-0">
+            Examination: <strong class="text-dark">{{ exam_subject.examination.name }}</strong>
+            &bull; Submitted By: <strong class="text-primary">{{ exam_subject.submitted_by.get_full_name|default:exam_subject.submitted_by.username }}</strong>
+            &bull; Max Marks: <strong>{{ exam_subject.max_marks }}</strong>
+            &bull; Pass Marks: <strong>{{ exam_subject.pass_marks }}</strong>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'examination_detail' exam_subject.examination.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Exam Details
+        </a>
+        <a href="{% url 'results_index' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-award me-1"></i> Results Hub
+        </a>
+    </div>
+</div>
+
+<!-- Statistical Summary Banner -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Roster Size</small>
+            <h4 class="fw-bold mb-0 text-dark">{{ total_students }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Subject Average</small>
+            <h4 class="fw-bold mb-0 text-primary">{{ avg_score }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Highest Mark</small>
+            <h4 class="fw-bold mb-0 text-success">{{ highest_score }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Lowest Mark</small>
+            <h4 class="fw-bold mb-0 text-danger">{{ lowest_score }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Passing Count</small>
+            <h4 class="fw-bold mb-0 text-success">{{ pass_count }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Absent Count</small>
+            <h4 class="fw-bold mb-0 text-warning">{{ absent_count }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Review & Decision Panel -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-shield-check text-warning me-2"></i>Registrar / Principal Review Action
+        </h6>
+    </div>
+    <div class="card-body p-4">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-semibold text-dark">Review Decision <span class="text-danger">*</span></label>
+                {{ form.decision }}
+                <div class="form-text">Choose 'APPROVED' to finalize marks or 'RETURNED' to request corrections.</div>
+            </div>
+            <div class="col-12 col-md-8">
+                <label class="form-label fw-semibold text-dark">Review Remarks / Discrepancy Details</label>
+                {{ form.comments }}
+                <div class="form-text">Optional for approval, required when returning marks for correction.</div>
+            </div>
+            <div class="col-12 d-flex justify-content-end gap-2 pt-2 border-top">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-circle me-1"></i> Save & Apply Review Decision
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Marks Inspection Table -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-table text-primary me-2"></i>Submitted Marks Roster
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Admission No</th>
+                        <th>Student Full Name</th>
+                        <th>Section</th>
+                        <th class="text-center">Marks Obtained</th>
+                        <th class="text-center">Status</th>
+                        <th>Teacher Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in marks %}
+                    <tr>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="fw-semibold">{{ m.student_enrollment.student.admission_number }}</td>
+                        <td class="fw-bold text-dark">{{ m.student_enrollment.student.full_name }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">Sec {{ m.student_enrollment.class_offering.section.name }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if m.is_absent %}
+                                <span class="badge bg-warning text-dark">Absent</span>
+                            {% elif m.marks_obtained is not None %}
+                                <span class="fw-bold fs-6 {% if m.is_passing %}text-success{% else %}text-danger{% endif %}">
+                                    {{ m.marks_obtained }}
+                                </span>
+                                <small class="text-muted">/ {{ exam_subject.max_marks }}</small>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-muted">Unrecorded</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if m.is_absent %}
+                                <span class="badge bg-secondary">Excused</span>
+                            {% elif m.marks_obtained is not None %}
+                                {% if m.is_passing %}
+                                    <span class="badge bg-success-subtle text-success">Pass</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger">Fail</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-light text-muted border">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ m.remarks|default:"&mdash;" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No student marks recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if approvals %}
+<!-- Audit Trail of Decisions -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-clock-history text-secondary me-2"></i>Review Decision History
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Reviewer</th>
+                        <th>Decision</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in approvals %}
+                    <tr>
+                        <td class="small text-muted">{{ app.reviewed_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ app.reviewed_by.get_full_name|default:app.reviewed_by.username }}</td>
+                        <td>
+                            {% if app.decision == 'APPROVED' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% else %}
+                                <span class="badge bg-danger">Returned</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ app.comments|default:"None" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

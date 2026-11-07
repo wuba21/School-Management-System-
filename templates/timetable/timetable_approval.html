@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Review & Approve Timetable - Smart School Management{% endblock %}
+{% block page_title %}Timetable Review{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-award text-success me-2"></i>Review Timetable: {{ timetable.class_offering.display_name }}
+                        </h6>
+                        <span class="text-muted small">
+                            Academic Year: {{ timetable.academic_year.name }} &bull; Version: v{{ timetable.version }}
+                        </span>
+                    </div>
+                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Under Review</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <!-- Summary Metrics -->
+                <div class="row g-2 mb-4 text-center">
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="text-muted small">Total Lessons</div>
+                            <h4 class="fw-bold mb-0 text-primary">{{ timetable.total_scheduled_lessons }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="text-muted small">Created By</div>
+                            <h6 class="fw-bold mb-0 text-dark mt-1">{{ timetable.created_by.username|default:"System" }}</h6>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="text-muted small">Conflict Count</div>
+                            <h4 class="fw-bold mb-0 {% if conflicts %}text-danger{% else %}text-success{% endif %}">
+                                {{ conflicts|length }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conflicts Notice if any -->
+                {% if conflicts %}
+                <div class="alert alert-danger py-2 small mb-4">
+                    <h6 class="fw-bold small mb-1"><i class="bi bi-exclamation-octagon me-1"></i>Conflicts Found:</h6>
+                    <ul class="mb-0 ps-3">
+                        {% for c in conflicts %}
+                        <li><strong>{{ c.title }}</strong>: {{ c.message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <div class="alert alert-success py-2 small mb-4">
+                    <i class="bi bi-check-circle-fill me-1"></i>Zero conflicts detected! This timetable is safe to authorize and publish.
+                </div>
+                {% endif %}
+
+                <!-- Review Decision Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Decision <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            {% for radio in form.decision %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label small fw-semibold text-dark" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark">Review Comments / Justification</label>
+                        {{ form.comments }}
+                        <div class="form-text small">Enter any feedback, approval conditions, or reasons if returned to draft.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'timetable_detail' timetable.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Schedule
+                        </a>
+                        <button type="submit" class="btn btn-success btn-sm px-4">
+                            <i class="bi bi-check-circle me-1"></i> Submit Decision
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

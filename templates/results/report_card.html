@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Report Card - {{ data.student.full_name }}{% endblock %}
+{% block page_title %}Official Student Report Card{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+    }
+    .report-card-container {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions (hidden during print) -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-person-fill text-primary me-2"></i>Official Academic Report Card
+        </h5>
+        <p class="text-muted small mb-0">Individual assessment breakdown and verified subject marks</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="?format=pdf" class="btn btn-danger btn-sm">
+            <i class="bi bi-file-pdf me-1"></i> Download PDF Report Card
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+        <a href="{% url 'published_results' data.examination.id %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Gradebook
+        </a>
+    </div>
+</div>
+
+<!-- Official Report Card Sheet -->
+<div class="card border-0 shadow-sm rounded-3 p-4 mb-4 report-card-container">
+    <!-- School Header -->
+    <div class="text-center pb-3 border-bottom mb-4">
+        <h4 class="fw-bold text-dark mb-1">SMART SECONDARY SCHOOL</h4>
+        <div class="text-muted small mb-2">Majang Zone, Gambella Region, Ethiopia &bull; Academic Information System</div>
+        <h5 class="fw-bold text-primary mb-0 text-uppercase">{{ data.examination.name }}</h5>
+        <div class="text-muted small">Academic Year: {{ data.academic_year.name }} &bull; Semester {{ data.examination.semester }}</div>
+    </div>
+
+    <!-- Student & Class Metadata -->
+    <div class="row g-3 mb-4 p-3 bg-light rounded-3">
+        <div class="col-12 col-md-4">
+            <div class="text-muted small">Student Full Name:</div>
+            <strong class="text-dark fs-6">{{ data.student.full_name }}</strong>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Admission Number:</div>
+            <strong class="text-dark">{{ data.student.admission_number }}</strong>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Class & Section:</div>
+            <strong class="text-dark">{{ data.class_offering.grade.name }} - Section {{ data.class_offering.section.name }}</strong>
+        </div>
+        <div class="col-12 col-md-2 text-md-end">
+            <div class="text-muted small">Class Rank:</div>
+            {% if data.summary.rank %}
+                <span class="badge bg-warning text-dark fs-6">#{{ data.summary.rank }}</span>
+            {% else %}
+                <span class="badge bg-secondary">Unranked</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Key Performance Summary -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-3">
+            <div class="border rounded-3 p-2">
+                <div class="text-muted small">Total Obtained</div>
+                <h5 class="fw-bold text-dark mb-0">{{ data.summary.total_marks_obtained|default:"0.00" }} / {{ data.summary.total_max_marks|default:"0.00" }}</h5>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded-3 p-2">
+                <div class="text-muted small">Average Percentage</div>
+                <h5 class="fw-bold text-primary mb-0">{{ data.summary.average_mark|default:"0.00" }}%</h5>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded-3 p-2">
+                <div class="text-muted small">Overall Grade</div>
+                <h5 class="fw-bold text-success mb-0">{{ data.summary.overall_grade|default:"&mdash;" }}</h5>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="border rounded-3 p-2">
+                <div class="text-muted small">Academic Standing</div>
+                {% if data.summary.is_passing %}
+                    <span class="badge bg-success-subtle text-success fs-6 mt-1">Promoted / Passed</span>
+                {% else %}
+                    <span class="badge bg-danger-subtle text-danger fs-6 mt-1">Academic Warning</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Subject Marks Table -->
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Subject Description</th>
+                    <th style="width: 100px;" class="text-center">Max Marks</th>
+                    <th style="width: 100px;" class="text-center">Pass Mark</th>
+                    <th style="width: 120px;" class="text-center">Obtained</th>
+                    <th style="width: 100px;" class="text-center">Score %</th>
+                    <th style="width: 80px;" class="text-center">Grade</th>
+                    <th style="width: 90px;" class="text-center">Status</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subj in data.subjects %}
+                <tr>
+                    <td class="text-muted small">{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ subj.subject_name }}</strong>
+                        <div class="small text-muted">{{ subj.subject_code }}</div>
+                    </td>
+                    <td class="text-center">{{ subj.max_marks }}</td>
+                    <td class="text-center text-muted">{{ subj.pass_marks }}</td>
+                    <td class="text-center">
+                        {% if subj.is_absent %}
+                            <span class="badge bg-warning text-dark">Absent</span>
+                        {% elif subj.marks_obtained is not None %}
+                            <strong class="fs-6 {% if subj.is_passing %}text-success{% else %}text-danger{% endif %}">
+                                {{ subj.marks_obtained }}
+                            </strong>
+                        {% else %}
+                            <span class="text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if subj.percentage is not None %}
+                            {{ subj.percentage }}%
+                        {% else %}
+                            &mdash;
+                        {% endif %}
+                    </td>
+                    <td class="text-center fw-bold">{{ subj.grade_label }}</td>
+                    <td class="text-center">
+                        {% if subj.is_absent %}
+                            <span class="badge bg-secondary">Excused</span>
+                        {% elif subj.is_passing %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-danger">Fail</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ subj.remarks|default:"" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">No examination subjects recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Signatures & Validation Footer -->
+    <div class="row pt-5 mt-4 border-top">
+        <div class="col-4 text-center">
+            <div class="border-top pt-2">
+                <small class="text-muted d-block">Class Teacher Signature</small>
+            </div>
+        </div>
+        <div class="col-4 text-center">
+            <div class="border-top pt-2">
+                <small class="text-muted d-block">Exam Officer / Registrar</small>
+            </div>
+        </div>
+        <div class="col-4 text-center">
+            <div class="border-top pt-2">
+                <small class="text-muted d-block">Principal / Official Seal</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

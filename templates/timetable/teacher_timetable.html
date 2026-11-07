@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Timetable: {{ teacher.full_name|default:"Schedule" }} - Smart School Management{% endblock %}
+{% block page_title %}Teacher Weekly Schedule{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-person-badge text-primary me-2"></i>Weekly Schedule: {{ teacher.full_name }}
+        </h5>
+        <p class="text-muted small mb-0">
+            Employee ID: <span class="fw-semibold text-dark">{{ teacher.employee_id }}</span>
+            &bull; Specialization: <span class="badge bg-light text-dark border">{{ teacher.specialization }}</span>
+            &bull; Weekly Lessons: <span class="badge bg-primary rounded-pill">{{ matrix.total_lessons|default:0 }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% if is_management %}
+        <!-- Teacher Switcher Dropdown for Admins/Principals -->
+        <form method="get" class="d-flex align-items-center gap-1">
+            <select name="teacher_select" class="form-select form-select-sm" onchange="if(this.value) window.location.href='/timetable/teachers/' + this.value + '/';">
+                <option value="">-- Switch Teacher --</option>
+                {% for t in all_teachers %}
+                <option value="{{ t.id }}" {% if teacher and t.id == teacher.id %}selected{% endif %}>
+                    {{ t.full_name }} ({{ t.employee_id }})
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+
+        {% if teacher %}
+        <a href="{% url 'export_teacher_timetable_pdf' teacher.id %}" class="btn btn-outline-danger btn-sm" title="Export PDF">
+            <i class="bi bi-file-pdf me-1"></i> PDF
+        </a>
+        <a href="{% url 'export_teacher_timetable_excel' teacher.id %}" class="btn btn-outline-success btn-sm" title="Export Excel">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </a>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+        {% endif %}
+
+        <a href="{% url 'timetable_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Teacher Schedule Matrix -->
+{% if matrix %}
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-grid-3x3 me-2 text-primary"></i>Weekly Teaching Timetable
+        </h6>
+        <span class="text-muted small">Academic Year: {{ selected_year.name|default:"Current Year" }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center mb-0" style="min-width: 800px;">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 140px;" class="py-3">Period / Time</th>
+                        {% for day in matrix.working_days %}
+                        <th class="py-3 text-uppercase fw-bold">{{ day.name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in matrix.grid %}
+                    <tr>
+                        <td class="bg-light fw-bold small text-start ps-3">
+                            <div class="text-dark">{{ row.period.name }}</div>
+                            <div class="text-muted fw-normal" style="font-size: 0.75rem;">
+                                {{ row.period.start_time|time:"H:i" }} - {{ row.period.end_time|time:"H:i" }}
+                            </div>
+                            {% if row.period.is_break %}
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">
+                                {{ row.period.get_break_type_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        {% for col in row.days %}
+                        {% if row.period.is_break %}
+                        <td class="bg-light text-muted small py-3" style="background-color: #f8fafc !important;">
+                            <span class="badge bg-secondary-subtle text-secondary border">
+                                &mdash; {{ row.period.get_break_type_display }} &mdash;
+                            </span>
+                        </td>
+                        {% elif col.entry %}
+                        <td class="p-2" style="background-color: #eff6ff;">
+                            <div class="fw-bold text-primary">{{ col.entry.class_offering.grade.name }} - {{ col.entry.class_offering.section.name }}</div>
+                            <div class="small fw-semibold text-dark">{{ col.entry.subject.name }} ({{ col.entry.subject.code }})</div>
+                            {% if col.entry.classroom %}
+                            <div class="small text-secondary" style="font-size: 0.75rem;">
+                                <i class="bi bi-door-closed me-1"></i>{{ col.entry.classroom.code }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% else %}
+                        <td class="p-2 text-muted small bg-white">
+                            <span class="text-muted">&mdash;</span>
+                        </td>
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info py-4 text-center">
+    <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+    No schedule records or published timetables found for this teacher.
+</div>
+{% endif %}
+{% endblock %}

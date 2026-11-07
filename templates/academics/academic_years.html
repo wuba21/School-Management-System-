@@ -1,0 +1,177 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Years & Calendar{% endblock %}
+{% block page_title %}Academic Calendar & Year Management{% endblock %}
+
+{% block content %}
+<!-- Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-primary-subtle text-primary p-3 rounded-3 fs-3">
+                <i class="bi bi-calendar3"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Total Academic Years</div>
+                <div class="fs-4 fw-bold text-dark">{{ years.count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-success-subtle text-success p-3 rounded-3 fs-3">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Current Active Year</div>
+                <div class="fs-4 fw-bold text-success">
+                    {% if current_year %}
+                        {{ current_year.name }}
+                    {% else %}
+                        <span class="text-muted fs-6">None Active</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-info-subtle text-info p-3 rounded-3 fs-3">
+                <i class="bi bi-building"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Class Offerings (Active)</div>
+                <div class="fs-4 fw-bold text-dark">
+                    {% if current_year %}
+                        {{ current_year.class_offerings.count }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Table Card -->
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-range-fill text-primary"></i>
+            <span class="fw-bold">Academic Year Records</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">
+                {{ years.count }} {{ years.count|pluralize:"Record,Records" }}
+            </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if can_manage %}
+            <a href="{% url 'academic_year_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Add Academic Year
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" class="ps-3">Academic Year</th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Start Date</th>
+                    <th scope="col">End Date</th>
+                    <th scope="col" class="text-center">Offerings</th>
+                    <th scope="col" class="text-center">Enrollments</th>
+                    <th scope="col" class="text-center">Status</th>
+                    <th scope="col" class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for yr in years %}
+                <tr class="{% if yr.is_current %}table-success-subtle bg-light-subtle{% endif %}">
+                    <td class="ps-3">
+                        <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                            {{ yr.name }}
+                            {% if yr.is_current %}
+                                <span class="badge bg-success"><i class="bi bi-star-fill me-1"></i>Current</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td><span class="badge bg-secondary-subtle text-dark border">{{ yr.code }}</span></td>
+                    <td>{{ yr.start_date|date:"M d, Y" }}</td>
+                    <td>{{ yr.end_date|date:"M d, Y" }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark border">{{ yr.offering_count }} classes</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-light text-dark border">{{ yr.enrollment_count }} students</span>
+                    </td>
+                    <td class="text-center">
+                        {% if yr.is_closed %}
+                            <span class="badge bg-secondary">Closed</span>
+                        {% elif yr.is_current %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'class_offering_list' %}?year={{ yr.id }}" class="btn btn-outline-secondary" title="View Classes">
+                                <i class="bi bi-building"></i>
+                            </a>
+                            {% if can_manage %}
+                            <a href="{% url 'academic_year_edit' yr.id %}" class="btn btn-outline-primary" title="Edit Dates/Name">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            {% if not yr.is_closed and not yr.is_current %}
+                            <form method="post" action="{% url 'academic_year_activate' yr.id %}" class="d-inline" onsubmit="return confirm('Activate {{ yr.name }} as the official school active year? (Any other active year will become inactive)');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success" title="Set as Active">
+                                    <i class="bi bi-check2-circle"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% if yr.is_current and not yr.is_closed %}
+                            <form method="post" action="{% url 'academic_year_close' yr.id %}" class="d-inline" onsubmit="return confirm('Close {{ yr.name }}? This marks the academic cycle finished.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-warning" title="Close Year">
+                                    <i class="bi bi-lock-fill"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% if yr.is_closed %}
+                            <form method="post" action="{% url 'academic_year_reopen' yr.id %}" class="d-inline" onsubmit="return confirm('Reopen {{ yr.name }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary" title="Reopen Year">
+                                    <i class="bi bi-unlock-fill"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                        No academic years configured yet.
+                        {% if can_manage %}
+                        <div class="mt-2">
+                            <a href="{% url 'academic_year_create' %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i> Create First Academic Year
+                            </a>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+

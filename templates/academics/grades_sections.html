@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grades, Sections & Streams{% endblock %}
+{% block page_title %}Academic Structure: Grades, Sections & Streams{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- GRADES COLUMN -->
+    <div class="col-lg-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-mortarboard-fill text-primary"></i>
+                    <span class="fw-bold">Grades (9–12)</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">{{ grades.count }}</span>
+                </div>
+                {% if can_manage %}
+                <a href="{% url 'grade_create' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus"></i> Add
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Grade</th>
+                                <th>Level</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for g in grades %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">{{ g.name }}</div>
+                                    {% if g.description %}
+                                        <div class="text-muted small text-truncate" style="max-width: 140px;">{{ g.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ g.level }}</span></td>
+                                <td class="text-center">
+                                    {% if g.is_active %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3">
+                                    {% if can_manage %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'grade_edit' g.id %}" class="btn btn-outline-primary" title="Edit Grade">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'grade_toggle' g.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-{% if g.is_active %}warning{% else %}success{% endif %}" title="{% if g.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No grades configured.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTIONS COLUMN -->
+    <div class="col-lg-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-grid-fill text-success"></i>
+                    <span class="fw-bold">Sections (A, B, C...)</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">{{ sections.count }}</span>
+                </div>
+                {% if can_manage %}
+                <a href="{% url 'section_create' %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-plus"></i> Add
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Section</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in sections %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">{{ s.name }}</div>
+                                </td>
+                                <td class="text-center">
+                                    {% if s.is_active %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3">
+                                    {% if can_manage %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'section_edit' s.id %}" class="btn btn-outline-primary" title="Edit Section">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'section_toggle' s.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-{% if s.is_active %}warning{% else %}success{% endif %}" title="{% if s.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">No sections configured.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STREAMS COLUMN -->
+    <div class="col-lg-4">
+        <div class="card-ssms h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-diagram-3-fill text-info"></i>
+                    <span class="fw-bold">Streams (Grades 11–12)</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle ms-1">{{ streams.count }}</span>
+                </div>
+                {% if can_manage %}
+                <a href="{% url 'stream_create' %}" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-plus"></i> Add
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Stream</th>
+                                <th>Code</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for st in streams %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">{{ st.name }}</div>
+                                    {% if st.description %}
+                                        <div class="text-muted small text-truncate" style="max-width: 140px;">{{ st.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-dark border">{{ st.code }}</span></td>
+                                <td class="text-center">
+                                    {% if st.is_active %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3">
+                                    {% if can_manage %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'stream_edit' st.id %}" class="btn btn-outline-primary" title="Edit Stream">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'stream_toggle' st.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-{% if st.is_active %}warning{% else %}success{% endif %}" title="{% if st.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No streams configured.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info d-flex align-items-center gap-3">
+    <i class="bi bi-info-circle-fill fs-4"></i>
+    <div>
+        <strong>Secondary School Academic Structure (Gambella Region, Majang Zone):</strong>
+        Grades 9 and 10 provide general foundational secondary education. Streaming into Natural Science and Social Science begins in Grade 11 and continues through Grade 12. Deactivating a grade, section, or stream hides it from new classroom offerings without deleting existing academic historical records.
+    </div>
+</div>
+{% endblock %}

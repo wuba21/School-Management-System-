@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Take Attendance - {{ session.class_offering.display_name }}{% endblock %}
+{% block page_title %}Student Roll-Call Sheet{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Compact, touch-friendly status radio pills */
+    .status-group .btn-check:checked + .btn-outline-success {
+        background-color: #16a34a !important;
+        color: #ffffff !important;
+        border-color: #16a34a !important;
+    }
+    .status-group .btn-check:checked + .btn-outline-danger {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #dc2626 !important;
+    }
+    .status-group .btn-check:checked + .btn-outline-warning {
+        background-color: #d97706 !important;
+        color: #ffffff !important;
+        border-color: #d97706 !important;
+    }
+    .status-group .btn-check:checked + .btn-outline-info {
+        background-color: #0284c7 !important;
+        color: #ffffff !important;
+        border-color: #0284c7 !important;
+    }
+    .sticky-actions-bar {
+        position: sticky;
+        top: var(--navbar-height, 64px);
+        z-index: 1010;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Session Information Header -->
+<div class="card-ssms mb-3">
+    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="fs-5 fw-bold text-dark">{{ session.class_offering.display_name }}</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    {{ session.academic_year.name }}
+                </span>
+                <span class="badge bg-light text-dark border">
+                    {{ session.get_session_type_display }}
+                    {% if session.subject %}- {{ session.subject.name }}{% endif %}
+                </span>
+                {% if session.is_closed %}
+                <span class="badge bg-secondary"><i class="bi bi-lock-fill me-1"></i>Closed</span>
+                {% endif %}
+            </div>
+            <div class="text-muted small">
+                <i class="bi bi-calendar-event me-1"></i> <strong>{{ session.date|date:"l, F j, Y" }}</strong>
+                &bull; Roll-call Instructor: 
+                <span class="fw-semibold text-secondary">
+                    {{ session.recorded_by.full_name|default:"Designated Faculty" }}
+                </span>
+                &bull; Total Roster: <strong>{{ total_students }} students</strong>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'attendance_session_detail' session.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="attendanceForm">
+    {% csrf_token %}
+
+    <!-- Sticky Bulk Action Toolbar -->
+    <div class="card-ssms sticky-actions-bar mb-3 p-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="small fw-bold text-muted text-uppercase">Quick Fill:</span>
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="setAllStatus('PRESENT')">
+                    <i class="bi bi-check-all me-1"></i> All Present
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="setAllStatus('ABSENT')">
+                    <i class="bi bi-x-circle me-1"></i> All Absent
+                </button>
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="setAllStatus('LATE')">
+                    <i class="bi bi-clock me-1"></i> All Late
+                </button>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> Save Roll-Call Records
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Attendance Table -->
+    <div class="card-ssms">
+        <div class="table-responsive">
+            <table class="table table-ssms align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;" class="ps-3 text-center">#</th>
+                        <th style="width: 50px;">Photo</th>
+                        <th>Admission No</th>
+                        <th>Student Full Name</th>
+                        <th style="width: 70px;">Gender</th>
+                        <th style="min-width: 290px;">Attendance Status</th>
+                        <th style="min-width: 200px;" class="pe-3">Reason / Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in student_rows %}
+                    <tr>
+                        <td class="ps-3 text-center text-muted font-monospace small">
+                            {{ forloop.counter }}
+                        </td>
+                        <td>
+                            {% if row.student.photo %}
+                            <img src="{{ row.student.photo.url }}" alt="{{ row.student.full_name }}" class="rounded-circle border" style="width: 34px; height: 34px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center border" style="width: 34px; height: 34px; font-size: 0.8rem; font-weight: bold;">
+                                {{ row.student.first_name|slice:":1" }}{{ row.student.father_name|slice:":1" }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'student_attendance_detail' row.student.id %}" target="_blank" class="font-monospace fw-semibold text-primary text-decoration-none">
+                                {{ row.student.admission_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ row.student.full_name }}</div>
+                        </td>
+                        <td>
+                            {% if row.student.gender == 'M' %}
+                            <span class="badge bg-light text-secondary border">M</span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border">F</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm status-group" role="group">
+                                <input type="radio" class="btn-check status-radio" name="status_{{ row.enrollment.id }}" id="pres_{{ row.enrollment.id }}" value="PRESENT" {% if row.status == 'PRESENT' %}checked{% endif %}>
+                                <label class="btn btn-outline-success" for="pres_{{ row.enrollment.id }}">
+                                    <i class="bi bi-check2"></i> Present
+                                </label>
+
+                                <input type="radio" class="btn-check status-radio" name="status_{{ row.enrollment.id }}" id="abs_{{ row.enrollment.id }}" value="ABSENT" {% if row.status == 'ABSENT' %}checked{% endif %}>
+                                <label class="btn btn-outline-danger" for="abs_{{ row.enrollment.id }}">
+                                    <i class="bi bi-x"></i> Absent
+                                </label>
+
+                                <input type="radio" class="btn-check status-radio" name="status_{{ row.enrollment.id }}" id="late_{{ row.enrollment.id }}" value="LATE" {% if row.status == 'LATE' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning" for="late_{{ row.enrollment.id }}">
+                                    <i class="bi bi-clock"></i> Late
+                                </label>
+
+                                <input type="radio" class="btn-check status-radio" name="status_{{ row.enrollment.id }}" id="exc_{{ row.enrollment.id }}" value="EXCUSED" {% if row.status == 'EXCUSED' %}checked{% endif %}>
+                                <label class="btn btn-outline-info" for="exc_{{ row.enrollment.id }}">
+                                    <i class="bi bi-shield-check"></i> Excused
+                                </label>
+                            </div>
+                        </td>
+                        <td class="pe-3">
+                            <input type="text" name="reason_{{ row.enrollment.id }}" class="form-control form-control-sm" placeholder="Optional excuse / reason..." value="{{ row.reason }}">
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-2 d-block mb-2 text-secondary"></i>
+                            No active students are currently enrolled in this classroom.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer bg-light border-top p-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Total students: {{ total_students }}</span>
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">
+                <i class="bi bi-cloud-arrow-up-fill me-1"></i> Save Roll-Call Records
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setAllStatus(targetStatus) {
+    const radios = document.querySelectorAll(`input.status-radio[value="${targetStatus}"]`);
+    radios.forEach(r => {
+        r.checked = true;
+    });
+}
+</script>
+{% endblock %}

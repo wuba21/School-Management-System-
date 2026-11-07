@@ -40,6 +40,7 @@ class Grade(models.Model):
     name = models.CharField(max_length=50, unique=True, help_text="e.g. Grade 9, Grade 10")
     level = models.PositiveSmallIntegerField(unique=True, help_text="Numeric level: 9, 10, 11, or 12")
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, help_text="Designates whether this grade level is currently active.")
 
     class Meta:
         verbose_name = 'Grade Level'
@@ -56,6 +57,7 @@ class Section(models.Model):
     """
     name = models.CharField(max_length=20, unique=True, help_text="e.g. A, B, C, D")
     description = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True, help_text="Designates whether this section is available for offerings.")
 
     class Meta:
         verbose_name = 'Section'
@@ -73,6 +75,7 @@ class Stream(models.Model):
     code = models.CharField(max_length=20, unique=True, help_text="e.g. GENERAL, NATURAL, SOCIAL")
     name = models.CharField(max_length=100, help_text="e.g. General Secondary, Natural Science, Social Science")
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, help_text="Designates whether this stream is currently available.")
 
     class Meta:
         verbose_name = 'Curriculum Stream'
@@ -151,3 +154,24 @@ class ClassOffering(models.Model):
     def __str__(self):
         stream_str = f" ({self.stream.name})" if self.stream else ""
         return f"{self.academic_year.code}: {self.grade.name}-{self.section.name}{stream_str}"
+
+    @property
+    def display_name(self):
+        stream_str = f" ({self.stream.name})" if self.stream else ""
+        return f"{self.grade.name} - Section {self.section.name}{stream_str}"
+
+    @property
+    def enrolled_students_count(self):
+        if hasattr(self, 'student_enrollments'):
+            return self.student_enrollments.filter(status='ACTIVE').count()
+        elif hasattr(self, 'enrollments'):
+            return self.enrollments.filter(status='ACTIVE').count()
+        return 0
+
+    @property
+    def is_full(self):
+        return self.enrolled_students_count >= self.max_capacity
+
+    @property
+    def available_seats(self):
+        return max(0, self.max_capacity - self.enrolled_students_count)

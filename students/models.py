@@ -1,7 +1,20 @@
+import os
+import uuid
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from academics.models import AcademicYear, Grade, ClassOffering
+
+
+def student_photo_upload_to(instance, filename):
+    """
+    Generate an unguessable, safe UUID file path for uploaded student portraits.
+    Prevents directory traversal, file overwrites, and malicious executable filenames.
+    """
+    ext = os.path.splitext(filename)[1].lower() if '.' in filename else '.jpg'
+    safe_name = f"{uuid.uuid4().hex}{ext}"
+    return f"students/photos/{safe_name}"
+
 
 class Student(models.Model):
     """
@@ -15,6 +28,7 @@ class Student(models.Model):
     STATUS_CHOICES = [
         ('ACTIVE', 'Active'),
         ('TRANSFERRED', 'Transferred Out'),
+        ('WITHDRAWN', 'Withdrawn'),
         ('DROPPED', 'Dropped Out'),
         ('GRADUATED', 'Graduated'),
     ]
@@ -29,6 +43,17 @@ class Student(models.Model):
     grandfather_name = models.CharField(max_length=50, help_text="Grandfather's name")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     date_of_birth = models.DateField()
+    photo = models.ImageField(
+        upload_to=student_photo_upload_to,
+        blank=True,
+        null=True,
+        help_text="Student portrait photograph (JPEG, PNG, WebP; max 2MB)"
+    )
+    phone_number = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Student or parent phone number, if available"
+    )
     address = models.CharField(max_length=255, blank=True, help_text="Kebele/Zone/Village in Majang Zone")
     emergency_contact_name = models.CharField(max_length=100, help_text="Parent or guardian name")
     emergency_contact_phone = models.CharField(max_length=30, help_text="Primary phone number")
@@ -82,9 +107,13 @@ class StudentEnrollment(models.Model):
         return f"{self.student.admission_number} - {self.class_offering}"
 
     def clean(self):
-        if self.class_offering and self.academic_year:
-            if self.class_offering.academic_year_id != self.academic_year_id:
-                raise ValidationError("Class offering must belong to the selected academic year.")
+        try:
+            if self.class_offering_id and self.academic_year_id:
+                if self.class_offering.academic_year_id != self.academic_year_id:
+                    raise ValidationError("Class offering must belong to the selected academic year.")
+        except Exception as e:
+            if isinstance(e, ValidationError):
+                raise e
 
 
 class PromotionRecord(models.Model):

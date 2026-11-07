@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Attendance - {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Attendance Profile{% endblock %}
+
+{% block content %}
+<!-- Student Header Card -->
+<div class="card-ssms mb-4">
+    <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            {% if student.photo %}
+            <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="rounded-circle border" style="width: 56px; height: 56px; object-fit: cover;">
+            {% else %}
+            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center border" style="width: 56px; height: 56px; font-size: 1.25rem; font-weight: bold;">
+                {{ student.first_name|slice:":1" }}{{ student.father_name|slice:":1" }}
+            </div>
+            {% endif %}
+            <div>
+                <div class="fs-5 fw-bold text-dark mb-0">{{ student.full_name }}</div>
+                <div class="small text-muted">
+                    Admission No: <span class="font-monospace fw-semibold text-primary">{{ student.admission_number }}</span>
+                    &bull; Gender: {{ student.get_gender_display }}
+                    &bull; Status: <span class="badge bg-success-subtle text-success border border-success-subtle">{{ student.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-badge me-1"></i> Full Master Profile
+            </a>
+            <a href="{% url 'attendance_history' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-clock-history me-1"></i> All Attendance Logs
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Breakdown -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Total Sessions</div>
+                <div class="metric-value text-dark">{{ summary.total_sessions }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Present</div>
+                <div class="metric-value text-success">{{ summary.present }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Absent</div>
+                <div class="metric-value text-danger">{{ summary.absent }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Late</div>
+                <div class="metric-value text-warning">{{ summary.late }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Excused</div>
+                <div class="metric-value text-info">{{ summary.excused }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="metric-card">
+            <div>
+                <div class="metric-label">Attendance Rate</div>
+                <div class="metric-value {% if summary.rate >= 85 %}text-success{% elif summary.rate >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ summary.rate }}%
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Record Table -->
+<div class="card-ssms">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-check text-primary"></i>
+            <span class="fw-bold">Longitudinal Roll-Call Records</span>
+        </div>
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label class="small text-muted mb-0">Academic Year:</label>
+            <select name="academic_year" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Academic Years</option>
+                {% for ay in academic_years %}
+                <option value="{{ ay.id }}" {% if selected_year and selected_year.id == ay.id %}selected{% endif %}>
+                    {{ ay.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Date</th>
+                    <th>Classroom</th>
+                    <th>Session Type</th>
+                    <th>Subject / Period</th>
+                    <th>Attendance Status</th>
+                    <th>Reason / Excuse</th>
+                    <th>Recorded By</th>
+                    <th class="text-end pe-3">Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in summary.records %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold">{{ r.attendance_session.date|date:"Y-m-d" }}</td>
+                    <td>
+                        <span class="fw-semibold text-dark">{{ r.attendance_session.class_offering.display_name }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ r.attendance_session.get_session_type_display }}</span>
+                    </td>
+                    <td>
+                        {% if r.attendance_session.subject %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">{{ r.attendance_session.subject.name }} ({{ r.attendance_session.subject.code }})</span>
+                        {% else %}
+                        <span class="text-muted small">Daily Roll-Call</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'PRESENT' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle-fill me-1"></i>Present
+                        </span>
+                        {% elif r.status == 'ABSENT' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-x-circle-fill me-1"></i>Absent
+                        </span>
+                        {% elif r.status == 'LATE' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-clock-history me-1"></i>Late
+                        </span>
+                        {% elif r.status == 'EXCUSED' %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                            <i class="bi bi-shield-check me-1"></i>Excused Absence
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="small">{{ r.reason|default:"-" }}</span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ r.attendance_session.recorded_by.full_name|default:"Staff" }}</span>
+                    </td>
+                    <td class="text-end pe-3 small text-muted font-monospace">
+                        {{ r.updated_at|date:"Y-m-d H:i" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-2 d-block mb-2 text-secondary"></i>
+                        No attendance records recorded for this student.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

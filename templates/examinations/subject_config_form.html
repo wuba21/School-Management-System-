@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Configure Subject - {{ exam.name }}{% endblock %}
+{% block page_title %}Configure Examination Subject{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-book-half text-primary me-2"></i>Add Subject to {{ exam.name }}
+                </h6>
+                <a href="{% url 'examination_detail' exam.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if not exam.grade %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Target Grade Level <span class="text-danger">*</span></label>
+                        <select name="grade" class="form-select" required>
+                            <option value="">-- Select Grade --</option>
+                            {% for g in grades %}
+                            <option value="{{ g.id }}">{{ g.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select which grade level this subject belongs to for this multi-grade exam.</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Subject <span class="text-danger">*</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}
+                            <div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold text-dark">Maximum Marks <span class="text-danger">*</span></label>
+                            {{ form.max_marks }}
+                            {% if form.max_marks.errors %}
+                                <div class="text-danger small mt-1">{{ form.max_marks.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">e.g. 100.0 or 50.0</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold text-dark">Passing Threshold <span class="text-danger">*</span></label>
+                            {{ form.pass_marks }}
+                            {% if form.pass_marks.errors %}
+                                <div class="text-danger small mt-1">{{ form.pass_marks.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">e.g. 50.0</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold text-dark">Weight %</label>
+                            {{ form.weight_percentage }}
+                            {% if form.weight_percentage.errors %}
+                                <div class="text-danger small mt-1">{{ form.weight_percentage.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Default 100%</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold text-dark">Scheduled Exam Date</label>
+                            {{ form.exam_date }}
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label fw-semibold text-dark">Start Time</label>
+                            {{ form.start_time }}
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label fw-semibold text-dark">End Time</label>
+                            {{ form.end_time }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% url 'examination_detail' exam.id %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-plus-circle me-1"></i> Add Subject Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

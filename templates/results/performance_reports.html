@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic Performance Reports - Smart School Management{% endblock %}
+{% block page_title %}Academic Performance Analytics{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-bar-chart-fill text-primary me-2"></i>Subject Performance & Pass Rate Analytics
+        </h5>
+        <p class="text-muted small mb-0">Comparative subject-level statistics, averages, and pass/fail distributions</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'published_results' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Master Gradebook
+        </a>
+        <a href="{% url 'results_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Results Hub
+        </a>
+    </div>
+</div>
+
+<!-- Examination Selector -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-8">
+                <label class="form-label small fw-semibold text-muted mb-1">Select Examination Cycle</label>
+                <select name="exam" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for ex in exams %}
+                    <option value="{{ ex.id }}" {% if selected_exam and selected_exam.id == ex.id %}selected{% endif %}>
+                        {{ ex.name }} ({{ ex.academic_year.name }} - Sem {{ ex.semester }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-funnel me-1"></i> Load Performance Data
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_exam and subject_stats %}
+<!-- Chart.js Offline Visuals -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-graph-up text-primary me-2"></i>Average Score by Subject
+            </h6>
+            <div style="height: 280px; position: relative;">
+                <canvas id="subjectAvgChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-pie-chart text-success me-2"></i>Pass Rates by Subject (%)
+            </h6>
+            <div style="height: 280px; position: relative;">
+                <canvas id="passRateChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Subject Statistics Table -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-table text-primary me-2"></i>Subject Performance Breakdown
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Target Grade</th>
+                        <th class="text-center">Evaluated Students</th>
+                        <th class="text-center">Average Score</th>
+                        <th class="text-center">Highest Mark</th>
+                        <th class="text-center">Lowest Mark</th>
+                        <th class="text-center">Passed</th>
+                        <th class="text-center">Failed</th>
+                        <th class="text-center">Pass Rate %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in subject_stats %}
+                    <tr>
+                        <td>
+                            <strong>{{ stat.exam_subject.subject.name }}</strong>
+                            <div class="small text-muted">{{ stat.exam_subject.subject.code }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ stat.exam_subject.grade.name }}</span>
+                        </td>
+                        <td class="text-center">{{ stat.total_students }}</td>
+                        <td class="text-center fw-bold text-primary">{{ stat.average }}</td>
+                        <td class="text-center text-success fw-bold">{{ stat.highest }}</td>
+                        <td class="text-center text-danger">{{ stat.lowest }}</td>
+                        <td class="text-center text-success">{{ stat.passed }}</td>
+                        <td class="text-center text-danger">{{ stat.failed }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if stat.pass_rate >= 75 %}bg-success{% elif stat.pass_rate >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">
+                                {{ stat.pass_rate }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No marks recorded for this examination cycle yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labels = [{% for s in subject_stats %}"{{ s.exam_subject.subject.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const averages = [{% for s in subject_stats %}{{ s.average }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const passRates = [{% for s in subject_stats %}{{ s.pass_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+    // Average Chart
+    const ctxAvg = document.getElementById('subjectAvgChart');
+    if (ctxAvg) {
+        new Chart(ctxAvg, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Subject Average Score',
+                    data: averages,
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: 'rgb(37, 99, 235)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // Pass Rate Chart
+    const ctxPass = document.getElementById('passRateChart');
+    if (ctxPass) {
+        new Chart(ctxPass, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pass Rate %',
+                    data: passRates,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% else %}
+<div class="card border-0 shadow-sm rounded-3 p-5 text-center text-muted">
+    <i class="bi bi-clipboard-data fs-1 d-block mb-3"></i>
+    <h5>No Examination Selected or No Results Calculated</h5>
+    <p>Please select an examination cycle with recorded and calculated student results.</p>
+</div>
+{% endif %}
+{% endblock %}

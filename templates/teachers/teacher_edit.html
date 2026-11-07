@@ -1,0 +1,164 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Teacher - {{ teacher.full_name }}{% endblock %}
+{% block page_title %}Update Faculty Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                    <span class="fw-bold">Edit Profile: {{ teacher.full_name }}</span>
+                    <span class="badge bg-light text-primary border font-monospace ms-2">{{ teacher.employee_id }}</span>
+                </div>
+                <a href="{% url 'teacher_detail' teacher.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Profile
+                </a>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="p-4">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Section 1: Personal Details -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                    <i class="bi bi-person-vcard text-primary me-2"></i>1. Personal Information
+                </h5>
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Father's Name <span class="text-danger">*</span></label>
+                        {{ form.father_name }}
+                        {% if form.father_name.errors %}<div class="text-danger small">{{ form.father_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Grandfather's Name</label>
+                        {{ form.grandfather_name }}
+                        {% if form.grandfather_name.errors %}<div class="text-danger small">{{ form.grandfather_name.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}<div class="text-danger small">{{ form.gender.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Date of Birth</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}<div class="text-danger small">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Photograph</label>
+                        {{ form.photo }}
+                        {% if form.photo.errors %}<div class="text-danger small">{{ form.photo.errors.0 }}</div>{% endif %}
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <div class="rounded-circle border bg-white shadow-sm d-flex align-items-center justify-content-center overflow-hidden" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                {% if teacher.photo %}
+                                <img id="photo-preview" src="{{ teacher.photo.url }}" alt="{{ teacher.full_name }}" class="w-100 h-100 object-fit-cover">
+                                <i id="photo-preview-placeholder" class="bi bi-camera text-secondary fs-4 d-none"></i>
+                                {% else %}
+                                <img id="photo-preview" src="#" alt="Preview" class="w-100 h-100 object-fit-cover d-none">
+                                <i id="photo-preview-placeholder" class="bi bi-camera text-secondary fs-4"></i>
+                                {% endif %}
+                            </div>
+                            <div class="form-text small mb-0">Select new image to replace current photo.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Professional Information -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                    <i class="bi bi-mortarboard text-primary me-2"></i>2. Professional Qualification & Employment
+                </h5>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Qualification <span class="text-danger">*</span></label>
+                        {{ form.qualification }}
+                        {% if form.qualification.errors %}<div class="text-danger small">{{ form.qualification.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Specialization <span class="text-danger">*</span></label>
+                        {{ form.specialization }}
+                        {% if form.specialization.errors %}<div class="text-danger small">{{ form.specialization.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Employment Date <span class="text-danger">*</span></label>
+                        {{ form.joining_date }}
+                        {% if form.joining_date.errors %}<div class="text-danger small">{{ form.joining_date.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Section 3: Contact Details -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                    <i class="bi bi-telephone text-primary me-2"></i>3. Contact Information
+                </h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <label class="form-label fw-semibold">Residential Address</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{% url 'teacher_detail' teacher.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2-circle me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input, previewId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(previewId + '-placeholder');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            if (placeholder) {
+                placeholder.classList.add('d-none');
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
+

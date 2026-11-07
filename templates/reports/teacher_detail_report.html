@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Dossier: {{ teacher.full_name }} - Smart School Management{% endblock %}
+{% block page_title %}Teacher Workload Dossier{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-person-badge text-success me-2"></i>{{ teacher.full_name }}
+            </h5>
+            <span class="badge bg-light text-success border font-monospace fw-bold">{{ teacher.employee_id }}</span>
+            <span class="badge {% if teacher.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} border">
+                {{ teacher.get_employment_status_display }}
+            </span>
+        </div>
+        <p class="text-muted small mb-0">
+            Specialization: <span class="fw-semibold text-dark">{{ teacher.specialization|default:"General" }}</span> &bull;
+            Qualification: <span class="fw-semibold text-dark">{{ teacher.qualification|default:"-" }}</span> &bull;
+            Joining Date: <span class="fw-semibold text-dark">{{ teacher.joining_date|default:"-" }}</span>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Dossier
+        </button>
+        <a href="{% url 'reports_teachers' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Teacher Directory
+        </a>
+    </div>
+</div>
+
+<!-- SECTION 1: WORKLOAD METRIC CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="text-muted small fw-semibold text-uppercase">Assigned Class Offerings</div>
+            <h3 class="fw-bold mb-0 text-success mt-1">{{ item.classes_count|default:"0" }}</h3>
+            <div class="small text-muted mt-1">Different student class sections taught</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="text-muted small fw-semibold text-uppercase">Weekly Scheduled Lessons</div>
+            <h3 class="fw-bold mb-0 text-primary mt-1">{{ item.periods_count|default:"0" }}</h3>
+            <div class="small text-muted mt-1">Contact periods per week in active timetables</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="text-muted small fw-semibold text-uppercase">Distinct Subjects</div>
+            <h3 class="fw-bold mb-0 text-dark mt-1">{{ item.subjects_list|length }}</h3>
+            <div class="small text-muted mt-1">Different curriculum subjects assigned</div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 2: OFFICIAL TEACHING ASSIGNMENTS -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-text text-primary me-2"></i>Official Subject & Class Allocations</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3">Subject Name</th>
+                        <th class="py-3">Subject Code</th>
+                        <th class="py-3">Class Offering</th>
+                        <th class="py-3">Grade & Stream</th>
+                        <th class="py-3">Academic Year</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assign in item.assignments %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-dark">{{ assign.subject.name }}</td>
+                        <td><span class="badge bg-light text-secondary border">{{ assign.subject.code }}</span></td>
+                        <td class="fw-semibold text-primary">{{ assign.class_offering.display_name }}</td>
+                        <td>{{ assign.class_offering.grade.name }} &bull; {{ assign.class_offering.stream.name|default:"General" }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ assign.class_offering.academic_year.name }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No teaching allocations recorded for this instructor.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Results & Marks Hub - Smart School Management{% endblock %}
+{% block page_title %}Examination Results & Marks Processing{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-award-fill text-primary me-2"></i>Results & Assessment Operations
+        </h5>
+        <p class="text-muted small mb-0">
+            Academic Year: <span class="fw-semibold text-dark">{{ current_year.name|default:"Active Academic Year" }}</span>
+            &bull; Role: <span class="badge bg-secondary">{{ user_role }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'published_results' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Master Gradebook
+        </a>
+        <a href="{% url 'performance_reports' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-bar-chart-line me-1"></i> Academic Analytics
+        </a>
+        {% if is_management %}
+        <a href="{% url 'grading_config' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-sliders me-1"></i> Grading Scale Policy
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_teacher %}
+<!-- Teacher's Subjects for Marks Entry -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-pencil-square text-primary me-2"></i>My Subjects Ready for Marks Recording
+        </h6>
+        <span class="badge bg-primary-subtle text-primary">{{ teacher_subjects|length }} Assigned Subjects</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Examination</th>
+                        <th>Subject</th>
+                        <th>Grade</th>
+                        <th class="text-center">Max Marks</th>
+                        <th class="text-center">Pass Marks</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for es in teacher_subjects %}
+                    <tr>
+                        <td>
+                            <strong>{{ es.examination.name }}</strong>
+                            <div class="small text-muted">{{ es.examination.academic_year.name }} (Sem {{ es.examination.semester }})</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ es.subject.code }}</span> {{ es.subject.name }}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ es.grade.name }}</span>
+                        </td>
+                        <td class="text-center fw-bold">{{ es.max_marks }}</td>
+                        <td class="text-center text-muted">{{ es.pass_marks }}</td>
+                        <td>
+                            {% if es.status == 'PENDING' %}
+                                <span class="badge bg-secondary-subtle text-secondary">Pending Entry</span>
+                            {% elif es.status == 'SUBMITTED' %}
+                                <span class="badge bg-warning text-dark">Submitted & Locked</span>
+                            {% elif es.status == 'VERIFIED' %}
+                                <span class="badge bg-success">Verified & Approved</span>
+                            {% elif es.status == 'RETURNED' %}
+                                <span class="badge bg-danger">Returned for Fixes</span>
+                            {% elif es.status == 'PUBLISHED' %}
+                                <span class="badge bg-primary">Published</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if es.status in 'PENDING RETURNED' %}
+                            <a href="{% url 'marks_entry' es.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil-square me-1"></i> Enter Marks
+                            </a>
+                            {% else %}
+                            <a href="{% url 'marks_entry' es.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye me-1"></i> View Marks
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-check fs-2 d-block mb-2"></i>
+                            No subjects currently assigned to you for ongoing examinations.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if is_management %}
+<!-- Administrative Verification Queue -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-shield-check text-warning me-2"></i>Verification & Approval Queue
+        </h6>
+        <span class="badge bg-warning-subtle text-warning-emphasis">{{ pending_verification|length }} Pending Review</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Examination</th>
+                        <th>Subject</th>
+                        <th>Grade</th>
+                        <th>Submitted By</th>
+                        <th class="text-center">Max Marks</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for es in pending_verification %}
+                    <tr>
+                        <td>
+                            <strong>{{ es.examination.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ es.subject.code }}</span> {{ es.subject.name }}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ es.grade.name }}</span>
+                        </td>
+                        <td>
+                            {{ es.submitted_by.get_full_name|default:es.submitted_by.username }}
+                        </td>
+                        <td class="text-center fw-bold">{{ es.max_marks }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'marks_verify' es.id %}" class="btn btn-sm btn-warning text-dark">
+                                <i class="bi bi-check2-circle me-1"></i> Review & Verify
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-check-all fs-2 text-success d-block mb-2"></i>
+                            No pending subject mark submissions awaiting verification.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Examination Cycles Overview -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-clock-history text-primary me-2"></i>Active Assessment Cycles
+        </h6>
+        <a href="{% url 'examination_list' %}" class="text-decoration-none small fw-semibold">View All Cycles &rarr;</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Examination Name</th>
+                        <th>Type</th>
+                        <th>Academic Year</th>
+                        <th>Schedule</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in active_exams %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'examination_detail' exam.id %}" class="fw-bold text-decoration-none text-dark">
+                                {{ exam.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info-emphasis">{{ exam.exam_type.name|default:"General" }}</span>
+                        </td>
+                        <td>{{ exam.academic_year.name }} (Sem {{ exam.semester }})</td>
+                        <td>
+                            <small class="text-muted">{{ exam.start_date|date:"M d, Y" }} &ndash; {{ exam.end_date|date:"M d, Y" }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">Active</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'examination_detail' exam.id %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> Details
+                                </a>
+                                {% if is_management %}
+                                <a href="{% url 'calculate_results' exam.id %}" class="btn btn-outline-success">
+                                    <i class="bi bi-calculator"></i> Calculate
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'published_results' exam.id %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-award"></i> Gradebook
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No active examination cycles at this moment.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

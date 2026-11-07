@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Alerts{% endblock %}
+{% block page_title %}Attendance Early Warning & Pastoral Alerts{% endblock %}
+
+{% block content %}
+<!-- Explanatory Banner -->
+<div class="alert alert-info border d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-info-circle-fill fs-4 text-primary flex-shrink-0"></i>
+    <div class="small">
+        <strong>Early Warning Framework:</strong> These automated alerts identify students experiencing attendance barriers so teachers, guidance counselors, and homeroom mentors can offer proactive academic and pastoral support. Alerts are non-punitive.
+    </div>
+</div>
+
+<!-- Threshold Configuration Bar -->
+<div class="card-ssms mb-4">
+    <div class="p-3 bg-light">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-sm-4 col-md-3">
+                <label class="form-label small text-muted mb-1">Attendance Rate Threshold (%)</label>
+                <div class="input-group input-group-sm">
+                    <input type="number" name="threshold" class="form-control" value="{{ threshold }}" min="50" max="95" step="5">
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4 col-md-3">
+                <label class="form-label small text-muted mb-1">Consecutive Unexcused Days</label>
+                <input type="number" name="consecutive" class="form-control form-control-sm" value="{{ consecutive_days }}" min="2" max="10">
+            </div>
+            <div class="col-12 col-sm-4 col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-sliders me-1"></i> Update Alert Criteria
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ALERT 1: Classes Missing Roll Call Today -->
+<div class="card-ssms mb-4">
+    <div class="card-header bg-warning-subtle text-warning-emphasis">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            <span class="fw-bold">Classrooms Pending Roll-Call for Today ({{ alerts.today|date:"M j, Y" }})</span>
+        </div>
+        <span class="badge bg-warning text-dark">{{ alerts.missing_classes|length }} Pending</span>
+    </div>
+    <div class="p-3">
+        {% if alerts.missing_classes %}
+        <div class="row g-2">
+            {% for c in alerts.missing_classes %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center bg-white">
+                    <div>
+                        <div class="fw-bold text-dark">{{ c.display_name }}</div>
+                        <div class="text-muted small">Grade {{ c.grade.name }} - Section {{ c.section.name }}</div>
+                    </div>
+                    <a href="{% url 'attendance_session_create' %}?class_offering={{ c.id }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-pencil-square me-1"></i> Open Session
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-success small py-2">
+            <i class="bi bi-check-circle-fill me-1"></i> All active classrooms have attendance sessions recorded for today.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ALERT 2: Consecutive Absences -->
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar2-x text-danger"></i>
+            <span class="fw-bold">Students with {{ consecutive_days }}+ Consecutive Unexcused Absences</span>
+        </div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ alerts.consecutive_alerts|length }} Flagged</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Admission No</th>
+                    <th>Student Full Name</th>
+                    <th>Classroom</th>
+                    <th class="text-center">Consecutive Days</th>
+                    <th>Most Recent Absence</th>
+                    <th class="text-end pe-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alerts.consecutive_alerts %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold text-primary">
+                        {{ a.student.admission_number }}
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark">{{ a.student.full_name }}</span>
+                    </td>
+                    <td>{{ a.class_offering.display_name }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-danger">{{ a.consecutive_days }} Days in a Row</span>
+                    </td>
+                    <td class="font-monospace text-muted small">{{ a.last_absent_date|date:"Y-m-d" }}</td>
+                    <td class="text-end pe-3">
+                        <a href="{% url 'student_attendance_detail' a.student.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-eye"></i> View History
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-shield-check text-success fs-3 d-block mb-1"></i>
+                        No students currently flagged for consecutive unexcused absences.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ALERT 3: Chronic Absenteeism (Low Rate) -->
+<div class="card-ssms">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-graph-down text-danger"></i>
+            <span class="fw-bold">Chronic Absenteeism (Cumulative Rate &lt; {{ threshold }}%)</span>
+        </div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ alerts.chronic_alerts|length }} Students</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Admission No</th>
+                    <th>Student Full Name</th>
+                    <th>Classroom</th>
+                    <th class="text-center">Total Sessions</th>
+                    <th class="text-center">Total Absences</th>
+                    <th class="text-center">Attendance Rate</th>
+                    <th class="text-end pe-3">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in alerts.chronic_alerts %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold text-primary">
+                        {{ c.student.admission_number }}
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark">{{ c.student.full_name }}</span>
+                    </td>
+                    <td>{{ c.class_offering.display_name }}</td>
+                    <td class="text-center font-monospace">{{ c.total_sessions }}</td>
+                    <td class="text-center font-monospace text-danger fw-bold">{{ c.absent_count }}</td>
+                    <td class="text-center font-monospace">
+                        <span class="badge {% if c.rate < 60 %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ c.rate }}%
+                        </span>
+                    </td>
+                    <td class="text-end pe-3">
+                        <a href="{% url 'student_attendance_detail' c.student.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-eye"></i> Profile
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="bi bi-check2-circle text-success fs-3 d-block mb-1"></i>
+                        No students currently fall below the {{ threshold }}% attendance threshold.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

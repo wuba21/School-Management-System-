@@ -1,0 +1,228 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Student - {{ student.full_name }}{% endblock %}
+{% block page_title %}Edit Student Information{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                    <span class="fw-bold">Update Student Profile: {{ student.full_name }}</span>
+                </div>
+                <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Profile
+                </a>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class="card-body p-4">
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        {% for error in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- 1. IDENTIFIER & STATUS -->
+                    <div class="border rounded-3 p-3 mb-4 bg-light bg-opacity-50">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="bi bi-card-text text-primary me-2"></i>1. Identification & Status
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.admission_number.id_for_label }}" class="form-label fw-semibold">
+                                    Admission Number <span class="text-danger">*</span>
+                                </label>
+                                {{ form.admission_number }}
+                                {% if form.admission_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.admission_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                                    Enrollment Status <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. PERSONAL DETAILS -->
+                    <div class="border rounded-3 p-3 mb-4 bg-light bg-opacity-50">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="bi bi-person-badge text-primary me-2"></i>2. Personal Details (Ethiopian Three-Part Name)
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                    Given Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.father_name.id_for_label }}" class="form-label fw-semibold">
+                                    Father's Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.father_name }}
+                                {% if form.father_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.father_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.grandfather_name.id_for_label }}" class="form-label fw-semibold">
+                                    Grandfather's Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.grandfather_name }}
+                                {% if form.grandfather_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.grandfather_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.gender.id_for_label }}" class="form-label fw-semibold">
+                                    Gender <span class="text-danger">*</span>
+                                </label>
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                <div class="text-danger small mt-1">{{ form.gender.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.date_of_birth.id_for_label }}" class="form-label fw-semibold">
+                                    Date of Birth <span class="text-danger">*</span>
+                                </label>
+                                {{ form.date_of_birth }}
+                                {% if form.date_of_birth.errors %}
+                                <div class="text-danger small mt-1">{{ form.date_of_birth.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.photo.id_for_label }}" class="form-label fw-semibold">
+                                    Update Photograph
+                                </label>
+                                {{ form.photo }}
+                                {% if form.photo.errors %}
+                                <div class="text-danger small mt-1">{{ form.photo.errors.0 }}</div>
+                                {% endif %}
+                                <div class="d-flex align-items-center gap-2 mt-2">
+                                    <div class="rounded-circle border bg-white shadow-sm d-flex align-items-center justify-content-center overflow-hidden" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                        {% if student.photo %}
+                                        <img id="photo-preview" src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="w-100 h-100 object-fit-cover">
+                                        <i id="photo-preview-placeholder" class="bi bi-camera text-secondary fs-4 d-none"></i>
+                                        {% else %}
+                                        <img id="photo-preview" src="#" alt="Preview" class="w-100 h-100 object-fit-cover d-none">
+                                        <i id="photo-preview-placeholder" class="bi bi-camera text-secondary fs-4"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-text small mb-0">Select new image to replace current photo.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. CONTACT & GUARDIAN -->
+                    <div class="border rounded-3 p-3 mb-4 bg-light bg-opacity-50">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="bi bi-geo-alt-fill text-primary me-2"></i>3. Contact & Guardian Details
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.address.id_for_label }}" class="form-label fw-semibold">
+                                    Address / Kebele
+                                </label>
+                                {{ form.address }}
+                                {% if form.address.errors %}
+                                <div class="text-danger small mt-1">{{ form.address.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">
+                                    Student Phone Number
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.emergency_contact_name.id_for_label }}" class="form-label fw-semibold">
+                                    Guardian Full Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.emergency_contact_name }}
+                                {% if form.emergency_contact_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.emergency_contact_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.emergency_contact_phone.id_for_label }}" class="form-label fw-semibold">
+                                    Guardian Phone <span class="text-danger">*</span>
+                                </label>
+                                {{ form.emergency_contact_phone }}
+                                {% if form.emergency_contact_phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.emergency_contact_phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label for="{{ form.emergency_contact_relation.id_for_label }}" class="form-label fw-semibold">
+                                    Relationship to Student <span class="text-danger">*</span>
+                                </label>
+                                {{ form.emergency_contact_relation }}
+                                {% if form.emergency_contact_relation.errors %}
+                                <div class="text-danger small mt-1">{{ form.emergency_contact_relation.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input, previewId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(previewId + '-placeholder');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            if (placeholder) {
+                placeholder.classList.add('d-none');
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
+

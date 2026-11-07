@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Create New User{% endblock %}
+{% block page_title %}Create New User{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-bottom py-3 px-4">
+        <h6 class="fw-bold mb-0">
+          <i class="bi bi-person-plus-fill me-2 text-primary"></i>Create System User Account
+        </h6>
+        <p class="text-muted small mb-0">
+          All fields marked with <span class="text-danger">*</span> are required.
+        </p>
+      </div>
+      <div class="card-body p-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show small py-2" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger small py-2">
+              {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Username <span class="text-danger">*</span></label>
+              {{ form.username }}
+              <div class="text-muted" style="font-size: 0.75rem; margin-top: 0.25rem;">
+                Use format: role_firstname — e.g. teacher_abebe, registrar_almaz
+              </div>
+              {% if form.username.errors %}
+                <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">First Name</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}
+                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Last Name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}
+                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Email Address</label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+              {{ form.phone_number }}
+              {% if form.phone_number.errors %}
+                <div class="text-danger small mt-1">{{ form.phone_number.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Role <span class="text-danger">*</span></label>
+              {{ form.role }}
+              {% if form.role.errors %}
+                <div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Password <span class="text-danger">*</span></label>
+              {{ form.password1 }}
+              {% if form.password1.errors %}
+                <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Confirm Password <span class="text-danger">*</span></label>
+              {{ form.password2 }}
+              {% if form.password2.errors %}
+                <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                {{ form.is_approved }}
+                <label class="form-check-label small" for="{{ form.is_approved.id_for_label }}">
+                  Account Approved (user can log in immediately)
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-light border small py-2 mt-3">
+            <i class="bi bi-shield-check text-success me-1"></i>
+            Passwords are securely hashed using Django's PBKDF2 algorithm. They are never stored in plain text.
+          </div>
+
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-person-check me-2"></i>Create Account
+            </button>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

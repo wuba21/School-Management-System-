@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI Assistant Dashboard - SSMS{% endblock %}
+{% block page_title %}AI-Powered School Assistant & Intelligence{% endblock %}
+
+{% block content %}
+<!-- Offline AI Environment Notice -->
+<div class="alert alert-primary bg-primary-subtle border-primary-subtle d-flex align-items-center mb-4 py-2 px-3 shadow-sm rounded-3">
+    <i class="bi bi-cpu-fill text-primary fs-4 me-3"></i>
+    <div class="small">
+        <strong>100% Offline Local Intelligence:</strong> Operating on the Majang secondary school local server.
+        No internet connectivity or cloud APIs are queried. All analytics and natural language responses derive from verified institutional records.
+        <span class="badge bg-success ms-2">Offline Ready</span>
+    </div>
+</div>
+
+<!-- Executive Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-primary">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Academic Average</span>
+                <span class="badge bg-primary-subtle text-primary rounded-pill p-2"><i class="bi bi-mortarboard fs-6"></i></span>
+            </div>
+            <div class="fs-3 fw-bold text-dark">{{ school_academic_avg }}%</div>
+            <div class="small text-muted mt-1">School-wide assessment mean</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-success">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Presence Rate</span>
+                <span class="badge bg-success-subtle text-success rounded-pill p-2"><i class="bi bi-check2-circle fs-6"></i></span>
+            </div>
+            <div class="fs-3 fw-bold text-dark">{{ presence_rate }}%</div>
+            <div class="small text-muted mt-1">Institutional attendance health</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-warning">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Subjects Needing Support</span>
+                <span class="badge bg-warning-subtle text-warning rounded-pill p-2"><i class="bi bi-exclamation-triangle fs-6"></i></span>
+            </div>
+            <div class="fs-3 fw-bold text-dark">{{ attention_count }}</div>
+            <div class="small text-muted mt-1">Pass rate &lt; 60% or mean &lt; 50%</div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-info">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Frequent Absentees</span>
+                <span class="badge bg-info-subtle text-info rounded-pill p-2"><i class="bi bi-person-exclamation fs-6"></i></span>
+            </div>
+            <div class="fs-3 fw-bold text-dark">{{ frequent_absentees_count }}</div>
+            <div class="small text-muted mt-1">Students with &ge; 3 absences</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Navigation Action Tiles -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{% url 'ai_chat_assistant' %}" class="card border-0 shadow-sm rounded-3 p-3 bg-white text-decoration-none h-100 border-top border-3 border-primary hover-shadow transition">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle"><i class="bi bi-robot fs-4"></i></div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Conversational Assistant</h6>
+                    <div class="small text-muted">Ask questions in natural English</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'ai_academic_analysis' %}" class="card border-0 shadow-sm rounded-3 p-3 bg-white text-decoration-none h-100 border-top border-3 border-success hover-shadow transition">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-success-subtle text-success rounded-circle"><i class="bi bi-graph-up fs-4"></i></div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Academic Diagnostics</h6>
+                    <div class="small text-muted">Subject variance & class ranks</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'ai_attendance_analysis' %}" class="card border-0 shadow-sm rounded-3 p-3 bg-white text-decoration-none h-100 border-top border-3 border-warning hover-shadow transition">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-warning-subtle text-warning rounded-circle"><i class="bi bi-calendar-week fs-4"></i></div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Attendance Intelligence</h6>
+                    <div class="small text-muted">Weekday patterns & absenteeism</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'ai_report_generator' %}" class="card border-0 shadow-sm rounded-3 p-3 bg-white text-decoration-none h-100 border-top border-3 border-danger hover-shadow transition">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-danger-subtle text-danger rounded-circle"><i class="bi bi-file-earmark-pdf fs-4"></i></div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">AI Report Studio</h6>
+                    <div class="small text-muted">Export dossiers in PDF & Excel</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Academic Support Priority -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-flag-fill text-warning me-2"></i>Subjects Requiring Priority Attention
+                </h6>
+                <a href="{% url 'ai_academic_analysis' %}" class="btn btn-outline-primary btn-sm">View All Diagnostics</a>
+            </div>
+            <div class="card-body p-0">
+                {% if attention_subjects %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Subject</th>
+                                <th>Grade</th>
+                                <th>Mean Score</th>
+                                <th>Pass Rate</th>
+                                <th>Diagnostic Flag</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for item in attention_subjects %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ item.subject_name }}</td>
+                                <td><span class="badge bg-secondary">{{ item.grade_name }}</span></td>
+                                <td>{{ item.average_score }} / {{ item.max_marks }}</td>
+                                <td>
+                                    <span class="badge {% if item.pass_rate < 50 %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ item.pass_rate }}%
+                                    </span>
+                                </td>
+                                <td class="text-muted">{{ item.attention_reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
+                    All examined subjects currently meet minimum passing thresholds.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performing Classes Matrix -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-trophy-fill text-primary me-2"></i>Class Section Performance Benchmarks
+                </h6>
+                <a href="{% url 'ai_academic_analysis' %}" class="btn btn-outline-primary btn-sm">Section Matrix</a>
+            </div>
+            <div class="card-body p-0">
+                {% if top_classes %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Rank</th>
+                                <th>Class Offering</th>
+                                <th>Enrolled</th>
+                                <th>Class Mean</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for c in top_classes %}
+                            <tr>
+                                <td class="fw-bold text-muted">#{{ c.rank }}</td>
+                                <td class="fw-semibold text-dark">{{ c.class_name }}</td>
+                                <td>{{ c.enrolled_students }} students</td>
+                                <td class="fw-bold text-primary">{{ c.class_average }}%</td>
+                                <td>
+                                    <span class="badge {% if c.pass_rate >= 70 %}bg-success{% elif c.pass_rate >= 50 %}bg-primary{% else %}bg-danger{% endif %}">
+                                        {{ c.pass_rate }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                    No class marks recorded for this academic period.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Promotion & Academic Progression Reports - Smart School Management{% endblock %}
+{% block page_title %}Student Promotion Reports{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-bar-graph-fill text-primary me-2"></i>Promotion & Progression Reports
+        </h5>
+        <p class="text-muted small mb-0">Cohort rosters, promotion outcomes, and exportable gradebooks</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if selected_batch %}
+        <a href="{% url 'export_promotion_pdf' selected_batch.id %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-pdf me-1"></i> Download PDF Roster
+        </a>
+        <a href="{% url 'export_promotion_excel' selected_batch.id %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-excel me-1"></i> Download Excel Roster
+        </a>
+        {% endif %}
+        <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Promotion Hub
+        </a>
+    </div>
+</div>
+
+<!-- Select Batch Form -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-8">
+                <label class="form-label small fw-semibold text-muted mb-1">Select Promotion Cohort</label>
+                <select name="batch" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for b in batches %}
+                    <option value="{{ b.id }}" {% if selected_batch and selected_batch.id == b.id %}selected{% endif %}>
+                        {{ b.name }} ({{ b.grade.name }}: {{ b.academic_year.name }} &rarr; {{ b.target_academic_year.name }}) [{{ b.get_status_display }}]
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4 pt-3">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-arrow-repeat me-1"></i> Load Report Data
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_batch %}
+<!-- Statistical Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Total Evaluated</small>
+            <h3 class="fw-bold mb-0 text-dark">{{ selected_batch.total_candidates }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Promoted</small>
+            <h3 class="fw-bold mb-0 text-success">{{ selected_batch.promoted_count }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Retained (Repeat)</small>
+            <h3 class="fw-bold mb-0 text-danger">{{ selected_batch.repeated_count }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Graduated</small>
+            <h3 class="fw-bold mb-0 text-primary">{{ selected_batch.graduated_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Candidate Roster -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-card-checklist text-primary me-2"></i>Official Outcome Roster: {{ selected_batch.name }}
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Admission No</th>
+                        <th>Student Name</th>
+                        <th>Previous Section</th>
+                        <th class="text-center">Average %</th>
+                        <th class="text-center">Fails</th>
+                        <th class="text-center">Attendance %</th>
+                        <th>Final Outcome</th>
+                        <th>Assigned Next Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in selected_batch.records.all %}
+                    <tr>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="fw-semibold">{{ r.student.admission_number }}</td>
+                        <td>
+                            <a href="{% url 'student_academic_history' r.student.id %}" class="fw-bold text-dark text-decoration-none">
+                                {{ r.student.full_name }}
+                            </a>
+                        </td>
+                        <td>Sec {{ r.previous_class_offering.section.name }}</td>
+                        <td class="text-center fw-semibold">{{ r.academic_average|default:"—" }}%</td>
+                        <td class="text-center">{{ r.total_failing_subjects }}</td>
+                        <td class="text-center">{{ r.attendance_percentage|default:"—" }}%</td>
+                        <td>
+                            <span class="badge {% if r.final_outcome == 'PROMOTED' %}bg-success{% elif r.final_outcome == 'REPEATED' %}bg-danger{% elif r.final_outcome == 'GRADUATED' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ r.get_final_outcome_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if r.next_class_offering %}
+                                {{ r.next_class_offering.grade.name }} - Sec {{ r.next_class_offering.section.name }}
+                            {% elif r.next_grade %}
+                                {{ r.next_grade.name }}
+                            {% else %}
+                                <span class="text-muted small">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No candidates in this batch.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card border-0 shadow-sm rounded-3 p-5 text-center text-muted">
+    <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+    <h5>No Promotion Batch Available</h5>
+    <p>Please initiate a promotion cohort to view progression reports.</p>
+</div>
+{% endif %}
+{% endblock %}

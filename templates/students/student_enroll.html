@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enroll Student - {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Classroom Enrollment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-box-arrow-in-right text-primary"></i>
+                    <span class="fw-bold">Classroom Enrollment Assignment</span>
+                </div>
+                <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Profile
+                </a>
+            </div>
+
+            <!-- Student Summary Header -->
+            <div class="bg-light p-3 border-bottom d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary border border-primary-subtle d-flex align-items-center justify-content-center fw-bold" style="width: 48px; height: 48px; font-size: 1.1rem;">
+                    {{ student.first_name|first }}{{ student.father_name|first }}
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">{{ student.full_name }}</h6>
+                    <div class="small text-muted font-monospace">{{ student.admission_number }} &bull; Gender: {{ student.get_gender_display }}</div>
+                </div>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="card-body p-4">
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        {% for error in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-info-circle-fill fs-5"></i>
+                        <div class="small">
+                            Assigning this enrollment establishes the student's active classroom roster for the selected academic year.
+                            A student may only hold <strong>one</strong> active enrollment per academic year.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.academic_year.id_for_label }}" class="form-label fw-semibold">
+                            Academic Year <span class="text-danger">*</span>
+                        </label>
+                        {{ form.academic_year }}
+                        {% if form.academic_year.errors %}
+                        <div class="text-danger small mt-1">{{ form.academic_year.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.class_offering.id_for_label }}" class="form-label fw-semibold">
+                            Classroom Offering (Grade, Section & Stream) <span class="text-danger">*</span>
+                        </label>
+                        {{ form.class_offering }}
+                        {% if form.class_offering.errors %}
+                        <div class="text-danger small mt-1">{{ form.class_offering.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Lists available sections, grade levels, and curriculum streams for this school year.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                            Enrollment Status <span class="text-danger">*</span>
+                        </label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                        <div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-circle-fill me-1"></i> Confirm Classroom Enrollment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

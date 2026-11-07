@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Conversational School Assistant - SSMS{% endblock %}
+{% block page_title %}Offline AI School Assistant{% endblock %}
+
+{% block content %}
+<!-- Offline AI Environment Notice -->
+<div class="alert alert-primary bg-primary-subtle border-primary-subtle d-flex align-items-center mb-3 py-2 px-3 shadow-sm rounded-3">
+    <i class="bi bi-robot text-primary fs-4 me-3"></i>
+    <div class="small">
+        <strong>Local Natural Language Engine:</strong> Answers natural English queries directly from database records.
+        Operates completely offline with zero internet requirement. Role-based permissions are enforced automatically.
+        <span class="badge bg-success ms-2">Offline Ready</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Chat Conversation Console -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 d-flex flex-column bg-white" style="height: 600px;">
+            <!-- Console Header -->
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="p-2 bg-primary-subtle text-primary rounded-circle"><i class="bi bi-robot fs-5"></i></div>
+                    <div>
+                        <div class="fw-bold small text-dark mb-0">SSMS Conversational Assistant</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">Majang Zone Secondary School Knowledge Engine</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <form method="post" action="{% url 'ai_chat_clear' %}" class="d-inline" onsubmit="return confirm('Clear chat conversation history?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Clear History">
+                            <i class="bi bi-trash3 me-1"></i>Clear
+                        </button>
+                    </form>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Online (LAN)</span>
+                </div>
+            </div>
+
+            <!-- Scrollable Message Canvas -->
+            <div class="card-body overflow-y-auto flex-grow-1 p-3 bg-light" id="chatCanvas">
+                <!-- Welcome Greeting -->
+                <div class="d-flex gap-2 mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">AI</div>
+                    </div>
+                    <div class="p-3 bg-white border rounded-3 shadow-sm" style="max-width: 85%;">
+                        <div class="fw-bold text-dark small mb-1">Hello, {{ request.user.get_full_name|default:request.user.username }}!</div>
+                        <p class="small text-muted mb-0">
+                            I am your local School Assistant. You can ask me natural language questions about student enrollment,
+                            faculty statistics, subject performance averages, attendance rates, period bell schedules, and academic promotion criteria.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Previous Messages History -->
+                {% for msg in messages_history %}
+                    {% if msg.sender == 'USER' %}
+                    <div class="d-flex gap-2 mb-3 justify-content-end">
+                        <div class="p-3 bg-primary text-white rounded-3 shadow-sm" style="max-width: 80%;">
+                            <div class="small">{{ msg.content }}</div>
+                            <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">{{ msg.timestamp|time:"H:i" }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">AI</div>
+                        </div>
+                        <div class="p-3 bg-white border rounded-3 shadow-sm" style="max-width: 85%;">
+                            <div class="small text-dark markdown-body">{{ msg.content|linebreaksbr }}</div>
+                            <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">{{ msg.timestamp|time:"H:i" }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Interactive Suggested Chips -->
+            <div class="px-3 pt-2 bg-white border-top">
+                <div class="d-flex gap-2 mb-2 flex-wrap" id="promptChips">
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="How many students are registered?">
+                        👥 Student Count
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="Which subjects have the lowest average scores?">
+                        ⚠️ Weakest Subjects
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="What is the attendance percentage of Grade 10?">
+                        📊 Grade 10 Attendance
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="Summarize Grade 11 academic performance.">
+                        📈 Grade 11 Summary
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="How many teachers are registered?">
+                        👨‍🏫 Teacher Statistics
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="What are the school periods and working days?">
+                        ⏰ Bell Schedule
+                    </button>
+                    <button type="button" class="badge bg-light text-secondary border px-2 py-1 small btn text-start prompt-chip" data-prompt="What are the promotion criteria from Grade 10 to 11?">
+                        📜 Promotion Policy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="p-3 bg-white border-top">
+                <form id="chatForm" method="post" action="{% url 'ai_chat_assistant' %}">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        {{ form.query }}
+                        <button class="btn btn-primary px-4" type="submit" id="sendBtn">
+                            <i class="bi bi-send-fill me-1"></i> Ask
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side Help & Capabilities Panel -->
+    <div class="col-lg-4">
+        <!-- Quick Guidance Card -->
+        <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>How to Use the Assistant
+                </h6>
+            </div>
+            <div class="card-body p-3 small text-muted">
+                <p>The Assistant answers questions using real, verified school records. Try asking questions such as:</p>
+                <div class="list-group list-group-flush mb-3">
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-1 text-primary prompt-chip" data-prompt="How many active students are male and female?">
+                        <i class="bi bi-chat-dots me-2"></i>Gender breakdown of students
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-1 text-primary prompt-chip" data-prompt="Which subjects have the lowest average scores?">
+                        <i class="bi bi-chat-dots me-2"></i>Curriculum subjects needing attention
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-1 text-primary prompt-chip" data-prompt="What is the attendance percentage across the school?">
+                        <i class="bi bi-chat-dots me-2"></i>Overall institutional attendance
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-1 text-primary prompt-chip" data-prompt="Who are the frequent absentees in Grade 9?">
+                        <i class="bi bi-chat-dots me-2"></i>Frequent absentees in Grade 9
+                    </a>
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-1 text-primary prompt-chip" data-prompt="What are the promotion criteria?">
+                        <i class="bi bi-chat-dots me-2"></i>Passing benchmarks and criteria
+                    </a>
+                </div>
+                <div class="p-2 bg-light rounded text-xs" style="font-size: 0.75rem;">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    <strong>Privacy Protected:</strong> Teachers only see statistics for their assigned classes and subjects.
+                </div>
+            </div>
+        </div>
+
+        <!-- System Architecture Card -->
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-hdd-network-fill text-info me-2"></i>LAN Engine Profile
+                </h6>
+            </div>
+            <div class="card-body p-3 small">
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 text-muted">
+                    <li class="d-flex justify-content-between">
+                        <span>Architecture:</span> <strong class="text-dark">Deterministic Offline NLP</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Internet Requirement:</span> <span class="badge bg-success">Zero / None</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Data Latency:</span> <strong class="text-dark">&lt; 50 ms</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Data Grounding:</span> <strong class="text-dark">PostgreSQL / SQLite ORM</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Decision Authority:</span> <strong class="text-dark">Human Review Only</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatCanvas = document.getElementById('chatCanvas');
+    const chatInput = document.getElementById('chatInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+        if (chatCanvas) chatCanvas.scrollTop = chatCanvas.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Prompt chip click handler
+    document.querySelectorAll('.prompt-chip').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const prompt = this.getAttribute('data-prompt');
+            if (chatInput && prompt) {
+                chatInput.value = prompt;
+                chatInput.focus();
+            }
+        });
+    });
+
+    // AJAX Chat submission for instant responses
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            // Append User message immediately to canvas
+            const userHtml = `
+                <div class="d-flex gap-2 mb-3 justify-content-end">
+                    <div class="p-3 bg-primary text-white rounded-3 shadow-sm" style="max-width: 80%;">
+                        <div class="small">${escapeHtml(query)}</div>
+                        <div class="text-white-50 text-end mt-1" style="font-size: 0.65rem;">Just now</div>
+                    </div>
+                </div>
+            `;
+            chatCanvas.insertAdjacentHTML('beforeend', userHtml);
+            chatInput.value = '';
+            scrollToBottom();
+
+            // Append typing indicator
+            const typingId = 'typingIndicator_' + Date.now();
+            const typingHtml = `
+                <div class="d-flex gap-2 mb-3" id="${typingId}">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">AI</div>
+                    </div>
+                    <div class="p-3 bg-white border rounded-3 shadow-sm text-muted small">
+                        <span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span> Analyzing institutional records...
+                    </div>
+                </div>
+            `;
+            chatCanvas.insertAdjacentHTML('beforeend', typingHtml);
+            scrollToBottom();
+
+            // Submit via Fetch API
+            const formData = new FormData(chatForm);
+            formData.append('query', query);
+
+            fetch("{% url 'ai_chat_assistant' %}", {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                const indicator = document.getElementById(typingId);
+                if (indicator) indicator.remove();
+
+                const formattedResponse = formatMarkdown(data.response);
+                const aiHtml = `
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">AI</div>
+                        </div>
+                        <div class="p-3 bg-white border rounded-3 shadow-sm" style="max-width: 85%;">
+                            <div class="small text-dark markdown-body">${formattedResponse}</div>
+                            <div class="text-muted text-end mt-1" style="font-size: 0.65rem;">${data.timestamp}</div>
+                        </div>
+                    </div>
+                `;
+                chatCanvas.insertAdjacentHTML('beforeend', aiHtml);
+                scrollToBottom();
+            })
+            .catch(err => {
+                const indicator = document.getElementById(typingId);
+                if (indicator) indicator.remove();
+                chatForm.submit(); // fallback to standard submit
+            });
+        });
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatMarkdown(md) {
+        // Quick local formatting for bullet points and bolding
+        let html = md.replace(/^### (.*$)/gim, '<h6 class="fw-bold text-dark mt-2 mb-2">$1</h6>')
+                     .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                     .replace(/^\• (.*$)/gim, '<div class="ms-2 mb-1">&bull; $1</div>')
+                     .replace(/\n/gim, '<br>');
+        return html;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Timetable Conflict Audit - Smart School Management{% endblock %}
+{% block page_title %}Timetable Conflict Audit{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Scheduling Conflict Audit Report
+        </h5>
+        <p class="text-muted small mb-0">Automated multi-dimensional scan across all published and approved class schedules.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'timetable_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Conflict Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Total Clashes</div>
+            <h3 class="fw-bold mb-0 {% if total_conflicts > 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ total_conflicts }}
+            </h3>
+            <div class="text-muted small">Total detected issues</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Blocking Errors</div>
+            <h3 class="fw-bold mb-0 text-danger">{{ error_conflicts }}</h3>
+            <div class="text-muted small">Double-booking / Break clashes</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Warnings</div>
+            <h3 class="fw-bold mb-0 text-warning">{{ warning_conflicts }}</h3>
+            <div class="text-muted small">Assignment / Room mismatch</div>
+        </div>
+    </div>
+</div>
+
+<!-- Conflicts List -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-list-check me-2 text-primary"></i>Detected Scheduling Conflicts
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Severity</th>
+                        <th>Conflict Category</th>
+                        <th>Affected Timetable</th>
+                        <th>Day & Period</th>
+                        <th>Conflicting Entity / Teacher</th>
+                        <th>Details / Explanation</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in conflicts %}
+                    <tr>
+                        <td class="ps-4">
+                            {% if c.severity == 'ERROR' %}
+                            <span class="badge bg-danger">BLOCKING ERROR</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">WARNING</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold small">{{ c.title }}</td>
+                        <td>
+                            <a href="{% url 'timetable_detail' c.timetable_id %}" class="fw-bold text-decoration-none">
+                                {{ c.class_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ c.day_name }}</span>
+                            <span class="small text-muted">{{ c.period_name }}</span>
+                        </td>
+                        <td class="small fw-semibold">{{ c.teacher_name }}</td>
+                        <td class="small text-muted" style="max-width: 320px;">{{ c.message }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'timetable_detail' c.timetable_id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Resolve
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-success">
+                            <i class="bi bi-shield-check fs-1 d-block mb-2"></i>
+                            <h6 class="fw-bold">All Schedules are Conflict-Free!</h6>
+                            <p class="text-muted small mb-0">No teacher double-booking, class overlap, or room clash detected.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

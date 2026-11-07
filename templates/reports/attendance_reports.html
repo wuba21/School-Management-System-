@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Reports - Smart School Management{% endblock %}
+{% block page_title %}Attendance Reports & Absenteeism Review{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-check text-info me-2"></i>Attendance Reports & Chronic Absenteeism Review
+        </h5>
+        <p class="text-muted small mb-0">
+            Sessions Analyzed: <span class="badge bg-info rounded-pill">{{ total_sessions_count }}</span> &bull; Majang Zone Secondary School
+        </p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'export_report_pdf' 'attendance' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+        </a>
+        <a href="{% url 'export_report_excel' 'attendance' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-speedometer2 me-1"></i> Analytics Hub
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3 bg-light">
+        <form method="get" action="{% url 'reports_attendance' %}" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small fw-bold mb-1">Grade</label>
+                {{ form.grade }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Class / Section</label>
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small fw-bold mb-1">From Date</label>
+                {{ form.date_from }}
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-search me-1"></i> Filter
+                </button>
+                {% if filters %}
+                <a href="{% url 'reports_attendance' %}" class="btn btn-outline-secondary btn-sm" title="Clear">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Daily Attendance Breakdown -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-event text-primary me-2"></i>Daily Attendance Aggregate Breakdown</h6>
+                <span class="badge bg-light text-muted border">Recent Dates</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3 py-3">Date</th>
+                                <th class="text-center py-3">Total</th>
+                                <th class="text-center py-3 text-success">Present</th>
+                                <th class="text-center py-3 text-warning">Late</th>
+                                <th class="text-center py-3 text-danger">Absent</th>
+                                <th class="text-center py-3 text-secondary">Excused</th>
+                                <th class="text-end pe-3 py-3">Presence Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in daily_summary %}
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">{{ d.date }}</td>
+                                <td class="text-center">{{ d.total }}</td>
+                                <td class="text-center fw-semibold text-success">{{ d.present }}</td>
+                                <td class="text-center fw-semibold text-warning">{{ d.late }}</td>
+                                <td class="text-center fw-semibold text-danger">{{ d.absent }}</td>
+                                <td class="text-center text-secondary">{{ d.excused }}</td>
+                                <td class="text-end pe-3 fw-bold {% if d.rate >= 85 %}text-success{% elif d.rate >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ d.rate }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">No daily attendance records match the filter query.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chronic Absenteeism Review Panel -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-danger border-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Chronic Absenteeism Watchlist</h6>
+                <span class="badge bg-danger text-white">&ge; 3 Absences</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3 py-3">Student Name</th>
+                                <th class="py-3">Class</th>
+                                <th class="text-center py-3 text-danger">Absences</th>
+                                <th class="text-end pe-3 py-3">Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in chronic_absentees %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-semibold text-dark">{{ s.full_name }}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">{{ s.admission_number }}</div>
+                                </td>
+                                <td>{{ s.class_name }}</td>
+                                <td class="text-center fw-bold text-danger">{{ s.absent_count }}</td>
+                                <td class="text-end pe-3 fw-bold text-danger">{{ s.rate }}%</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-shield-check text-success fs-2 d-block mb-1"></i>
+                                    Excellent! No chronic absenteeism alerts detected under current filters.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

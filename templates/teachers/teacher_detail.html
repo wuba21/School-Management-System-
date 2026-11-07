@@ -1,0 +1,393 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Profile - {{ teacher.full_name }}{% endblock %}
+{% block page_title %}Faculty Member Profile{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="card-ssms mb-4">
+    <div class="p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            {% if teacher.photo %}
+            <img src="{{ teacher.photo.url }}" alt="{{ teacher.full_name }}" class="rounded-circle border shadow-sm" style="width: 80px; height: 80px; object-fit: cover;" onerror="this.onerror=null; this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+            <div class="rounded-circle bg-primary-subtle text-primary border shadow-sm d-none align-items-center justify-content-center fw-bold fs-2" style="width: 80px; height: 80px;">
+                {{ teacher.first_name|slice:":1" }}{{ teacher.father_name|slice:":1" }}
+            </div>
+            {% else %}
+            <div class="rounded-circle bg-primary-subtle text-primary border shadow-sm d-flex align-items-center justify-content-center fw-bold fs-2" style="width: 80px; height: 80px;">
+                {{ teacher.first_name|slice:":1" }}{{ teacher.father_name|slice:":1" }}
+            </div>
+            {% endif %}
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">{{ teacher.full_name }}</h3>
+                <div class="d-flex flex-wrap align-items-center gap-2 text-secondary small">
+                    <span class="font-monospace fw-semibold text-primary"><i class="bi bi-person-badge me-1"></i>{{ teacher.employee_id }}</span>
+                    <span>&bull;</span>
+                    <span><i class="bi bi-mortarboard-fill me-1"></i>{{ teacher.qualification }}</span>
+                    <span>&bull;</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle">{{ teacher.specialization }}</span>
+                    <span>&bull;</span>
+                    {% if teacher.employment_status == 'ACTIVE' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="bi bi-check-circle-fill me-1"></i>Active Faculty
+                    </span>
+                    {% elif teacher.employment_status == 'ON_LEAVE' %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                        <i class="bi bi-pause-circle-fill me-1"></i>On Leave
+                    </span>
+                    {% elif teacher.employment_status == 'TRANSFERRED' %}
+                    <span class="badge bg-secondary-subtle text-secondary border">
+                        <i class="bi bi-arrow-left-right me-1"></i>Transferred
+                    </span>
+                    {% elif teacher.employment_status == 'RETIRED' %}
+                    <span class="badge bg-secondary-subtle text-secondary border">
+                        <i class="bi bi-award-fill me-1"></i>Retired
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger-subtle text-danger border">
+                        <i class="bi bi-x-circle-fill me-1"></i>Inactive
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'teachers_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Faculty Directory
+            </a>
+            {% if can_manage %}
+            <a href="{% url 'teacher_assign' teacher.pk %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-book-plus me-1"></i> Assign Class & Subject
+            </a>
+            <a href="{% url 'teacher_edit' teacher.pk %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil me-1"></i> Edit Profile
+            </a>
+            <a href="{% url 'teacher_status' teacher.pk %}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-shield-lock me-1"></i> Status Lifecycle
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Workload Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-primary-subtle text-primary p-3 rounded-3 fs-3">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Assigned Classrooms</div>
+                <div class="fs-4 fw-bold text-dark">{{ total_assigned_classes }}</div>
+                <div class="small text-muted">{{ current_ay.name|default:"Active Year" }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-success-subtle text-success p-3 rounded-3 fs-3">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Students Taught</div>
+                <div class="fs-4 fw-bold text-success">{{ total_students_taught }}</div>
+                <div class="small text-muted">Across all assigned classrooms</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card-ssms p-3 d-flex flex-row align-items-center gap-3">
+            <div class="bg-info-subtle text-info p-3 rounded-3 fs-3">
+                <i class="bi bi-journal-bookmark-fill"></i>
+            </div>
+            <div>
+                <div class="text-secondary small fw-semibold text-uppercase">Active Subject Allocations</div>
+                <div class="fs-4 fw-bold text-info">{{ current_assignments|length }}</div>
+                <div class="small text-muted">Primary teaching duties</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Personal & Contact Information -->
+    <div class="col-lg-4">
+        <!-- Faculty Portrait Card -->
+        <div class="card-ssms mb-4 text-center p-3">
+            <div class="position-relative d-inline-block mb-3">
+                {% if teacher.photo %}
+                <img src="{{ teacher.photo.url }}" alt="{{ teacher.full_name }}" class="rounded-3 border shadow-sm" style="width: 150px; height: 160px; object-fit: cover;" onerror="this.onerror=null; this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                <div class="rounded-3 bg-light border d-none align-items-center justify-content-center text-secondary fw-bold shadow-sm" style="width: 150px; height: 160px; font-size: 2.5rem;">
+                    {{ teacher.first_name|slice:":1" }}{{ teacher.father_name|slice:":1" }}
+                </div>
+                {% else %}
+                <div class="rounded-3 bg-light border d-flex flex-column align-items-center justify-content-center text-secondary shadow-sm" style="width: 150px; height: 160px;">
+                    <i class="bi bi-person-video3 fs-1 opacity-50"></i>
+                    <span class="small text-muted mt-1">No Photo</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="fw-bold text-dark fs-5">{{ teacher.full_name }}</div>
+            <div class="font-monospace text-primary fw-semibold small mb-2">{{ teacher.employee_id }}</div>
+            <div>
+                <span class="badge bg-info-subtle text-info border border-info-subtle">{{ teacher.specialization }}</span>
+            </div>
+            {% if can_manage %}
+            <a href="{% url 'teacher_edit' teacher.pk %}" class="btn btn-outline-primary btn-sm w-100 mt-3">
+                <i class="bi bi-camera me-1"></i> {% if teacher.photo %}Change Photo{% else %}Upload Photo{% endif %}
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Personal Info Card -->
+        <div class="card-ssms mb-4">
+            <div class="card-header">
+                <i class="bi bi-person-vcard text-primary me-2"></i>Personal Details
+            </div>
+            <div class="p-3">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">First Name</span>
+                        <span class="fw-semibold">{{ teacher.first_name }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Father's Name</span>
+                        <span class="fw-semibold">{{ teacher.father_name }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Grandfather's Name</span>
+                        <span class="fw-semibold">{{ teacher.grandfather_name|default:"â€”" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Gender</span>
+                        <span class="fw-semibold">{% if teacher.gender == 'M' %}Male{% else %}Female{% endif %}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Date of Birth</span>
+                        <span class="fw-semibold">{{ teacher.date_of_birth|date:"M d, Y"|default:"Not specified" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Employment Date</span>
+                        <span class="fw-semibold">{{ teacher.joining_date|date:"M d, Y" }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Contact Info Card -->
+        <div class="card-ssms mb-4">
+            <div class="card-header">
+                <i class="bi bi-telephone text-primary me-2"></i>Contact Details
+            </div>
+            <div class="p-3">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Phone Number</span>
+                        <span class="fw-semibold font-monospace">{{ teacher.phone_number|default:"Not recorded" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Email Address</span>
+                        <span class="fw-semibold">{{ teacher.email|default:"Not recorded" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">Residential Address</span>
+                        <span class="fw-semibold">{{ teacher.address|default:"Not recorded" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-secondary">System Account</span>
+                        <span class="fw-semibold">
+                            {% if teacher.user %}
+                            <span class="badge bg-success-subtle text-success border">Linked ({{ teacher.user.username }})</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border">No system login</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Teaching Assignments & Workload History -->
+    <div class="col-lg-8">
+        <!-- Current Assignments Card -->
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-book-fill text-primary"></i>
+                    <span class="fw-bold">Teaching Assignments ({{ current_ay.name|default:"Active Year" }})</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">
+                        {{ current_assignments|length }} Allocated
+                    </span>
+                </div>
+                {% if can_manage %}
+                <a href="{% url 'teacher_assign' teacher.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Add Assignment
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-ssms align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Grade & Section</th>
+                            <th>Stream</th>
+                            <th>Subject</th>
+                            <th>Role</th>
+                            <th>Notes</th>
+                            {% if can_manage %}
+                            <th class="text-end">Action</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in current_assignments %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-dark">
+                                    {{ a.class_offering.grade.name }} - Section {{ a.class_offering.section.name }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if a.class_offering.stream %}
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                    {{ a.class_offering.stream.name }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">General</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-primary">{{ a.subject.name }}</span>
+                                <span class="small text-muted font-monospace">({{ a.subject.code }})</span>
+                            </td>
+                            <td>
+                                {% if a.is_primary %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Primary Instructor</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border">Assistant / Co-teacher</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="small text-muted">{{ a.notes|default:"â€”" }}</span>
+                            </td>
+                            {% if can_manage %}
+                            <td class="text-end">
+                                <form method="post" action="{% url 'teacher_assignment_delete' a.pk %}" class="d-inline" onsubmit="return confirm('Remove this subject and class allocation for {{ teacher.full_name }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm p-1" title="Remove Assignment">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-journal-x fs-3 d-block mb-1 text-secondary opacity-50"></i>
+                                <div>No class or subject assignments allocated for the current academic year.</div>
+                                {% if can_manage %}
+                                <a href="{% url 'teacher_assign' teacher.pk %}" class="btn btn-sm btn-primary mt-2">
+                                    <i class="bi bi-plus-circle me-1"></i> Allocate First Class Assignment
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Historical Assignments Card -->
+        {% if past_assignments %}
+        <div class="card-ssms mb-4">
+            <div class="card-header">
+                <i class="bi bi-clock-history text-secondary me-2"></i>Historical Teaching Records (Past Years)
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Academic Year</th>
+                            <th>Class Offering</th>
+                            <th>Subject</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pa in past_assignments %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ pa.academic_year.name|default:pa.class_offering.academic_year.name }}
+                                </span>
+                            </td>
+                            <td>{{ pa.class_offering }}</td>
+                            <td>{{ pa.subject.name }}</td>
+                            <td>
+                                {% if pa.is_primary %}
+                                <span class="badge bg-light text-dark border">Primary</span>
+                                {% else %}
+                                <span class="badge bg-light text-secondary border">Assistant</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit History -->
+        {% if audit_logs and can_review %}
+        <div class="card-ssms mb-4">
+            <div class="card-header">
+                <i class="bi bi-shield-check text-primary me-2"></i>Administrative Audit Trail
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless small align-middle mb-0">
+                        <thead>
+                            <tr class="text-secondary border-bottom">
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Authorizing Staff</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                            <tr>
+                                <td class="text-muted">{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if log.action == 'CREATE' %}
+                                    <span class="badge bg-success-subtle text-success">Created</span>
+                                    {% elif log.action == 'UPDATE' %}
+                                    <span class="badge bg-primary-subtle text-primary">Updated</span>
+                                    {% elif log.action == 'DELETE' %}
+                                    <span class="badge bg-danger-subtle text-danger">Deleted</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.actor.username|default:"System" }}</td>
+                                <td class="font-monospace text-truncate" style="max-width: 320px;">
+                                    {{ log.changes_json }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

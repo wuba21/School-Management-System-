@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ exam.name }} - Details{% endblock %}
+{% block page_title %}{{ exam.name }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ exam.name }}</h5>
+            {% if exam.status == 'ACTIVE' %}
+                <span class="badge bg-success">Active Cycle</span>
+            {% elif exam.status == 'PUBLISHED' %}
+                <span class="badge bg-primary">Results Published</span>
+            {% elif exam.status == 'CLOSED' %}
+                <span class="badge bg-dark">Closed</span>
+            {% elif exam.status == 'SUBMITTED' %}
+                <span class="badge bg-warning text-dark">Under Review</span>
+            {% else %}
+                <span class="badge bg-secondary">Draft</span>
+            {% endif %}
+            {% if exam.is_locked %}
+                <span class="badge bg-danger"><i class="bi bi-lock-fill"></i> Locked</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0">
+            Academic Year: <span class="fw-semibold text-dark">{{ exam.academic_year.name }}</span> (Semester {{ exam.semester }})
+            &bull; Schedule: <span class="fw-semibold text-primary">{{ exam.start_date|date:"M d, Y" }} &ndash; {{ exam.end_date|date:"M d, Y" }}</span>
+            &bull; Target: <span class="badge bg-light text-dark border">{{ exam.grade.name|default:"All Secondary Grades (9-12)" }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if can_manage %}
+            <form method="post" action="{% url 'examination_subject_auto' exam.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary btn-sm" onclick="return confirm('Auto-populate subjects from approved curriculum for this grade level?')">
+                    <i class="bi bi-magic me-1"></i> Auto-Populate Curriculum
+                </button>
+            </form>
+            <a href="{% url 'examination_subject_add' exam.id %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Add Subject
+            </a>
+            {% if exam.is_closed %}
+            <form method="post" action="{% url 'examination_reopen' exam.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-unlock me-1"></i> Reopen Cycle
+                </button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'examination_close' exam.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to close this examination cycle?')">
+                    <i class="bi bi-lock me-1"></i> Close Cycle
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+
+        {% if can_publish %}
+            <a href="{% url 'calculate_results' exam.id %}" class="btn btn-success btn-sm">
+                <i class="bi bi-calculator me-1"></i> Calculate Results
+            </a>
+            <a href="{% url 'published_results' exam.id %}" class="btn btn-info text-white btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Master Gradebook
+            </a>
+        {% endif %}
+
+        <a href="{% url 'examination_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Configured Examination Subjects -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-book text-primary me-2"></i>Configured Examination Subjects ({{ total_subjects }})
+        </h6>
+        <span class="text-muted small">Pass marks and maximum marks configured per subject</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Grade / Stream</th>
+                        <th class="text-center">Max Marks</th>
+                        <th class="text-center">Pass Marks</th>
+                        <th class="text-center">Weight %</th>
+                        <th>Marks Status</th>
+                        <th>Reviewer Info</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for es in exam_subjects %}
+                    <tr>
+                        <td>
+                            <strong>{{ es.subject.name }}</strong>
+                            <div class="small text-muted">{{ es.subject.code }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ es.grade.name }}</span>
+                            {% if es.stream %}
+                                <span class="badge bg-light text-primary border">{{ es.stream.name }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fw-bold">{{ es.max_marks }}</td>
+                        <td class="text-center text-muted">{{ es.pass_marks }}</td>
+                        <td class="text-center">{{ es.weight_percentage }}%</td>
+                        <td>
+                            {% if es.status == 'PENDING' %}
+                                <span class="badge bg-secondary-subtle text-secondary">Pending Entry</span>
+                            {% elif es.status == 'SUBMITTED' %}
+                                <span class="badge bg-warning text-dark">Submitted for Review</span>
+                            {% elif es.status == 'VERIFIED' %}
+                                <span class="badge bg-success">Verified & Approved</span>
+                            {% elif es.status == 'RETURNED' %}
+                                <span class="badge bg-danger">Returned for Fixes</span>
+                            {% elif es.status == 'PUBLISHED' %}
+                                <span class="badge bg-primary">Published</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if es.submitted_by %}
+                                <div class="small text-muted">Sub: {{ es.submitted_by.get_full_name|default:es.submitted_by.username }}</div>
+                            {% endif %}
+                            {% if es.verified_by %}
+                                <div class="small text-success">Ver: {{ es.verified_by.get_full_name|default:es.verified_by.username }}</div>
+                            {% endif %}
+                            {% if es.verification_remarks %}
+                                <div class="small text-danger fst-italic">Note: {{ es.verification_remarks|truncatechars:35 }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'marks_entry' es.id %}" class="btn btn-outline-primary" title="Enter or Edit Marks">
+                                    <i class="bi bi-pencil-square"></i> Marks
+                                </a>
+                                {% if es.status == 'SUBMITTED' and can_publish %}
+                                <a href="{% url 'marks_verify' es.id %}" class="btn btn-warning text-dark" title="Review & Verify">
+                                    <i class="bi bi-check2-circle"></i> Verify
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-plus fs-2 d-block mb-2"></i>
+                            No subjects configured yet for this examination.
+                            {% if can_manage %}
+                            <div class="mt-2">
+                                <form method="post" action="{% url 'examination_subject_auto' exam.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-magic me-1"></i> Auto-Populate Curriculum Subjects
+                                    </button>
+                                </form>
+                                <span class="mx-2 text-muted">or</span>
+                                <a href="{% url 'examination_subject_add' exam.id %}" class="btn btn-sm btn-outline-secondary">
+                                    Add Subject Manually
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

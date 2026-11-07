@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Promotion Preview - {{ batch.name }}{% endblock %}
+{% block page_title %}Promotion Cohort Preview{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ batch.name }}</h5>
+            <span class="badge bg-primary">Preview & Verification</span>
+        </div>
+        <p class="text-muted small mb-0">
+            Source Year: <strong class="text-dark">{{ batch.academic_year.name }}</strong>
+            &rarr; Target Year: <strong class="text-primary">{{ batch.target_academic_year.name }}</strong>
+            &bull; Grade: <strong>{{ batch.grade.name }}</strong>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if can_approve %}
+        <a href="{% url 'promotion_approval' batch.id %}" class="btn btn-warning text-dark btn-sm">
+            <i class="bi bi-shield-check me-1"></i> Proceed to Committee Review
+        </a>
+        {% endif %}
+
+        {% if can_finalize %}
+        <form method="post" action="{% url 'promotion_finalize' batch.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Officially finalize this promotion batch? New student enrollments will be created.')">
+                <i class="bi bi-check2-all me-1"></i> Finalize & Enroll Students
+            </button>
+        </form>
+        {% endif %}
+
+        <a href="{% url 'export_promotion_pdf' batch.id %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-pdf me-1"></i> Export PDF
+        </a>
+        <a href="{% url 'promotion_batch_detail' batch.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Batch
+        </a>
+    </div>
+</div>
+
+<!-- Projection Breakdown KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Total Candidates</small>
+            <h3 class="fw-bold mb-0 text-dark">{{ counts.total }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Promoted</small>
+            <h3 class="fw-bold mb-0 text-success">{{ counts.promoted }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Retained (Repeat)</small>
+            <h3 class="fw-bold mb-0 text-danger">{{ counts.repeated }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Graduating</small>
+            <h3 class="fw-bold mb-0 text-primary">{{ counts.graduated }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Pending Review</small>
+            <h3 class="fw-bold mb-0 text-warning">{{ counts.pending }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+            <small class="text-muted text-uppercase fw-semibold">Departed / Out</small>
+            <h3 class="fw-bold mb-0 text-secondary">{{ counts.transferred|add:counts.withdrawn }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Verification Roster Table -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-table text-primary me-2"></i>Proposed Promotion Roster for Committee Authorization
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Admission No</th>
+                        <th>Student Name</th>
+                        <th>Current Class</th>
+                        <th class="text-center">Academic Avg</th>
+                        <th class="text-center">Fails</th>
+                        <th class="text-center">Attendance</th>
+                        <th>Recommended</th>
+                        <th>Proposed Final Decision</th>
+                        <th>Assigned Next Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="fw-semibold">{{ r.student.admission_number }}</td>
+                        <td class="fw-bold text-dark">{{ r.student.full_name }}</td>
+                        <td>{{ r.previous_class_offering.grade.name }} - Sec {{ r.previous_class_offering.section.name }}</td>
+                        <td class="text-center fw-semibold">{{ r.academic_average|default:"—" }}%</td>
+                        <td class="text-center">{{ r.total_failing_subjects }}</td>
+                        <td class="text-center">{{ r.attendance_percentage|default:"—" }}%</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ r.get_recommended_outcome_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge {% if r.final_outcome == 'PROMOTED' %}bg-success{% elif r.final_outcome == 'REPEATED' %}bg-danger{% elif r.final_outcome == 'GRADUATED' %}bg-primary{% elif r.final_outcome == 'PENDING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ r.get_final_outcome_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if r.next_class_offering %}
+                                <strong class="text-primary">{{ r.next_class_offering.grade.name }} - Sec {{ r.next_class_offering.section.name }}</strong>
+                            {% elif r.next_grade %}
+                                <span class="text-dark">{{ r.next_grade.name }}</span>
+                            {% else %}
+                                <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-4 text-muted">No candidate records available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

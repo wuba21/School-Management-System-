@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Reports & Registry - Smart School Management{% endblock %}
+{% block page_title %}Student Reports & Registry{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-person text-primary me-2"></i>Student Registration & Enrollment Reports
+        </h5>
+        <p class="text-muted small mb-0">
+            Total Matching Records: <span class="badge bg-primary rounded-pill">{{ total_count }}</span> &bull; Showing Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'export_report_pdf' 'students' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+        </a>
+        <a href="{% url 'export_report_excel' 'students' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-speedometer2 me-1"></i> Analytics Hub
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3 bg-light">
+        <form method="get" action="{% url 'reports_students' %}" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small fw-bold mb-1">Grade</label>
+                {{ form.grade }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small fw-bold mb-1">Class / Section</label>
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Search Student</label>
+                {{ form.search }}
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-search me-1"></i> Filter
+                </button>
+                {% if filters %}
+                <a href="{% url 'reports_students' %}" class="btn btn-outline-secondary btn-sm" title="Clear">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Student Roster Table -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3">Admission No</th>
+                        <th class="py-3">Student Full Name</th>
+                        <th class="py-3">Gender</th>
+                        <th class="py-3">Grade & Section</th>
+                        <th class="py-3">Stream</th>
+                        <th class="py-3">Academic Year</th>
+                        <th class="py-3">Status</th>
+                        <th class="text-end pe-3 py-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in page_obj %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-primary">
+                            {{ enrollment.student.admission_number }}
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ enrollment.student.full_name }}</div>
+                            <div class="text-muted small" style="font-size: 0.75rem;">DOB: {{ enrollment.student.date_of_birth|default:"-" }}</div>
+                        </td>
+                        <td>
+                            {% if enrollment.student.gender == 'M' %}
+                            <span class="badge bg-primary-subtle text-primary border"><i class="bi bi-gender-male me-1"></i>Male</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger border"><i class="bi bi-gender-female me-1"></i>Female</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ enrollment.class_offering.grade.name }}</span>
+                            <span class="text-muted">Sec {{ enrollment.class_offering.section.name }}</span>
+                        </td>
+                        <td>
+                            {{ enrollment.class_offering.stream.name|default:"General" }}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-secondary border">{{ enrollment.academic_year.name }}</span>
+                        </td>
+                        <td>
+                            {% if enrollment.status == 'ACTIVE' %}
+                            <span class="badge bg-success-subtle text-success border">Active</span>
+                            {% elif enrollment.status == 'GRADUATED' %}
+                            <span class="badge bg-info-subtle text-info border">Graduated</span>
+                            {% elif enrollment.status == 'TRANSFERRED' %}
+                            <span class="badge bg-warning-subtle text-warning border">Transferred</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border">{{ enrollment.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{% url 'student_report_detail' enrollment.student.id %}" class="btn btn-outline-primary btn-sm py-1 px-2" title="View 360 Academic Report">
+                                <i class="bi bi-person-vcard me-1"></i> Portfolio
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-people text-secondary fs-1 d-block mb-2"></i>
+                            No student enrollment records match the selected query criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+        <span class="small text-muted">
+            Showing records {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_count }}
+        </span>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for p in page_obj.paginator.page_range %}
+                    {% if p == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p > page_obj.number|add:"-3" and p < page_obj.number|add:"3" %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ p }}&{{ request.GET.urlencode }}">{{ p }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

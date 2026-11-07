@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Record Student Status Change - Smart School Management{% endblock %}
+{% block page_title %}Student Status Alteration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-person-dash text-warning me-2"></i>Record Student Transfer or Departure
+                </h6>
+                <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </a>
+            </div>
+            <div class="card-body p-4">
+                {% if student %}
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0">{{ student.full_name }}</h6>
+                            <small class="text-muted">Admission No: {{ student.admission_number }}</small>
+                        </div>
+                        <span class="badge bg-secondary">{{ student.status }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="alert alert-warning small mb-4">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <strong>Important:</strong> Recording a transfer or withdrawal closes active enrollments while strictly preserving all historical examination results, grades, and attendance records.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.student_id }}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Status Alteration Type <span class="text-danger">*</span></label>
+                        {{ form.status_type }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Effective Date <span class="text-danger">*</span></label>
+                        {{ form.effective_date }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Destination School (for Transfers)</label>
+                        {{ form.destination_school }}
+                        <div class="form-text">e.g. Gambella Comprehensive High School</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Documents / Certificates Issued</label>
+                        {{ form.documents_issued }}
+                        <div class="form-text">e.g. Official Leaving Certificate, Clearance Slip #402</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark">Official Justification / Reason <span class="text-danger">*</span></label>
+                        {{ form.reason }}
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning text-dark px-4">
+                            <i class="bi bi-check-lg me-1"></i> Save Status Alteration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

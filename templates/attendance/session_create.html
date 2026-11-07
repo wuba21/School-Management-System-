@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Initiate Attendance Session{% endblock %}
+{% block page_title %}Open Roll-Call Session{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card-ssms">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-plus text-primary"></i>
+                    <span class="fw-bold">Initiate Roll-Call Session</span>
+                </div>
+                <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small mb-3">
+                        {% for err in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Classroom Offering <span class="text-danger">*</span></label>
+                        {{ form.class_offering }}
+                        {% if form.class_offering.errors %}
+                        <div class="text-danger small mt-1">{{ form.class_offering.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Select the grade and section to conduct roll call for.</div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-semibold text-dark">Attendance Date <span class="text-danger">*</span></label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                            <div class="text-danger small mt-1">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-semibold text-dark">Session Type <span class="text-danger">*</span></label>
+                            {{ form.session_type }}
+                            {% if form.session_type.errors %}
+                            <div class="text-danger small mt-1">{{ form.session_type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="subjectGroup">
+                        <label class="form-label small fw-semibold text-dark">Subject <span class="text-muted">(Required for 'Subject Period')</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}
+                        <div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text small">Leave blank for Full Day or Morning/Afternoon general roll-calls.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Session Remarks</label>
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}
+                        <div class="text-danger small mt-1">{{ form.remarks.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-light border small text-muted mb-0">
+                        <i class="bi bi-info-circle text-primary me-1"></i>
+                        Saving this form immediately opens the roll-call grid so you can record student marks in seconds.
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light border-top p-3 d-flex justify-content-between align-items-center">
+                    <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="bi bi-check-circle me-1"></i> Open & Start Roll-Call
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

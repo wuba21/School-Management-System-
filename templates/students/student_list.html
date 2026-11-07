@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Directory{% endblock %}
+{% block page_title %}Student Information Management{% endblock %}
+
+{% block content %}
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="bi bi-mortarboard-fill text-primary"></i>
+            <span class="fw-bold">Enrolled Students Directory</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                {{ total_count }} {{ total_count|pluralize:"Student,Students" }}
+            </span>
+            {% if is_teacher %}
+            <span class="badge bg-info-subtle text-info border border-info-subtle">
+                <i class="bi bi-person-check-fill me-1"></i> My Assigned Classes Only
+            </span>
+            {% endif %}
+        </div>
+        <div class="flex-shrink-0">
+            {% if is_registrar %}
+            <a href="{% url 'student_register' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-person-plus-fill me-1"></i>
+                <span class="d-none d-sm-inline">Register Student</span>
+                <span class="d-sm-none">Register</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Multi-Filter Bar -->
+    <div class="p-3 border-bottom bg-light">
+        <form method="get" action="{% url 'students_list' %}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search by name or admission #..." value="{{ current_filters.q }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="grade" class="form-select form-select-sm">
+                    <option value="">All Grades</option>
+                    {% for g in grades %}
+                    <option value="{{ g.id }}" {% if current_filters.grade == g.id|stringformat:"i" %}selected{% endif %}>{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <select name="section" class="form-select form-select-sm">
+                    <option value="">All Sections</option>
+                    {% for s in sections %}
+                    <option value="{{ s.id }}" {% if current_filters.section == s.id|stringformat:"i" %}selected{% endif %}>Section {{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <select name="stream" class="form-select form-select-sm">
+                    <option value="">All Streams</option>
+                    {% for st in streams %}
+                    <option value="{{ st.id }}" {% if current_filters.stream == st.id|stringformat:"i" %}selected{% endif %}>{{ st.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for sc, label in status_choices %}
+                    <option value="{{ sc }}" {% if current_filters.status == sc %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4 col-lg-1 d-flex gap-1 justify-content-end">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1" title="Apply Filters">
+                    <i class="bi bi-funnel-fill"></i>
+                </button>
+                {% if current_filters.q or current_filters.grade or current_filters.section or current_filters.stream or current_filters.status or current_filters.gender %}
+                <a href="{% url 'students_list' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Student Table -->
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0 text-nowrap">
+            <thead>
+                <tr>
+                    <th style="width: 50px;" class="ps-3">Photo</th>
+                    <th>Admission No.</th>
+                    <th>Full Name (Ethiopian 3-Part)</th>
+                    <th>Gender</th>
+                    <th>Grade & Section</th>
+                    <th>Stream</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3" style="min-width: 140px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in page_obj %}
+                <tr>
+                    <td>
+                        {% if student.photo %}
+                        <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                        <div class="rounded-circle bg-secondary-subtle text-secondary d-none align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; font-size: 0.75rem;">
+                            {{ student.first_name|first }}{{ student.father_name|first }}
+                        </div>
+                        {% else %}
+                        <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; font-size: 0.75rem;">
+                            {{ student.first_name|first }}{{ student.father_name|first }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="font-monospace fw-bold text-primary">
+                        <a href="{% url 'student_detail' student.pk %}" class="text-decoration-none">
+                            {{ student.admission_number }}
+                        </a>
+                    </td>
+                    <td class="fw-semibold text-dark">
+                        {{ student.full_name }}
+                    </td>
+                    <td>
+                        {% if student.gender == 'M' %}
+                        <span class="badge bg-light text-primary border"><i class="bi bi-gender-male me-1"></i>Male</span>
+                        {% else %}
+                        <span class="badge bg-light text-danger border"><i class="bi bi-gender-female me-1"></i>Female</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with latest_enrollment=student.enrollments.first %}
+                        {% if latest_enrollment %}
+                            <span class="fw-semibold">{{ latest_enrollment.class_offering.grade.name }}</span> - {{ latest_enrollment.class_offering.section.name }}
+                        {% else %}
+                            <span class="text-muted small fst-italic">Unassigned</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with latest_enrollment=student.enrollments.first %}
+                        {% if latest_enrollment and latest_enrollment.class_offering.stream %}
+                            <span class="small">{{ latest_enrollment.class_offering.stream.name }}</span>
+                        {% else %}
+                            <span class="text-muted small">General Secondary</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if student.status == 'ACTIVE' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                        {% elif student.status == 'TRANSFERRED' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Transferred</span>
+                        {% elif student.status == 'WITHDRAWN' or student.status == 'DROPPED' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ student.get_status_display }}</span>
+                        {% elif student.status == 'GRADUATED' %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Graduated</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary">{{ student.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-3 text-nowrap">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary py-1 px-2" title="View Student Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if is_registrar %}
+                            <a href="{% url 'student_edit' student.pk %}" class="btn btn-outline-primary py-1 px-2" title="Edit Student Record">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'student_enroll' student.pk %}" class="btn btn-outline-success py-1 px-2" title="Enroll in Classroom">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="bi bi-people text-muted opacity-50" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-3 mb-1">No student records found</h6>
+                        <p class="text-muted small mb-3">
+                            {% if current_filters.q or current_filters.grade or current_filters.section or current_filters.stream or current_filters.status %}
+                                No students match your specified search filter criteria.
+                            {% else %}
+                                There are currently no students registered in the school database.
+                            {% endif %}
+                        </p>
+                        {% if is_registrar %}
+                        <a href="{% url 'student_register' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-person-plus-fill me-1"></i> Register First Student
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+        <div class="small text-muted">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_count }} students
+        </div>
+        <nav aria-label="Student list pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ pagination_query }}">
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> Previous</span></li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{{ pagination_query }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ pagination_query }}">
+                        Next <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next <i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

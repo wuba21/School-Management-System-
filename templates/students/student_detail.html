@@ -1,0 +1,482 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ student.full_name }} ({{ student.admission_number }}){% endblock %}
+{% block page_title %}Student Longitudinal Profile{% endblock %}
+
+{% block content %}
+<!-- Student Header Card -->
+<div class="card-ssms mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                {% if student.photo %}
+                <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="rounded-circle border shadow-sm" style="width: 80px; height: 80px; object-fit: cover;" onerror="this.onerror=null; this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary border border-primary-subtle d-none align-items-center justify-content-center fw-bold shadow-sm" style="width: 80px; height: 80px; font-size: 1.8rem;">
+                    {{ student.first_name|first }}{{ student.father_name|first }}
+                </div>
+                {% else %}
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary border border-primary-subtle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 80px; height: 80px; font-size: 1.8rem;">
+                    {{ student.first_name|first }}{{ student.father_name|first }}
+                </div>
+                {% endif %}
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-secondary-subtle text-secondary font-monospace border">
+                            {{ student.admission_number }}
+                        </span>
+                        {% if student.status == 'ACTIVE' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                        {% elif student.status == 'TRANSFERRED' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Transferred Out</span>
+                        {% elif student.status == 'WITHDRAWN' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Withdrawn</span>
+                        {% elif student.status == 'DROPPED' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Dropped Out</span>
+                        {% elif student.status == 'GRADUATED' %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Graduated</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="fw-bold mb-1 text-dark">{{ student.full_name }}</h3>
+                    <p class="text-muted small mb-0">
+                        {% if current_enrollment %}
+                            Currently enrolled in <strong>{{ current_enrollment.class_offering.grade.name }} - Section {{ current_enrollment.class_offering.section.name }}</strong>
+                            ({{ current_enrollment.class_offering.stream.name|default:"General Secondary" }}) &bull; {{ current_enrollment.academic_year.name }}
+                        {% else %}
+                            <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i> Not enrolled in an active classroom offering</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{% url 'students_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Directory
+                </a>
+                {% if is_registrar %}
+                <a href="{% url 'student_edit' student.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Edit Profile
+                </a>
+                <a href="{% url 'student_enroll' student.pk %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Enroll Class
+                </a>
+                <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal">
+                    <i class="bi bi-arrow-repeat me-1"></i> Change Status
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4 border-bottom" id="profileTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+            <i class="bi bi-person-lines-fill me-1 text-primary"></i> Personal & Contact Info
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+            <i class="bi bi-clock-history me-1 text-primary"></i> Academic History & Enrollments
+            <span class="badge bg-secondary-subtle text-secondary ms-1">{{ all_enrollments.count }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab">
+            <i class="bi bi-calendar-check me-1 text-primary"></i> Attendance Performance
+            {% if attendance_stats.percentage is not None %}
+            <span class="badge {% if attendance_stats.percentage >= 85 %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %} ms-1">
+                {{ attendance_stats.percentage }}%
+            </span>
+            {% endif %}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="marks-tab" data-bs-toggle="tab" data-bs-target="#marks" type="button" role="tab">
+            <i class="bi bi-card-checklist me-1 text-primary"></i> Examination Results
+            <span class="badge bg-secondary-subtle text-secondary ms-1">{{ marks.count }}</span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="profileTabsContent">
+
+    <!-- TAB 1: PERSONAL & CONTACT OVERVIEW -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <div class="row g-4">
+            <!-- Official Photograph Card -->
+            <div class="col-lg-3 col-md-4">
+                <div class="card-ssms h-100 text-center p-3 d-flex flex-column align-items-center justify-content-between">
+                    <div>
+                        <div class="card-header bg-transparent border-0 fw-bold text-dark px-0 mb-2">
+                            <i class="bi bi-camera-fill text-primary me-1"></i> Student Portrait
+                        </div>
+                        <div class="position-relative d-inline-block mb-3">
+                            {% if student.photo %}
+                            <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="rounded-3 border shadow-sm" style="width: 150px; height: 160px; object-fit: cover;" onerror="this.onerror=null; this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                            <div class="rounded-3 bg-light border d-none align-items-center justify-content-center text-secondary fw-bold shadow-sm" style="width: 150px; height: 160px; font-size: 2.5rem;">
+                                {{ student.first_name|first }}{{ student.father_name|first }}
+                            </div>
+                            {% else %}
+                            <div class="rounded-3 bg-light border d-flex flex-column align-items-center justify-content-center text-secondary shadow-sm" style="width: 150px; height: 160px;">
+                                <i class="bi bi-person fs-1 opacity-50"></i>
+                                <span class="small text-muted mt-1">No Photo</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="fw-bold text-dark">{{ student.first_name }} {{ student.father_name }}</div>
+                        <div class="font-monospace small text-muted">{{ student.admission_number }}</div>
+                    </div>
+                    {% if is_registrar %}
+                    <a href="{% url 'student_edit' student.pk %}" class="btn btn-outline-primary btn-sm w-100 mt-3">
+                        <i class="bi bi-camera me-1"></i> {% if student.photo %}Change Photo{% else %}Upload Photo{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Personal Info Card -->
+            <div class="col-lg-5 col-md-8">
+                <div class="card-ssms h-100">
+                    <div class="card-header">
+                        <i class="bi bi-person-badge-fill text-primary"></i>
+                        <span>Personal Demographics</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <table class="table table-sm table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted fw-semibold" style="width: 40%;">Admission Number:</td>
+                                    <td class="font-monospace fw-bold text-primary">{{ student.admission_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Given Name:</td>
+                                    <td class="fw-semibold">{{ student.first_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Father's Name:</td>
+                                    <td class="fw-semibold">{{ student.father_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Grandfather's Name:</td>
+                                    <td class="fw-semibold">{{ student.grandfather_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Gender:</td>
+                                    <td>{{ student.get_gender_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Date of Birth:</td>
+                                    <td>{{ student.date_of_birth|date:"d M Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Admission Date:</td>
+                                    <td>{{ student.admission_date|date:"d M Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Current Status:</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ student.get_status_display }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact & Guardian Card -->
+            <div class="col-lg-4 col-md-12">
+                <div class="card-ssms h-100">
+                    <div class="card-header">
+                        <i class="bi bi-telephone-fill text-primary"></i>
+                        <span>Contact & Guardian Information</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <table class="table table-sm table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted fw-semibold" style="width: 40%;">Primary Guardian:</td>
+                                    <td class="fw-bold">{{ student.emergency_contact_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Relationship:</td>
+                                    <td>{{ student.emergency_contact_relation }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Guardian Phone:</td>
+                                    <td class="font-monospace">{{ student.emergency_contact_phone }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Student Phone:</td>
+                                    <td class="font-monospace">{{ student.phone_number|default:"Not Provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-semibold">Residential Address:</td>
+                                    <td>{{ student.address|default:"Majang Zone, Gambella Region" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: ACADEMIC HISTORY & ENROLLMENTS -->
+    <div class="tab-pane fade" id="history" role="tabpanel">
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    <span>Longitudinal Classroom Enrollments</span>
+                </div>
+                {% if is_registrar %}
+                <a href="{% url 'student_enroll' student.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> New Academic Year Enrollment
+                </a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Academic Year</th>
+                            <th>Grade Level</th>
+                            <th>Section</th>
+                            <th>Curriculum Stream</th>
+                            <th>Enrollment Date</th>
+                            <th>Enrollment Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in all_enrollments %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ enrollment.academic_year.name }}</td>
+                            <td>{{ enrollment.class_offering.grade.name }}</td>
+                            <td>Section {{ enrollment.class_offering.section.name }}</td>
+                            <td>{{ enrollment.class_offering.stream.name|default:"General Secondary" }}</td>
+                            <td class="small text-muted">{{ enrollment.enrollment_date|date:"d M Y" }}</td>
+                            <td>
+                                {% if enrollment.status == 'ACTIVE' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                {% elif enrollment.status == 'PROMOTED' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Promoted</span>
+                                {% elif enrollment.status == 'RETAINED' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Retained</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary">{{ enrollment.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No historical classroom enrollment records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Promotion Progression Records -->
+        <div class="card-ssms">
+            <div class="card-header">
+                <i class="bi bi-arrow-up-right-circle text-primary"></i>
+                <span>Official Year-to-Year Promotion Records</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Progression Cycle</th>
+                            <th>From Grade</th>
+                            <th>To Grade</th>
+                            <th>Promotion Decision</th>
+                            <th>Average Mark</th>
+                            <th>Section Rank</th>
+                            <th>Authorized By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for promo in promotions %}
+                        <tr>
+                            <td class="fw-semibold">{{ promo.from_academic_year.code }} &rarr; {{ promo.to_academic_year.code }}</td>
+                            <td>{{ promo.from_grade.name }}</td>
+                            <td>{{ promo.to_grade.name|default:"Graduation" }}</td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">{{ promo.get_decision_display }}</span>
+                            </td>
+                            <td class="font-monospace fw-bold">{{ promo.average_mark|default:"--" }}%</td>
+                            <td>{% if promo.rank_in_section %}Rank #{{ promo.rank_in_section }}{% else %}--{% endif %}</td>
+                            <td class="small">{{ promo.approved_by.get_full_name|default:promo.approved_by.username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No official end-of-year promotion records recorded yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: ATTENDANCE PERFORMANCE -->
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Total Sessions</div>
+                        <div class="metric-value text-dark">{{ attendance_stats.total }}</div>
+                    </div>
+                    <div class="metric-icon-box metric-icon-blue"><i class="bi bi-calendar-event"></i></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Present Days</div>
+                        <div class="metric-value text-success">{{ attendance_stats.present }}</div>
+                    </div>
+                    <div class="metric-icon-box metric-icon-green"><i class="bi bi-check2-circle"></i></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Late Arrivals</div>
+                        <div class="metric-value text-warning">{{ attendance_stats.late }}</div>
+                    </div>
+                    <div class="metric-icon-box metric-icon-yellow"><i class="bi bi-clock-history"></i></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Absent Days</div>
+                        <div class="metric-value text-danger">{{ attendance_stats.absent }}</div>
+                    </div>
+                    <div class="metric-icon-box metric-icon-red"><i class="bi bi-x-circle"></i></div>
+                </div>
+            </div>
+        </div>
+
+        {% if attendance_stats.percentage is not None %}
+        <div class="card-ssms p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-semibold small">Cumulative Attendance Rate</span>
+                <span class="fw-bold font-monospace">{{ attendance_stats.percentage }}%</span>
+            </div>
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar {% if attendance_stats.percentage >= 85 %}bg-success{% elif attendance_stats.percentage >= 75 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ attendance_stats.percentage }}%;"></div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-light border text-center py-4 text-muted mb-0">
+            <i class="bi bi-info-circle me-1"></i> No daily attendance logs have been recorded for this student yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB 4: EXAMINATION RESULTS -->
+    <div class="tab-pane fade" id="marks" role="tabpanel">
+        <div class="card-ssms">
+            <div class="card-header">
+                <i class="bi bi-card-checklist text-primary"></i>
+                <span>Recorded Examination Marks</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Examination</th>
+                            <th>Subject</th>
+                            <th>Grade</th>
+                            <th>Marks Obtained</th>
+                            <th>Max Marks</th>
+                            <th>Status</th>
+                            <th>Recorded By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mark in marks %}
+                        <tr>
+                            <td class="fw-semibold">{{ mark.exam_subject.examination.name }}</td>
+                            <td>{{ mark.exam_subject.subject.name }}</td>
+                            <td>{{ mark.exam_subject.grade.name }}</td>
+                            <td class="font-monospace fw-bold text-primary">{{ mark.marks_obtained }}</td>
+                            <td class="font-monospace text-muted">{{ mark.exam_subject.max_marks }}</td>
+                            <td>
+                                {% if mark.is_absent %}
+                                <span class="badge bg-danger-subtle text-danger border">Absent</span>
+                                {% elif mark.marks_obtained >= mark.exam_subject.pass_marks %}
+                                <span class="badge bg-success-subtle text-success border">Passed</span>
+                                {% else %}
+                                <span class="badge bg-danger-subtle text-danger border">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ mark.entered_by.get_full_name|default:mark.entered_by.username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No examination marks recorded for this student yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Status Transition Modal (for Registrar) -->
+{% if is_registrar %}
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'student_status' student.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="statusModalLabel">
+                        <i class="bi bi-arrow-repeat text-warning me-2"></i>Update Student Status
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Updating status updates academic records without permanently deleting the student.
+                        All status updates are permanently recorded in the security audit trail.
+                    </p>
+                    <div class="mb-3">
+                        <label for="{{ status_form.status.id_for_label }}" class="form-label fw-semibold">New Status</label>
+                        {{ status_form.status }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ status_form.remarks.id_for_label }}" class="form-label fw-semibold">Official Remarks / Reference</label>
+                        {{ status_form.remarks }}
+                        <div class="form-text small">{{ status_form.remarks.help_text }}</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm">Confirm Status Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

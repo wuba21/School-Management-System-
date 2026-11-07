@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Profile Overview Card -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-body text-center p-4">
+        <div class="user-avatar-circle mx-auto mb-3" style="width: 72px; height: 72px; font-size: 1.8rem;">
+          <span>{{ request.user.username|first|upper }}</span>
+        </div>
+        <h5 class="fw-bold mb-1">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </h5>
+        <span class="badge bg-primary rounded-pill px-3 py-1 mb-3">
+          {{ request.user.role.name|default:"No Role Assigned" }}
+        </span>
+        <hr>
+        <div class="text-start small text-muted">
+          <div class="d-flex justify-content-between py-1 border-bottom">
+            <span>Username</span>
+            <strong class="text-dark font-monospace">{{ request.user.username }}</strong>
+          </div>
+          <div class="d-flex justify-content-between py-1 border-bottom">
+            <span>Account Status</span>
+            {% if request.user.is_active and request.user.is_approved %}
+              <span class="badge bg-success rounded-pill">Active</span>
+            {% else %}
+              <span class="badge bg-danger rounded-pill">Inactive</span>
+            {% endif %}
+          </div>
+          <div class="d-flex justify-content-between py-1 border-bottom">
+            <span>Last Login</span>
+            <strong class="text-dark">
+              {{ request.user.last_login|date:"d M Y, H:i"|default:"Never" }}
+            </strong>
+          </div>
+          <div class="d-flex justify-content-between py-1">
+            <span>Member Since</span>
+            <strong class="text-dark">{{ request.user.date_joined|date:"d M Y" }}</strong>
+          </div>
+        </div>
+        <div class="mt-3">
+          <a href="{% url 'password_change' %}" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-key me-2"></i>Change Password
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Edit Card -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-bottom py-3 px-4">
+        <h6 class="fw-bold mb-0">
+          <i class="bi bi-person-lines-fill me-2 text-primary"></i>Edit Profile Information
+        </h6>
+        <p class="text-muted small mb-0">You can update your name, email, and phone number.</p>
+      </div>
+      <div class="card-body p-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show small py-2" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">First Name</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}
+                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Last Name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}
+                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Email Address</label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+              {{ form.phone_number }}
+              {% if form.phone_number.errors %}
+                <div class="text-danger small mt-1">{{ form.phone_number.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="alert alert-info small mt-3 py-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Your <strong>role</strong> and <strong>permissions</strong> are managed by the System Administrator and cannot be changed here.
+          </div>
+
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-2"></i>Save Changes
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

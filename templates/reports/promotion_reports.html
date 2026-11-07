@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Promotion & Graduation Analytics - Smart School Management{% endblock %}
+{% block page_title %}Promotion & Graduation Analytics{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-award text-success me-2"></i>Student Promotion Outcomes & Graduation Registry
+        </h5>
+        <p class="text-muted small mb-0">
+            End-of-year academic cohort outcomes & Grade 12 completions &bull; Majang Zone Secondary School
+        </p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'export_report_pdf' 'promotion' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+        </a>
+        <a href="{% url 'export_report_excel' 'promotion' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-speedometer2 me-1"></i> Analytics Hub
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3 bg-light">
+        <form method="get" action="{% url 'reports_promotion' %}" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label text-muted small fw-bold mb-1">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold mb-1">Grade</label>
+                {{ form.grade }}
+            </div>
+            <div class="col-md-3 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-search me-1"></i> Filter
+                </button>
+                {% if filters %}
+                <a href="{% url 'reports_promotion' %}" class="btn btn-outline-secondary btn-sm" title="Clear">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SECTION 1: PROMOTION BATCH SUMMARIES -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Promotion Batch Cohort Summaries</h6>
+        <span class="badge bg-light text-muted border">Completed Batches</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3">Cohort Batch Name</th>
+                        <th class="py-3">From Year</th>
+                        <th class="py-3">Target Year</th>
+                        <th class="py-3">Grade</th>
+                        <th class="text-center py-3">Total Candidates</th>
+                        <th class="text-center py-3 text-success">Promoted</th>
+                        <th class="text-center py-3 text-danger">Repeated</th>
+                        <th class="text-center py-3 text-info">Graduated</th>
+                        <th class="text-center py-3 text-warning">Transferred</th>
+                        <th class="text-end pe-3 py-3">Promotion Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in batch_summaries %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark">{{ item.batch.name }}</div>
+                            <div class="text-muted small" style="font-size: 0.75rem;">Status: {{ item.batch.get_status_display }}</div>
+                        </td>
+                        <td><span class="badge bg-light text-secondary border">{{ item.batch.academic_year.name }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ item.batch.target_academic_year.name }}</span></td>
+                        <td><span class="fw-semibold">{{ item.batch.grade.name }}</span></td>
+                        <td class="text-center fw-bold">{{ item.total_candidates }}</td>
+                        <td class="text-center fw-bold text-success">{{ item.promoted }}</td>
+                        <td class="text-center fw-bold text-danger">{{ item.repeated }}</td>
+                        <td class="text-center fw-bold text-info">{{ item.graduated }}</td>
+                        <td class="text-center text-warning fw-semibold">{{ item.transferred }}</td>
+                        <td class="text-end pe-3 fw-bold {% if item.promotion_rate >= 80 %}text-success{% elif item.promotion_rate >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ item.promotion_rate }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-4 text-muted">
+                            No promotion batches recorded for selected criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 2: OFFICIAL GRADUATION REGISTRY -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-mortarboard-fill me-2"></i>Official Grade 12 Graduation Registry</h6>
+        <span class="badge bg-success-subtle text-success border">Graduates: {{ graduations|length }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3">Admission No</th>
+                        <th class="py-3">Graduate Full Name</th>
+                        <th class="py-3">Gender</th>
+                        <th class="py-3">Academic Year</th>
+                        <th class="py-3">Graduation Date</th>
+                        <th class="py-3">Certificate Number</th>
+                        <th class="text-center py-3">Cumulative Avg</th>
+                        <th class="text-end pe-3 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grad in graduations %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-primary">{{ grad.student.admission_number }}</td>
+                        <td class="fw-semibold text-dark">{{ grad.student.full_name }}</td>
+                        <td>{{ grad.student.get_gender_display }}</td>
+                        <td>{{ grad.academic_year.name }}</td>
+                        <td>{{ grad.graduation_date|default:"-" }}</td>
+                        <td class="font-monospace text-secondary">{{ grad.certificate_number|default:"Pending Issue" }}</td>
+                        <td class="text-center fw-bold text-dark">{{ grad.cumulative_average|default:"-" }}</td>
+                        <td class="text-end pe-3">
+                            <span class="badge bg-success-subtle text-success border">{{ grad.get_status_display }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            No formal Grade 12 graduation registry entries recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

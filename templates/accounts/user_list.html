@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="fw-bold mb-1">System User Accounts</h5>
+    <p class="text-muted small mb-0">Manage staff accounts, roles, and access levels.</p>
+  </div>
+  <a href="{% url 'user_create' %}" class="btn btn-primary">
+    <i class="bi bi-person-plus me-2"></i>Add New User
+  </a>
+</div>
+
+<!-- Role Filter Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+  <div class="card-body py-2 px-3">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="text-muted small fw-semibold me-1">Filter by Role:</span>
+      <a href="{% url 'user_list' %}" class="btn btn-sm {% if not role_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+        All
+      </a>
+      {% for role in roles %}
+        <a href="{% url 'user_list' %}?role={{ role.code }}"
+           class="btn btn-sm {% if role_filter == role.code %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+          {{ role.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- User Table -->
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-body p-0">
+    {% if messages %}
+      <div class="p-3">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show small py-2 mb-0" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 small">
+        <thead class="table-light border-bottom">
+          <tr>
+            <th class="ps-4">Username</th>
+            <th>Full Name</th>
+            <th>Role</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="ps-4">
+              <div class="d-flex align-items-center gap-2">
+                <div class="user-avatar-circle" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                  <span>{{ u.username|first|upper }}</span>
+                </div>
+                <span class="font-monospace fw-semibold">{{ u.username }}</span>
+                {% if u.is_superuser %}
+                  <span class="badge bg-warning text-dark rounded-pill" style="font-size: 0.65rem;">Super</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>{{ u.get_full_name|default:"—" }}</td>
+            <td>
+              {% if u.role %}
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2">
+                  {{ u.role.name }}
+                </span>
+              {% else %}
+                <span class="text-muted">No Role</span>
+              {% endif %}
+            </td>
+            <td>{{ u.phone_number|default:"—" }}</td>
+            <td>
+              {% if u.is_active and u.is_approved %}
+                <span class="badge bg-success rounded-pill">Active</span>
+              {% elif not u.is_active %}
+                <span class="badge bg-danger rounded-pill">Inactive</span>
+              {% else %}
+                <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+              {% endif %}
+            </td>
+            <td>{{ u.last_login|date:"d M Y H:i"|default:"Never" }}</td>
+            <td class="text-end pe-4">
+              <div class="d-flex justify-content-end gap-1">
+                <a href="{% url 'user_edit' u.pk %}" class="btn btn-sm btn-outline-primary" title="Edit User">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'user_admin_reset_password' u.pk %}" class="btn btn-sm btn-outline-warning" title="Reset Password">
+                  <i class="bi bi-key"></i>
+                </a>
+                {% if not u.is_superuser and u != request.user %}
+                  <form method="post" action="{% url 'user_toggle_active' u.pk %}" class="d-inline"
+                        onsubmit="return confirm('Are you sure you want to {% if u.is_active %}deactivate{% else %}activate{% endif %} this account?')">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                            title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
+                      <i class="bi {% if u.is_active %}bi-person-x{% else %}bi-person-check{% endif %}"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              <i class="bi bi-people fs-1 d-block mb-2 opacity-25"></i>
+              No user accounts found.
+              <a href="{% url 'user_create' %}">Create the first one</a>.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-light border-top text-muted small py-2 px-4">
+    Showing {{ users|length }} user account{{ users|length|pluralize }}.
+    All account changes are recorded in the <a href="{% url 'system_audit' %}">Audit Trail</a>.
+  </div>
+</div>
+{% endblock %}

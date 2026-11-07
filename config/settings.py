@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'attendance.apps.AttendanceConfig',
     'examinations.apps.ExaminationsConfig',
     'results.apps.ResultsConfig',
+    'promotion.apps.PromotionConfig',
+    'timetable.apps.TimetableConfig',
     'reports.apps.ReportsConfig',
     'dashboard.apps.DashboardConfig',
     'ai_assistant.apps.AiAssistantConfig',
@@ -160,3 +162,38 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ---------------------------------------------------------------------------
+# Authentication & Session Configuration
+# ---------------------------------------------------------------------------
+
+# Where unauthenticated users are redirected when @login_required is applied
+LOGIN_URL = '/login/'
+
+# Where users land after a successful login (if no 'next' param exists)
+LOGIN_REDIRECT_URL = '/dashboard/'
+
+# Where users go after logout
+LOGOUT_REDIRECT_URL = '/login/'
+
+# Session expires when the browser is closed (unless "remember me" is checked)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Prevent JavaScript from reading the session cookie (XSS mitigation)
+SESSION_COOKIE_HTTPONLY = True
+
+# CSRF cookie also restricted to HTTP (not readable by JS)
+CSRF_COOKIE_HTTPONLY = True
+
+# Message storage — use session-based messages (requires session middleware)
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
+# Fast password hasher during test execution to accelerate test suite runs
+import sys
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+
+

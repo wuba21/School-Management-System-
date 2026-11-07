@@ -3,48 +3,49 @@ URL configuration for the Smart School Management and Academic Information Syste
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 from core import views as core_views
+from accounts.views import access_denied_view
+from attendance import views as attendance_views
+
+# Custom error handlers (must be at module level)
+handler403 = 'accounts.views.access_denied_view'
+handler404 = 'django.views.defaults.page_not_found'
 
 urlpatterns = [
     # Built-in Django Admin Interface
     path('admin/', admin.site.urls),
 
-    # Authentication UI
-    path('login/', core_views.login_view, name='login'),
+    # Accounts app: auth + user management (replaces old /login/ and /users/ in core)
+    path('', include('accounts.urls')),
 
     # Main Dashboard
     path('', core_views.dashboard_view, name='home'),
     path('dashboard/', core_views.dashboard_view, name='dashboard'),
 
     # Management Modules
-    path('students/', core_views.students_list_view, name='students_list'),
-    path('teachers/', core_views.teachers_list_view, name='teachers_list'),
-    path('academics/years/', core_views.academics_years_view, name='academics_years'),
-    path('academics/grades/', core_views.academics_grades_view, name='academics_grades'),
-    path('academics/subjects/', core_views.academics_subjects_view, name='academics_subjects'),
+    path('students/', include('students.urls')),
+    path('teachers/', include('teachers.urls')),
+    path('academics/', include('academics.urls')),
 
     # Academic Modules
-    path('attendance/', core_views.attendance_index_view, name='attendance_index'),
-    path('examinations/', core_views.examinations_index_view, name='examinations_index'),
-    path('results/', core_views.results_index_view, name='results_index'),
-    path('promotion/', core_views.promotion_index_view, name='promotion_index'),
-    path('timetable/', core_views.timetable_index_view, name='timetable_index'),
+    path('attendance/', include('attendance.urls')),
+    path('examinations/', include('examinations.urls')),
+    path('results/', include('results.urls')),
+    path('promotion/', include('promotion.urls')),
+    path('timetable/', include('timetable.urls')),
 
-    # Reports Modules
-    path('reports/students/', core_views.reports_students_view, name='reports_students'),
-    path('reports/academic/', core_views.reports_academic_view, name='reports_academic'),
-    path('reports/attendance/', core_views.reports_attendance_view, name='reports_attendance'),
+    # Reports & Analytics Hub
+    path('reports/', include('reports.urls')),
 
     # Intelligence & AI Modules
-    path('ai-assistant/', core_views.ai_assistant_chat_view, name='ai_assistant_chat'),
-    path('ai-assistant/analytics/', core_views.ai_analytics_view, name='ai_analytics'),
+    path('ai-assistant/', include('ai_assistant.urls')),
 
-    # System & Administration Modules
-    path('users/', core_views.system_users_view, name='system_users'),
+    # System & Administration Modules (legacy routes redirect to accounts app)
+    path('system/users/', core_views.system_users_view, name='system_users'),
     path('settings/', core_views.system_settings_view, name='system_settings'),
     path('audit/', core_views.system_audit_view, name='system_audit'),
 ]

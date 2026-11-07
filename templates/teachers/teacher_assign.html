@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Assign Class & Subject - {{ teacher.full_name }}{% endblock %}
+{% block page_title %}Teaching Assignment Allocation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card-ssms mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-book-fill text-primary"></i>
+                    <span class="fw-bold">Teaching Allocation: {{ teacher.full_name }}</span>
+                    <span class="badge bg-light text-primary border font-monospace ms-2">{{ teacher.employee_id }}</span>
+                </div>
+                <a href="{% url 'teacher_detail' teacher.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Profile
+                </a>
+            </div>
+
+            <!-- Header Info -->
+            <div class="p-3 bg-light border-bottom d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary-subtle text-primary border d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 48px; height: 48px;">
+                    {{ teacher.first_name|slice:":1" }}{{ teacher.father_name|slice:":1" }}
+                </div>
+                <div>
+                    <div class="fw-bold text-dark">{{ teacher.full_name }}</div>
+                    <div class="small text-muted">
+                        Specialization: <span class="badge bg-info-subtle text-info border border-info-subtle">{{ teacher.specialization }}</span>
+                        &bull; Qualification: {{ teacher.qualification }}
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="p-4">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Academic Year <span class="text-danger">*</span></label>
+                        {{ form.academic_year }}
+                        {% if form.academic_year.errors %}
+                        <div class="text-danger small mt-1">{{ form.academic_year.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">Active academic year for teaching allocation.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Classroom Section <span class="text-danger">*</span></label>
+                        {{ form.class_offering }}
+                        {% if form.class_offering.errors %}
+                        <div class="text-danger small mt-1">{{ form.class_offering.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">Select Grade and Section (e.g. Grade 10-A).</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}
+                        <div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">Curriculum subject to be taught in this classroom.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teaching Role</label>
+                        <div class="form-check mt-2">
+                            {{ form.is_primary }}
+                            <label class="form-check-label fw-semibold" for="{{ form.is_primary.id_for_label }}">
+                                Primary Subject Instructor
+                            </label>
+                        </div>
+                        <div class="form-text">Uncheck if co-instructor or laboratory assistant.</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Schedule Notes (Optional)</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-text">e.g. Period 1 & 2 on Mondays, Period 4 on Wednesdays.</div>
+                </div>
+
+                <!-- Existing active assignments for quick reference -->
+                <div class="p-3 bg-light rounded-3 border mb-4">
+                    <div class="fw-bold small text-secondary mb-2 text-uppercase">
+                        <i class="bi bi-info-circle me-1"></i>Current Allocations for {{ teacher.first_name }}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for a in teacher.assignments.all %}
+                        <span class="badge bg-white text-dark border">
+                            {{ a.class_offering.grade.name }}-{{ a.class_offering.section.name }}: {{ a.subject.name }}
+                        </span>
+                        {% empty %}
+                        <span class="small text-muted italic">No assignments currently allocated.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{% url 'teacher_detail' teacher.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

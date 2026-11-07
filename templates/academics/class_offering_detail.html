@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ offering.display_name }} - Classroom Cockpit{% endblock %}
+{% block page_title %}Classroom Cockpit: {{ offering.display_name }}{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <a href="{% url 'class_offering_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Class Offerings
+        </a>
+    </div>
+    {% if can_manage %}
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
+            <i class="bi bi-person-plus-fill me-1"></i> Enroll Student
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignTeacherModal">
+            <i class="bi bi-person-badge-fill me-1"></i> Assign Faculty Subject
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Classroom Header Overview Card -->
+<div class="card-ssms mb-4">
+    <div class="card-body p-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">
+                        {{ offering.grade.name }} • Section {{ offering.section.name }}
+                    </span>
+                    {% if offering.stream %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                            {{ offering.stream.name }} Stream
+                        </span>
+                    {% endif %}
+                    {% if offering.academic_year.is_current %}
+                        <span class="badge bg-success"><i class="bi bi-star-fill me-1"></i>Current Active Session</span>
+                    {% endif %}
+                </div>
+                <h3 class="fw-bold text-dark mb-1">{{ offering.display_name }}</h3>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-calendar3 me-1"></i> Academic Year: <strong>{{ offering.academic_year.name }}</strong> ({{ offering.academic_year.code }})
+                </p>
+            </div>
+            <div class="col-md-5">
+                <div class="p-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold text-secondary small text-uppercase">Seat Allocation</span>
+                        <span class="fw-bold {% if offering.is_full %}text-danger{% else %}text-success{% endif %}">
+                            {{ offering.enrolled_students_count }} / {{ offering.max_capacity }} Students
+                        </span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar {% if offering.is_full %}bg-danger{% elif offering.enrolled_students_count > 40 %}bg-warning{% else %}bg-success{% endif %}"
+                             role="progressbar"
+                             style="width: {% widthratio offering.enrolled_students_count offering.max_capacity 100 %}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Available Seats: <strong>{{ offering.available_seats }}</strong></span>
+                        <span>Capacity: <strong>{{ offering.max_capacity }}</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs: Enrolled Students & Assigned Teachers -->
+<ul class="nav nav-pills mb-3" id="classCockpitTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="students-tab" data-bs-toggle="pill" data-bs-target="#students-pane" type="button" role="tab">
+            <i class="bi bi-people-fill me-1"></i> Enrolled Students ({{ enrollments.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="faculty-tab" data-bs-toggle="pill" data-bs-target="#faculty-pane" type="button" role="tab">
+            <i class="bi bi-person-video3 me-1"></i> Faculty & Subjects ({{ teachers.count }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="classCockpitTabContent">
+    <!-- PANE 1: ENROLLED STUDENTS -->
+    <div class="tab-pane fade show active" id="students-pane" role="tabpanel">
+        <div class="card-ssms">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-mortarboard-fill text-primary"></i>
+                    <span class="fw-bold">Classroom Student Roster</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">
+                        {{ enrollments.count }} Students
+                    </span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="width: 50px;">#</th>
+                            <th style="width: 60px;">Photo</th>
+                            <th>Admission No</th>
+                            <th>Student Full Name</th>
+                            <th>Gender</th>
+                            <th>Enrollment Date</th>
+                            <th>Status</th>
+                            <th class="text-end pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enr in enrollments %}
+                        <tr>
+                            <td class="ps-3 text-muted small">{{ forloop.counter }}</td>
+                            <td>
+                                {% if enr.student.photo %}
+                                    <img src="{{ enr.student.photo.url }}" alt="{{ enr.student.get_full_name }}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center border" style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace">
+                                    {{ enr.student.admission_number }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'student_detail' enr.student.id %}" class="fw-bold text-dark text-decoration-none">
+                                    {{ enr.student.get_full_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if enr.student.gender == 'M' %}
+                                    <span class="badge bg-primary-subtle text-primary">Male</span>
+                                {% elif enr.student.gender == 'F' %}
+                                    <span class="badge bg-danger-subtle text-danger">Female</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">{{ enr.student.get_gender_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ enr.enrollment_date|date:"M d, Y" }}</td>
+                            <td>
+                                {% if enr.status == 'ACTIVE' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border">{{ enr.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                {% if can_manage %}
+                                <form method="post" action="{% url 'class_remove_student' offering.id enr.id %}" class="d-inline" onsubmit="return confirm('Remove student {{ enr.student.get_full_name }} from this classroom?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Remove from class">
+                                        <i class="bi bi-person-dash"></i> Remove
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                No students enrolled in this classroom section yet.
+                                {% if can_manage %}
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Enroll First Student
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANE 2: FACULTY & SUBJECT ASSIGNMENTS -->
+    <div class="tab-pane fade" id="faculty-pane" role="tabpanel">
+        <div class="card-ssms">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-video3 text-primary"></i>
+                    <span class="fw-bold">Teaching Faculty & Subject Assignments</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">
+                        {{ teachers.count }} Assigned
+                    </span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="width: 50px;">#</th>
+                            <th>Faculty Member</th>
+                            <th>Subject Taught</th>
+                            <th>Subject Code</th>
+                            <th class="text-center">Role</th>
+                            <th>Assigned Date</th>
+                            <th class="text-end pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ta in teachers %}
+                        <tr>
+                            <td class="ps-3 text-muted small">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if ta.teacher.photo %}
+                                        <img src="{{ ta.teacher.photo.url }}" alt="{{ ta.teacher.get_full_name }}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center border" style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <a href="{% url 'teacher_detail' ta.teacher.id %}" class="fw-bold text-dark text-decoration-none">
+                                            {{ ta.teacher.get_full_name }}
+                                        </a>
+                                        <div class="text-muted small font-monospace">{{ ta.teacher.teacher_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><div class="fw-semibold text-dark">{{ ta.subject.name }}</div></td>
+                            <td><span class="badge bg-light text-dark border font-monospace">{{ ta.subject.code }}</span></td>
+                            <td class="text-center">
+                                {% if ta.is_primary %}
+                                    <span class="badge bg-primary"><i class="bi bi-star-fill me-1"></i>Primary / Homeroom</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">Subject Teacher</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ ta.assigned_at|date:"M d, Y" }}</td>
+                            <td class="text-end pe-3">
+                                {% if can_manage %}
+                                <form method="post" action="{% url 'class_remove_teacher' offering.id ta.id %}" class="d-inline" onsubmit="return confirm('Remove {{ ta.teacher.get_full_name }} from teaching {{ ta.subject.name }} in this class?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Remove assignment">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                                No teachers assigned to this classroom section yet.
+                                {% if can_manage %}
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignTeacherModal">
+                                        <i class="bi bi-person-badge-fill me-1"></i> Assign First Teacher
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 1: ENROLL STUDENT -->
+{% if can_manage %}
+<div class="modal fade" id="enrollStudentModal" tabindex="-1" aria-labelledby="enrollStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'class_enroll_student' offering.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="enrollStudentModalLabel">
+                        <i class="bi bi-person-plus-fill text-success me-2"></i> Enroll Student in {{ offering.display_name }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if offering.is_full %}
+                    <div class="alert alert-danger small">
+                        <i class="bi bi-exclamation-octagon-fill me-1"></i> This classroom has reached maximum capacity ({{ offering.max_capacity }} students).
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ enroll_form.student.id_for_label }}" class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
+                        {{ enroll_form.student }}
+                        <div class="form-text">Choose an active student to enroll. Students already enrolled in this academic year will be rejected.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" {% if offering.is_full %}disabled{% endif %}>
+                        <i class="bi bi-check2-circle me-1"></i> Complete Enrollment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: ASSIGN TEACHER -->
+<div class="modal fade" id="assignTeacherModal" tabindex="-1" aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'class_assign_teacher' offering.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="assignTeacherModalLabel">
+                        <i class="bi bi-person-badge-fill text-primary me-2"></i> Assign Subject Faculty
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="{{ teacher_form.teacher.id_for_label }}" class="form-label fw-semibold">Select Teacher <span class="text-danger">*</span></label>
+                        {{ teacher_form.teacher }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ teacher_form.subject.id_for_label }}" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                        {{ teacher_form.subject }}
+                    </div>
+
+                    <div class="form-check form-switch mt-3">
+                        {{ teacher_form.is_primary }}
+                        <label class="form-check-label fw-semibold" for="{{ teacher_form.is_primary.id_for_label }}">
+                            Primary / Homeroom Teacher
+                        </label>
+                        <div class="text-muted small">Designate this teacher as the primary custodian of this classroom.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1"></i> Save Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

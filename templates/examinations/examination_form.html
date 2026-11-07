@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-calendar-plus text-primary me-2"></i>Schedule Examination Cycle
+                </h6>
+                <a href="{% url 'examinations_index' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Examination Name <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">e.g. Semester 1 Midterm Examination (2026/27)</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark">Assessment Type <span class="text-danger">*</span></label>
+                            {{ form.exam_type }}
+                            {% if form.exam_type.errors %}
+                                <div class="text-danger small mt-1">{{ form.exam_type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold text-dark">Academic Year <span class="text-danger">*</span></label>
+                            {{ form.academic_year }}
+                            {% if form.academic_year.errors %}
+                                <div class="text-danger small mt-1">{{ form.academic_year.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold text-dark">Semester <span class="text-danger">*</span></label>
+                            {{ form.semester }}
+                            {% if form.semester.errors %}
+                                <div class="text-danger small mt-1">{{ form.semester.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark">Target Grade Level</label>
+                            {{ form.grade }}
+                            <div class="form-text">Leave blank to apply this examination school-wide across all secondary grades (9-12).</div>
+                            {% if form.grade.errors %}
+                                <div class="text-danger small mt-1">{{ form.grade.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark">Specific Classroom Section</label>
+                            {{ form.class_offering }}
+                            <div class="form-text">Optional. Specify if this exam is exclusive to a single class section.</div>
+                            {% if form.class_offering.errors %}
+                                <div class="text-danger small mt-1">{{ form.class_offering.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark">Start Date <span class="text-danger">*</span></label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark">End Date <span class="text-danger">*</span></label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% url 'examinations_index' %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i> Create Examination Cycle &rarr;
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

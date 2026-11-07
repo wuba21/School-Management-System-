@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Session Details - {{ session.class_offering.display_name }}{% endblock %}
+{% block page_title %}Attendance Roll-Call Summary{% endblock %}
+
+{% block content %}
+<!-- Session Master Card -->
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="bi bi-calendar2-check-fill text-primary"></i>
+            <span class="fw-bold">{{ session.class_offering.display_name }}</span>
+            <span class="badge bg-light text-dark border">{{ session.date|date:"l, F j, Y" }}</span>
+            <span class="badge bg-info-subtle text-info border border-info-subtle">{{ session.get_session_type_display }}</span>
+            {% if session.subject %}
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ session.subject.name }} ({{ session.subject.code }})</span>
+            {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> All Sessions
+            </a>
+
+            <!-- Exports -->
+            <a href="{% url 'attendance_export_excel' %}?session_id={{ session.id }}" class="btn btn-outline-success btn-sm" title="Export to Excel">
+                <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+            <a href="{% url 'attendance_export_pdf' %}?session_id={{ session.id }}" class="btn btn-outline-danger btn-sm" title="Export to PDF">
+                <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </a>
+
+            {% if can_edit %}
+            <a href="{% url 'attendance_take' session.id %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-pencil-square me-1"></i> Edit Roll-Call
+            </a>
+            {% endif %}
+
+            {% if can_close %}
+            <form method="post" action="{% url 'attendance_session_close' session.id %}" class="d-inline" onsubmit="return confirm('Lock this attendance session? Locked sessions cannot be modified by standard teachers.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-lock-fill me-1"></i> Close Session
+                </button>
+            </form>
+            {% endif %}
+
+            {% if can_reopen %}
+            <form method="post" action="{% url 'attendance_session_reopen' session.id %}" class="d-inline" onsubmit="return confirm('Reopen this attendance session for corrections?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="bi bi-unlock-fill me-1"></i> Reopen Session
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Stats Breakdown -->
+    <div class="p-3 border-bottom bg-light">
+        <div class="row g-3">
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Total Students</div>
+                <div class="fs-4 fw-bold text-dark">{{ total }}</div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Present</div>
+                <div class="fs-4 fw-bold text-success">{{ present }}</div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Absent</div>
+                <div class="fs-4 fw-bold text-danger">{{ absent }}</div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Late</div>
+                <div class="fs-4 fw-bold text-warning">{{ late }}</div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Excused</div>
+                <div class="fs-4 fw-bold text-info">{{ excused }}</div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="small text-muted text-uppercase fw-semibold">Attendance Rate</div>
+                <div class="fs-4 fw-bold {% if rate >= 85 %}text-success{% elif rate >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ rate }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Details -->
+    <div class="p-3 border-bottom text-muted small d-flex flex-wrap gap-3 align-items-center">
+        <div>
+            <strong>Academic Year:</strong> {{ session.academic_year.name }}
+        </div>
+        <div>
+            <strong>Recorded By:</strong> {{ session.recorded_by.full_name|default:"Administrative Staff" }}
+        </div>
+        <div>
+            <strong>Status:</strong>
+            {% if session.is_closed %}
+            <span class="badge bg-secondary"><i class="bi bi-lock-fill me-1"></i>Closed & Locked</span>
+            {% elif session.status == 'SUBMITTED' %}
+            <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Submitted</span>
+            {% else %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Open / In Progress</span>
+            {% endif %}
+        </div>
+        {% if session.remarks %}
+        <div>
+            <strong>Remarks:</strong> {{ session.remarks }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Student Attendance Marks List -->
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 45px;" class="ps-3 text-center">#</th>
+                    <th>Admission No</th>
+                    <th>Student Full Name</th>
+                    <th>Gender</th>
+                    <th>Attendance Status</th>
+                    <th>Reason / Excuse</th>
+                    <th class="text-end pe-3">Recorded Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td class="ps-3 text-center text-muted font-monospace small">{{ forloop.counter }}</td>
+                    <td>
+                        <a href="{% url 'student_attendance_detail' r.student_enrollment.student.id %}" class="font-monospace fw-semibold text-primary text-decoration-none">
+                            {{ r.student_enrollment.student.admission_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ r.student_enrollment.student.full_name }}</div>
+                    </td>
+                    <td>
+                        {% if r.student_enrollment.student.gender == 'M' %}
+                        <span class="badge bg-light text-secondary border">Male</span>
+                        {% else %}
+                        <span class="badge bg-light text-secondary border">Female</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'PRESENT' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle-fill me-1"></i>Present
+                        </span>
+                        {% elif r.status == 'ABSENT' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-x-circle-fill me-1"></i>Absent
+                        </span>
+                        {% elif r.status == 'LATE' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-clock-history me-1"></i>Late Arrival
+                        </span>
+                        {% elif r.status == 'EXCUSED' %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                            <i class="bi bi-shield-check me-1"></i>Excused Absence
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ r.reason|default:"-" }}
+                    </td>
+                    <td class="text-end pe-3 font-monospace small text-muted">
+                        {{ r.created_at|date:"H:i" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="bi bi-exclamation-circle text-warning fs-3 d-block mb-2"></i>
+                        No student marks have been submitted for this session yet.
+                        <div class="mt-2">
+                            <a href="{% url 'attendance_take' session.id %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Take Roll-Call Now
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

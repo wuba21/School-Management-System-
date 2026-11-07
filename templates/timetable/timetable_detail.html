@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Timetable: {{ timetable.class_offering.display_name }} - Smart School Management{% endblock %}
+{% block page_title %}Timetable Editor: {{ timetable.class_offering.display_name }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Action Controls -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-calendar-week text-primary me-2"></i>{{ timetable.class_offering.display_name }}
+            </h5>
+            <span class="badge bg-light text-dark border">v{{ timetable.version }}</span>
+            {% if timetable.status == 'PUBLISHED' %}
+            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Published / Active</span>
+            {% elif timetable.status == 'APPROVED' %}
+            <span class="badge bg-info text-dark"><i class="bi bi-award me-1"></i>Approved</span>
+            {% elif timetable.status == 'SUBMITTED' %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Under Committee Review</span>
+            {% elif timetable.status == 'ARCHIVED' %}
+            <span class="badge bg-secondary">Archived</span>
+            {% else %}
+            <span class="badge bg-light text-secondary border">Draft (In Preparation)</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0">
+            Academic Year: <span class="fw-semibold text-dark">{{ timetable.academic_year.name }}</span>
+            &bull; Scheduled Lessons: <span class="badge bg-primary rounded-pill">{{ timetable.total_scheduled_lessons }}</span>
+            {% if timetable.published_at %}
+            &bull; Published on: {{ timetable.published_at|date:"M d, Y" }}
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Lifecycle Action Buttons -->
+    <div class="d-flex flex-wrap gap-2">
+        {% if can_edit %}
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Lesson
+        </button>
+        {% endif %}
+
+        {% if can_submit %}
+        <form method="post" action="{% url 'timetable_submit' timetable.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning text-dark btn-sm fw-semibold" onclick="return confirm('Submit this timetable for administrative review?')">
+                <i class="bi bi-send-check me-1"></i> Submit for Review
+            </button>
+        </form>
+        {% endif %}
+
+        {% if can_approve %}
+        <a href="{% url 'timetable_approval' timetable.id %}" class="btn btn-success btn-sm">
+            <i class="bi bi-check2-circle me-1"></i> Review & Approve
+        </a>
+        {% endif %}
+
+        {% if can_publish %}
+        <form method="post" action="{% url 'timetable_publish' timetable.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm fw-semibold" onclick="return confirm('Publish this timetable? It will become active for all teachers and students, and archive older versions.')">
+                <i class="bi bi-broadcast me-1"></i> Publish Live
+            </button>
+        </form>
+        {% endif %}
+
+        {% if can_revise %}
+        <form method="post" action="{% url 'timetable_revise' timetable.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-warning text-dark btn-sm" onclick="return confirm('Create a new revision draft (v{{ timetable.version|add:1 }})? The published schedule remains active until the new revision is published.')">
+                <i class="bi bi-pencil-square me-1"></i> Create Revision
+            </button>
+        </form>
+        {% endif %}
+
+        {% if is_management %}
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#copyTimetableModal">
+            <i class="bi bi-files me-1"></i> Clone to Class
+        </button>
+        {% endif %}
+
+        <div class="btn-group">
+            <a href="{% url 'export_class_timetable_pdf' timetable.id %}" class="btn btn-outline-danger btn-sm" title="Export PDF">
+                <i class="bi bi-file-pdf me-1"></i> PDF
+            </a>
+            <a href="{% url 'export_class_timetable_excel' timetable.id %}" class="btn btn-outline-success btn-sm" title="Export Excel">
+                <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+        </div>
+
+        <a href="{% url 'timetable_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Directory
+        </a>
+    </div>
+</div>
+
+<!-- Conflict Warnings Banner -->
+{% if conflicts %}
+<div class="card border-danger border-2 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-danger text-white py-2 px-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 small">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Scheduling Conflicts Detected ({{ conflicts|length }})
+        </h6>
+        <span class="badge bg-white text-danger fw-bold">Action Required</span>
+    </div>
+    <div class="card-body p-3 bg-light">
+        <div class="row g-2">
+            {% for c in conflicts %}
+            <div class="col-12 col-md-6">
+                <div class="p-2 rounded border bg-white small {% if c.severity == 'ERROR' %}border-danger{% else %}border-warning{% endif %}">
+                    <div class="fw-bold {% if c.severity == 'ERROR' %}text-danger{% else %}text-warning{% endif %}">
+                        <i class="bi bi-x-circle me-1"></i>{{ c.title }}
+                    </div>
+                    <div class="text-muted">{{ c.message }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 2D Weekly Matrix Grid -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-grid-3x3 me-2 text-primary"></i>Weekly Schedule Matrix
+        </h6>
+        <div class="small text-muted">
+            <span class="badge bg-light text-dark border me-2"><i class="bi bi-square-fill text-primary me-1"></i>Instructional Lesson</span>
+            <span class="badge bg-light text-secondary border"><i class="bi bi-square-fill text-secondary me-1"></i>Break / Recess</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center mb-0" style="min-width: 800px;">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 130px;" class="py-3">Period / Time</th>
+                        {% for day in matrix.working_days %}
+                        <th class="py-3 text-uppercase fw-bold">{{ day.name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in matrix.grid %}
+                    <tr>
+                        <!-- Period Label -->
+                        <td class="bg-light fw-bold small text-start ps-3">
+                            <div class="text-dark">{{ row.period.name }}</div>
+                            <div class="text-muted fw-normal" style="font-size: 0.75rem;">
+                                {{ row.period.start_time|time:"H:i" }} - {{ row.period.end_time|time:"H:i" }}
+                            </div>
+                            {% if row.period.is_break %}
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">
+                                {{ row.period.get_break_type_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Day Cells -->
+                        {% for col in row.days %}
+                        {% if row.period.is_break %}
+                        <td class="bg-light text-muted small py-3" style="background-color: #f8fafc !important;">
+                            <span class="badge bg-secondary-subtle text-secondary border">
+                                &mdash; {{ row.period.get_break_type_display }} &mdash;
+                            </span>
+                        </td>
+                        {% elif col.entry %}
+                        <td class="p-2 position-relative" style="background-color: #f0fdf4;">
+                            <div class="fw-bold text-primary">{{ col.entry.subject.code }}</div>
+                            <div class="small fw-semibold text-dark">{{ col.entry.subject.name }}</div>
+                            <div class="small text-muted">
+                                <i class="bi bi-person me-1"></i>{{ col.entry.teacher.full_name }}
+                            </div>
+                            {% if col.entry.classroom %}
+                            <div class="small text-secondary" style="font-size: 0.75rem;">
+                                <i class="bi bi-door-closed me-1"></i>{{ col.entry.classroom.code }}
+                            </div>
+                            {% endif %}
+
+                            {% if can_edit %}
+                            <form method="post" action="{% url 'timetable_entry_delete' col.entry.id %}" class="position-absolute top-0 end-0 p-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link text-danger p-0" title="Remove lesson" onclick="return confirm('Remove this scheduled lesson?')">
+                                    <i class="bi bi-x-circle" style="font-size: 0.85rem;"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                        {% else %}
+                        <td class="p-2 text-muted small bg-white">
+                            {% if can_edit %}
+                            <button type="button" class="btn btn-outline-light text-muted border-0 btn-sm w-100 py-3"
+                                    data-bs-toggle="modal" data-bs-target="#addLessonModal"
+                                    data-day="{{ col.day.day_of_week }}" data-period="{{ row.period.id }}">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                            {% else %}
+                            <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 1: Add Lesson Entry Modal -->
+{% if can_edit and entry_form %}
+<div class="modal fade" id="addLessonModal" tabindex="-1" aria-labelledby="addLessonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h6 class="modal-title fw-bold" id="addLessonModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Schedule Lesson
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'timetable_entry_create' timetable.id %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-dark">Day of Week <span class="text-danger">*</span></label>
+                            {{ entry_form.day_of_week }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-dark">Period Slot <span class="text-danger">*</span></label>
+                            {{ entry_form.period }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Subject <span class="text-danger">*</span></label>
+                        {{ entry_form.subject }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Assigned Teacher <span class="text-danger">*</span></label>
+                        {{ entry_form.teacher }}
+                        <div class="form-text small">System verifies teacher schedule availability and qualifications.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Classroom / Laboratory (Optional)</label>
+                        {{ entry_form.classroom }}
+                        <div class="form-text small">Leave unselected if assigned to regular home room.</div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-dark">Lesson Focus / Notes (Optional)</label>
+                        {{ entry_form.notes }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="bi bi-check-circle me-1"></i> Save to Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal 2: Clone / Copy Timetable Modal -->
+{% if is_management and copy_form %}
+<div class="modal fade" id="copyTimetableModal" tabindex="-1" aria-labelledby="copyTimetableModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white py-3">
+                <h6 class="modal-title fw-bold" id="copyTimetableModalLabel">
+                    <i class="bi bi-files me-2"></i>Clone Timetable Structure
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'timetable_copy' timetable.id %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        This copies all period layouts, subjects, and teacher assignments from
+                        <strong>{{ timetable.class_offering.display_name }}</strong> into a new draft timetable for the chosen class offering.
+                        Slots with teacher conflicts in the target class will be safely skipped.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Select Target Class Offering <span class="text-danger">*</span></label>
+                        {{ copy_form.target_class_offering }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="bi bi-check-circle me-1"></i> Clone Timetable
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick modal auto-fill script for empty cell clicks -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addLessonModal = document.getElementById('addLessonModal');
+    if (addLessonModal) {
+        addLessonModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (button && button.hasAttribute('data-day')) {
+                const dayVal = button.getAttribute('data-day');
+                const periodVal = button.getAttribute('data-period');
+                const daySelect = addLessonModal.querySelector('select[name="day_of_week"]');
+                const periodSelect = addLessonModal.querySelector('select[name="period"]');
+                if (daySelect && dayVal) daySelect.value = dayVal;
+                if (periodSelect && periodVal) periodSelect.value = periodVal;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

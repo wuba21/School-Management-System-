@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Calculate Results - {{ exam.name }}{% endblock %}
+{% block page_title %}Result Calculations & Aggregation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-7 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-calculator-fill text-success me-2"></i>Compute Final Examination Results
+                </h6>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-block text-success mb-3">
+                    <i class="bi bi-cpu fs-1"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Automated Result Processing</h5>
+                <p class="text-muted mb-4">
+                    Calculate total marks, percentage, weighted average, class ranks, and map letter grades
+                    for <strong class="text-dark">{{ exam.name }}</strong>.
+                </p>
+
+                <div class="card bg-light border-0 p-3 text-start mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Target Grade:</span>
+                        <strong class="text-dark">{{ exam.grade.name|default:"All Secondary Grades (9-12)" }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Academic Year:</span>
+                        <strong class="text-dark">{{ exam.academic_year.name }} (Sem {{ exam.semester }})</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Configured Subjects:</span>
+                        <strong class="text-primary">{{ exam.exam_subjects.count }} Subjects</strong>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="text-start mb-4">
+                        <label class="form-label fw-semibold text-dark">Select Grading Policy Scale</label>
+                        <select name="grading_scale" class="form-select">
+                            {% for scale in grading_scales %}
+                            <option value="{{ scale.id }}" {% if scale.is_default %}selected{% endif %}>
+                                {{ scale.name }} ({{ scale.code }}) {% if scale.is_default %}[Default]{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Defines grade brackets (e.g. A: 90-100%, B: 80-89%, etc.) and pass/fail thresholds.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between gap-2">
+                        <a href="{% url 'examination_detail' exam.id %}" class="btn btn-outline-secondary px-4">
+                            &larr; Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-play-circle me-1"></i> Run Result Calculation &rarr;
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

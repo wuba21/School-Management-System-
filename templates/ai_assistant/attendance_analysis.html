@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Intelligence - AI Assistant{% endblock %}
+{% block page_title %}AI Attendance & Absenteeism Pattern Analysis{% endblock %}
+
+{% block content %}
+<!-- Filtering Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Grade Level</label>
+                {{ form.grade }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1 fw-bold">Class Section</label>
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1 mt-4">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-funnel me-1"></i> Analyze
+                </button>
+                <a href="{% url 'ai_attendance_analysis' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Attendance Health Overview Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-success">
+            <div class="small text-muted fw-bold text-uppercase">Presence Rate</div>
+            <div class="fs-3 fw-bold text-success">{{ overview.presence_rate }}%</div>
+            <div class="small text-muted">Present ({{ overview.present_count }}) + Late ({{ overview.late_count }})</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-danger">
+            <div class="small text-muted fw-bold text-uppercase">Unexcused Absence Rate</div>
+            <div class="fs-3 fw-bold text-danger">{{ overview.absence_rate }}%</div>
+            <div class="small text-muted">{{ overview.absent_count }} absences recorded</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-warning">
+            <div class="small text-muted fw-bold text-uppercase">Excused Absence Rate</div>
+            <div class="fs-3 fw-bold text-warning">{{ overview.excused_rate }}%</div>
+            <div class="small text-muted">{{ overview.excused_count }} medical/pastoral leaves</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-primary">
+            <div class="small text-muted fw-bold text-uppercase">Total Session Records</div>
+            <div class="fs-3 fw-bold text-dark">{{ overview.total_records }}</div>
+            <div class="small text-muted">Filtered attendance data points</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Day-of-Week Absence Distribution Chart -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-calendar-week-fill text-primary me-2"></i>Weekday Absence Distribution
+                </h6>
+                <div class="small text-muted">Identifies day-of-week correlations (e.g. market days, travel days)</div>
+            </div>
+            <div class="card-body p-3">
+                <div style="height: 260px;">
+                    <canvas id="weekdayAbsenceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Attendance Ranking Benchmarks -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-award-fill text-success me-2"></i>Class Attendance Benchmarks
+                </h6>
+                <div class="small text-muted">Sections ranked by attendance compliance</div>
+            </div>
+            <div class="card-body p-0">
+                {% if class_benchmarks %}
+                <div class="table-responsive" style="max-height: 280px;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Class Offering</th>
+                                <th>Total Logs</th>
+                                <th>Presence Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for b in class_benchmarks %}
+                            <tr>
+                                <td class="fw-semibold text-dark">{{ b.class_name }}</td>
+                                <td>{{ b.total_records }} records</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar {% if b.presence_rate >= 85 %}bg-success{% elif b.presence_rate >= 75 %}bg-primary{% else %}bg-warning{% endif %}"
+                                                 style="width: {{ b.presence_rate }}%;"></div>
+                                        </div>
+                                        <span class="fw-bold small">{{ b.presence_rate }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">No attendance sessions recorded for this selection.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Repeated Absenteeism Supportive Follow-Up Roster -->
+<div class="card border-0 shadow-sm rounded-3 bg-white border-start border-4 border-warning">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="bi bi-person-exclamation text-warning me-2"></i>Students Flagged for Attendance Engagement (&ge; 3 Absences)
+            </h6>
+            <div class="small text-muted">
+                <strong>Non-Punitive Advisory:</strong> Intended strictly for supportive parental outreach, counseling, and identifying transportation/health barriers.
+            </div>
+        </div>
+        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ frequent_absentees|length }} Students</span>
+    </div>
+    <div class="card-body p-0">
+        {% if frequent_absentees %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Admission No</th>
+                        <th>Class Section</th>
+                        <th>Unexcused Absences</th>
+                        <th>Supportive Advisory Action</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    {% for a in frequent_absentees %}
+                    <tr>
+                        <td class="fw-bold text-dark">{{ a.student_name }}</td>
+                        <td><code>{{ a.admission_number }}</code></td>
+                        <td><span class="badge bg-light text-dark border">{{ a.grade_section }}</span></td>
+                        <td><span class="badge bg-danger">{{ a.unexcused_absences }} absences</span></td>
+                        <td class="text-muted"><i class="bi bi-chat-heart text-info me-1"></i>{{ a.advisory_recommendation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
+            No students currently exhibit repeated unexcused absence patterns.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dayPatterns = {{ day_patterns_json|safe }};
+    const ctx = document.getElementById('weekdayAbsenceChart');
+    if (ctx && dayPatterns.length > 0) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dayPatterns.map(d => d.day_name),
+                datasets: [{
+                    label: 'Absence Rate (%)',
+                    data: dayPatterns.map(d => d.absence_rate),
+                    backgroundColor: [
+                        '#3B82F6', '#60A5FA', '#93C5FD', '#F59E0B', '#EF4444'
+                    ],
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => v + '%' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

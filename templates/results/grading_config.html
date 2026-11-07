@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grading Policy Configuration - Smart School Management{% endblock %}
+{% block page_title %}Grading Scale & Assessment Policies{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-sliders text-primary me-2"></i>Configurable Grading Scales
+        </h5>
+        <p class="text-muted small mb-0">Manage school grading brackets, GPA conversion points, and passing criteria</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'results_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Results Hub
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Active Grading Scales List -->
+    <div class="col-12 col-lg-8">
+        {% for scale in scales %}
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark">
+                        {{ scale.name }} <span class="badge bg-light text-dark border">{{ scale.code }}</span>
+                        {% if scale.is_default %}
+                            <span class="badge bg-success ms-2"><i class="bi bi-check-circle"></i> Default Policy</span>
+                        {% endif %}
+                    </h6>
+                    <small class="text-muted">{{ scale.description|default:"Secondary School Standard Grading Scheme" }}</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Grade Label</th>
+                                <th class="text-center">Score Range (%)</th>
+                                <th class="text-center">GPA Points</th>
+                                <th>Description / Standing</th>
+                                <th class="text-center">Passing?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in scale.ranges.all %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if r.grade_label == 'A' or r.grade_label == 'B' %}bg-success{% elif r.grade_label == 'C' or r.grade_label == 'D' %}bg-info text-dark{% else %}bg-danger{% endif %} fs-6">
+                                        {{ r.grade_label }}
+                                    </span>
+                                </td>
+                                <td class="text-center fw-semibold">
+                                    {{ r.min_score }}% &ndash; {{ r.max_score }}%
+                                </td>
+                                <td class="text-center">
+                                    {{ r.gpa_point|default:"&mdash;" }}
+                                </td>
+                                <td>{{ r.description }}</td>
+                                <td class="text-center">
+                                    {% if r.is_passing %}
+                                        <span class="badge bg-success-subtle text-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No grade brackets configured yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Grade Bracket Form -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-plus-circle text-primary me-2"></i>Add Grade Range
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_range">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Target Scale</label>
+                        <select name="scale_id" class="form-select form-select-sm" required>
+                            {% for scale in scales %}
+                            <option value="{{ scale.id }}" {% if scale.is_default %}selected{% endif %}>
+                                {{ scale.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Grade Label (e.g. A, B+, C)</label>
+                        {{ range_form.grade_label }}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-dark small">Min Score (%)</label>
+                            {{ range_form.min_score }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-dark small">Max Score (%)</label>
+                            {{ range_form.max_score }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">GPA Value (0.0 - 4.0)</label>
+                        {{ range_form.gpa_point }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Description</label>
+                        {{ range_form.description }}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ range_form.is_passing }}
+                        <label class="form-check-label small fw-semibold text-dark" for="{{ range_form.is_passing.id_for_label }}">
+                            Is Passing Grade
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-plus-lg me-1"></i> Add Grade Bracket
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

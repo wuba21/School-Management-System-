@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Sessions{% endblock %}
+{% block page_title %}Roll-Call Attendance Sessions{% endblock %}
+
+{% block content %}
+<div class="card-ssms mb-4">
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="bi bi-calendar3-range text-primary"></i>
+            <span class="fw-bold">Attendance Sessions Directory</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                {{ page_obj.paginator.count }} {{ page_obj.paginator.count|pluralize:"Session,Sessions" }}
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            {% if can_create %}
+            <a href="{% url 'attendance_session_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Session
+            </a>
+            {% endif %}
+            <a href="{% url 'attendance_reports' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-file-earmark-bar-graph me-1"></i> Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="p-3 border-bottom bg-light">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label small text-muted mb-1">Academic Year</label>
+                {{ filter_form.academic_year }}
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label small text-muted mb-1">Grade</label>
+                {{ filter_form.grade }}
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label small text-muted mb-1">Classroom</label>
+                {{ filter_form.class_offering }}
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label small text-muted mb-1">Session Type</label>
+                {{ filter_form.session_type }}
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label small text-muted mb-1">Date From</label>
+                {{ filter_form.date_from }}
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1" title="Apply Filters">
+                    <i class="bi bi-funnel-fill me-1"></i> Filter
+                </button>
+                <a href="{% url 'attendance_sessions' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-ssms align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Date</th>
+                    <th>Classroom</th>
+                    <th>Academic Year</th>
+                    <th>Type / Subject</th>
+                    <th>Recorded By</th>
+                    <th class="text-center">Present / Total</th>
+                    <th class="text-center">Rate</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td class="ps-3 font-monospace fw-semibold">
+                        <a href="{% url 'attendance_session_detail' session.id %}" class="text-decoration-none fw-bold text-dark">
+                            {{ session.date|date:"Y-m-d" }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark">{{ session.class_offering.display_name }}</span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ session.academic_year.code }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ session.get_session_type_display }}</span>
+                        {% if session.subject %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">{{ session.subject.code }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if session.recorded_by %}
+                        <span class="small fw-semibold text-secondary">{{ session.recorded_by.full_name }}</span>
+                        {% else %}
+                        <span class="text-muted small italic">Staff Account</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center font-monospace">
+                        <span class="text-success fw-bold">{{ session.present_count }}</span> / {{ session.total_records }}
+                    </td>
+                    <td class="text-center font-monospace">
+                        <span class="badge {% if session.attendance_percentage >= 85 %}bg-success-subtle text-success border border-success-subtle{% elif session.attendance_percentage >= 75 %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                            {{ session.attendance_percentage }}%
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        {% if session.is_closed %}
+                        <span class="badge bg-secondary-subtle text-secondary border">
+                            <i class="bi bi-lock-fill me-1"></i>Closed
+                        </span>
+                        {% elif session.status == 'SUBMITTED' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check2 me-1"></i>Recorded
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-hourglass-split me-1"></i>Open
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'attendance_session_detail' session.id %}" class="btn btn-outline-secondary" title="View Summary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if session.is_editable %}
+                            <a href="{% url 'attendance_take' session.id %}" class="btn btn-outline-primary" title="Record / Edit Marks">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                        No attendance sessions found matching the filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="small text-muted">
+            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </div>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for p in page_obj.paginator.page_range %}
+                {% if p == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                <li class="page-item"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academic History - {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Academic History & Progression{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ student.full_name }}</h5>
+            <span class="badge bg-primary">{{ student.admission_number }}</span>
+            {% if student.status == 'ACTIVE' %}
+                <span class="badge bg-success">Active Enrolled</span>
+            {% elif student.status == 'GRADUATED' %}
+                <span class="badge bg-info text-dark">Graduated</span>
+            {% elif student.status == 'TRANSFERRED' %}
+                <span class="badge bg-warning text-dark">Transferred</span>
+            {% elif student.status == 'WITHDRAWN' %}
+                <span class="badge bg-danger">Withdrawn</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0">
+            Gender: <strong>{{ student.gender|default:"Not specified" }}</strong>
+            &bull; Date of Birth: <strong>{{ student.date_of_birth|date:"M d, Y" }}</strong>
+            &bull; Father: <strong>{{ student.father_name }}</strong> &bull; Grandfather: <strong>{{ student.grandfather_name }}</strong>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'student_status_change' %}?student_id={{ student.id }}" class="btn btn-outline-warning text-dark btn-sm">
+            <i class="bi bi-person-dash me-1"></i> Record Status Change
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print History
+        </button>
+        <a href="{% url 'promotion_index' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Promotion Hub
+        </a>
+    </div>
+</div>
+
+<!-- Chronological Academic Progression Cards -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-mortarboard text-primary me-2"></i>Year-by-Year Academic Progress
+        </h6>
+    </div>
+    <div class="card-body p-4">
+        {% for row in history.history_rows %}
+        <div class="border rounded-3 p-3 mb-4 bg-light bg-opacity-25">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-2 mb-3">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">
+                        {{ row.academic_year.name }} &bull; {{ row.grade.name }} - Section {{ row.section.name }}
+                        {% if row.stream %}<span class="badge bg-light text-primary border ms-1">{{ row.stream.name }}</span>{% endif %}
+                    </h6>
+                    <small class="text-muted">Class Offering: {{ row.class_offering.display_name }}</small>
+                </div>
+                <div>
+                    {% if row.is_repeating %}
+                        <span class="badge bg-danger-subtle text-danger border">Repeating Grade</span>
+                    {% endif %}
+                    <span class="badge bg-secondary-subtle text-secondary">{{ row.status }}</span>
+                    {% if row.promotion_record %}
+                        <span class="badge {% if row.promotion_record.final_outcome == 'PROMOTED' %}bg-success{% elif row.promotion_record.final_outcome == 'REPEATED' %}bg-danger{% elif row.promotion_record.final_outcome == 'GRADUATED' %}bg-primary{% else %}bg-secondary{% endif %} ms-1">
+                            {{ row.promotion_record.get_final_outcome_display }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Examination Performance in this year -->
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-md-8">
+                    <div class="small fw-semibold text-muted mb-2">Examination Cycles & Term Results:</div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered bg-white mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Examination</th>
+                                    <th>Semester</th>
+                                    <th class="text-center">Score</th>
+                                    <th class="text-center">Average %</th>
+                                    <th class="text-center">Grade</th>
+                                    <th class="text-center">Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in row.summaries %}
+                                <tr>
+                                    <td><strong>{{ s.examination.name }}</strong></td>
+                                    <td>Semester {{ s.examination.semester }}</td>
+                                    <td class="text-center">{{ s.total_marks_obtained }} / {{ s.total_max_marks }}</td>
+                                    <td class="text-center fw-bold {% if s.is_passing %}text-success{% else %}text-danger{% endif %}">{{ s.average_mark }}%</td>
+                                    <td class="text-center"><span class="badge bg-light text-dark border">{{ s.overall_grade }}</span></td>
+                                    <td class="text-center">
+                                        {% if s.rank %}<span class="badge bg-warning text-dark">#{{ s.rank }}</span>{% else %}&mdash;{% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-2 text-muted small">No examination summaries recorded.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <div class="small fw-semibold text-muted mb-2">Attendance Summary:</div>
+                    <div class="p-3 bg-white border rounded">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Total Sessions:</span>
+                            <strong>{{ row.attendance_total }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Sessions Present:</span>
+                            <strong class="text-success">{{ row.attendance_present }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between border-top pt-1">
+                            <span class="text-muted small">Attendance Rate:</span>
+                            <strong class="text-primary">{{ row.attendance_percentage|default:"N/A" }}%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if row.promotion_record %}
+            <div class="small text-muted bg-white p-2 rounded border">
+                <i class="bi bi-award-fill text-warning me-1"></i>
+                <strong>Promotion Outcome:</strong> {{ row.promotion_record.get_final_outcome_display }}
+                {% if row.promotion_record.remarks %}
+                    &bull; <em>Remarks: {{ row.promotion_record.remarks }}</em>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="text-center py-5 text-muted">No academic enrollment history found for this student.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Formal Status Transitions & Audit Trail -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-clock-history text-secondary me-2"></i>Status Changes & Departures Registry
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Status Transition</th>
+                        <th>Official Justification / Reason</th>
+                        <th>Destination Institution</th>
+                        <th>Documents Issued</th>
+                        <th>Authorized Officer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sc in history.status_changes %}
+                    <tr>
+                        <td class="small text-muted">{{ sc.effective_date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge {% if sc.status_type == 'TRANSFER_OUT' %}bg-warning text-dark{% elif sc.status_type == 'GRADUATION' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ sc.get_status_type_display }}
+                            </span>
+                        </td>
+                        <td class="small">{{ sc.reason }}</td>
+                        <td class="small">{{ sc.destination_school|default:"&mdash;" }}</td>
+                        <td class="small">{{ sc.documents_issued|default:"&mdash;" }}</td>
+                        <td class="small text-muted">{{ sc.authorized_by.get_full_name|default:sc.authorized_by.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-3 text-muted small">No transfers or disciplinary departures recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

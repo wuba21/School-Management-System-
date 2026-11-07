@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}School Working Days - Smart School Management{% endblock %}
+{% block page_title %}Working Days Configuration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-calendar-week text-primary me-2"></i>Configure School Working Days
+                </h6>
+                <p class="text-muted small mb-0">Select the operational school days for timetable generation and scheduling.</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="list-group mb-4">
+                        {% for d in days %}
+                        <label class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <span class="fw-bold text-dark">{{ d.name }}</span>
+                                <span class="badge bg-light text-muted border ms-2">{{ d.short_name }}</span>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" name="active_days" value="{{ d.day_of_week }}" id="day_{{ d.day_of_week }}" {% if d.is_active %}checked{% endif %}>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'timetable_index' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                            <i class="bi bi-check-circle me-1"></i> Save Working Days
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

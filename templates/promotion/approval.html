@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Review Promotion Batch - {{ batch.name }}{% endblock %}
+{% block page_title %}Committee Promotion Review{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-shield-check text-primary me-2"></i>Principal / Committee Promotion Authorization
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-block text-primary mb-2">
+                        <i class="bi bi-award fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">{{ batch.name }}</h5>
+                    <p class="text-muted small mb-0">
+                        From <strong class="text-dark">{{ batch.academic_year.name }}</strong>
+                        to <strong class="text-primary">{{ batch.target_academic_year.name }}</strong>
+                        &bull; {{ batch.grade.name }}
+                    </p>
+                </div>
+
+                <div class="card bg-light border-0 p-3 mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Total Candidates:</span>
+                        <strong class="text-dark">{{ batch.total_candidates }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Promoted to Next Grade:</span>
+                        <strong class="text-success">{{ batch.promoted_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Retained in Same Grade:</span>
+                        <strong class="text-danger">{{ batch.repeated_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Graduating (Grade 12):</span>
+                        <strong class="text-primary">{{ batch.graduated_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Pending Review:</span>
+                        <strong class="text-warning">{{ batch.pending_count }}</strong>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Review Decision <span class="text-danger">*</span></label>
+                        {{ form.decision }}
+                        <div class="form-text">Choose 'Approve Batch' to authorize final enrollment, or 'Return' for revision.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark">Committee Comments / Authorization Rationale</label>
+                        {{ form.comments }}
+                    </div>
+
+                    <div class="d-flex justify-content-between gap-2 pt-3 border-top">
+                        <a href="{% url 'promotion_batch_detail' batch.id %}" class="btn btn-outline-secondary">
+                            &larr; Back to Candidate Roster
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-circle me-1"></i> Submit Review Decision
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

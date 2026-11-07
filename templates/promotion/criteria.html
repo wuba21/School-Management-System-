@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Promotion Criteria Policies - Smart School Management{% endblock %}
+{% block page_title %}Promotion Criteria Policies{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-sliders text-primary me-2"></i>Promotion Criteria & Threshold Policies
+        </h5>
+        <p class="text-muted small mb-0">Configure minimum passing averages, allowed failing subjects, and attendance rules</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Promotion Hub
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Existing Criteria Policies -->
+    <div class="col-12 col-lg-7">
+        {% for c in criteria_list %}
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark">
+                        {{ c.name }}
+                        {% if c.is_default %}
+                            <span class="badge bg-success ms-2"><i class="bi bi-check-circle"></i> Default Policy</span>
+                        {% endif %}
+                    </h6>
+                    <small class="text-muted">Code: {{ c.code }}</small>
+                </div>
+                <span class="badge {% if c.is_active %}bg-success-subtle text-success{% else %}bg-secondary{% endif %}">
+                    {% if c.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-3">{{ c.description|default:"Standard policy governing secondary school grade progression." }}</p>
+                <div class="row g-3 text-center">
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <small class="text-muted d-block">Min Average</small>
+                            <h5 class="fw-bold text-primary mb-0">{{ c.minimum_average }}%</h5>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <small class="text-muted d-block">Max Failing Subj</small>
+                            <h5 class="fw-bold text-danger mb-0">{{ c.max_failing_subjects }}</h5>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <small class="text-muted d-block">Min Attendance</small>
+                            <h5 class="fw-bold text-dark mb-0">{{ c.minimum_attendance_percentage|default:"N/A" }}{% if c.minimum_attendance_percentage %}%{% endif %}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-4 text-center text-muted">No criteria policies configured yet.</div>
+        {% endfor %}
+    </div>
+
+    <!-- Create / Edit Policy Form -->
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-plus-circle text-primary me-2"></i>Add Promotion Policy
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Policy Name <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Code Identifier <span class="text-danger">*</span></label>
+                        {{ form.code }}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-dark small">Min Average (%) <span class="text-danger">*</span></label>
+                            {{ form.minimum_average }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold text-dark small">Max Failing Subjects <span class="text-danger">*</span></label>
+                            {{ form.max_failing_subjects }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Min Attendance (%) [Optional]</label>
+                        {{ form.minimum_attendance_percentage }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark small">Policy Description</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.is_default }}
+                        <label class="form-check-label small fw-semibold text-dark" for="{{ form.is_default.id_for_label }}">
+                            Make Default Policy
+                        </label>
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label small fw-semibold text-dark" for="{{ form.is_active.id_for_label }}">
+                            Active Policy
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-plus-lg me-1"></i> Save Promotion Criteria Policy
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

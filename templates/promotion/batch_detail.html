@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ batch.name }} - Details{% endblock %}
+{% block page_title %}{{ batch.name }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Action Controls -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="fw-bold mb-0 text-dark">{{ batch.name }}</h5>
+            {% if batch.status == 'DRAFT' %}
+                <span class="badge bg-secondary">Draft Preparation</span>
+            {% elif batch.status == 'SUBMITTED' %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Submitted for Committee Review</span>
+            {% elif batch.status == 'APPROVED' %}
+                <span class="badge bg-info text-dark"><i class="bi bi-check2-circle"></i> Approved by Committee</span>
+            {% elif batch.status == 'FINALIZED' %}
+                <span class="badge bg-success"><i class="bi bi-check-all"></i> Finalized & Enrolled</span>
+            {% elif batch.status == 'REJECTED' %}
+                <span class="badge bg-danger"><i class="bi bi-arrow-return-left"></i> Returned for Revision</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0">
+            Grade: <span class="badge bg-light text-dark border">{{ batch.grade.name }}</span>
+            &bull; Transition: <strong class="text-dark">{{ batch.academic_year.name }}</strong> &rarr; <strong class="text-primary">{{ batch.target_academic_year.name }}</strong>
+            &bull; Candidates: <strong class="text-dark">{{ batch.total_candidates }} Students</strong>
+            {% if batch.promotion_criteria %}
+            &bull; Policy: <span>{{ batch.promotion_criteria.name }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'promotion_preview' batch.id %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-eye me-1"></i> Preview Summary
+        </a>
+
+        {% if can_submit %}
+        <form method="post" action="{% url 'promotion_batch_submit' batch.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning text-dark btn-sm" onclick="return confirm('Submit this promotion batch to the Principal / Committee for review?')">
+                <i class="bi bi-send-check me-1"></i> Submit for Approval
+            </button>
+        </form>
+        {% endif %}
+
+        {% if can_approve %}
+        <a href="{% url 'promotion_approval' batch.id %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-shield-check me-1"></i> Review & Approve Batch
+        </a>
+        {% endif %}
+
+        {% if can_finalize %}
+        <form method="post" action="{% url 'promotion_finalize' batch.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Confirm and execute batch enrollment into target academic year? This creates new student enrollments.')">
+                <i class="bi bi-check2-all me-1"></i> Finalize & Enroll Students
+            </button>
+        </form>
+        {% endif %}
+
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'export_promotion_pdf' batch.id %}" class="btn btn-outline-danger" title="Download PDF Roster">
+                <i class="bi bi-file-pdf"></i> PDF
+            </a>
+            <a href="{% url 'export_promotion_excel' batch.id %}" class="btn btn-outline-success" title="Download Excel Gradebook">
+                <i class="bi bi-file-excel"></i> Excel
+            </a>
+        </div>
+
+        <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+{% if batch.approval_remarks %}
+<div class="alert {% if batch.status == 'REJECTED' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+    <i class="bi bi-chat-quote-fill me-2"></i>
+    <strong>Committee Note:</strong> {{ batch.approval_remarks }}
+</div>
+{% endif %}
+
+<!-- Candidate Filter & Search Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search by name or admission number..." value="{{ search_q }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <select name="outcome" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- All Promotion Outcomes --</option>
+                    <option value="PROMOTED" {% if outcome_filter == 'PROMOTED' %}selected{% endif %}>Promoted ({{ batch.promoted_count }})</option>
+                    <option value="REPEATED" {% if outcome_filter == 'REPEATED' %}selected{% endif %}>Repeated / Retained ({{ batch.repeated_count }})</option>
+                    <option value="GRADUATED" {% if outcome_filter == 'GRADUATED' %}selected{% endif %}>Graduated ({{ batch.graduated_count }})</option>
+                    <option value="PENDING" {% if outcome_filter == 'PENDING' %}selected{% endif %}>Pending Review ({{ batch.pending_count }})</option>
+                    <option value="TRANSFERRED" {% if outcome_filter == 'TRANSFERRED' %}selected{% endif %}>Transferred</option>
+                    <option value="WITHDRAWN" {% if outcome_filter == 'WITHDRAWN' %}selected{% endif %}>Withdrawn</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                {% if outcome_filter or search_q %}
+                <a href="{% url 'promotion_batch_detail' batch.id %}" class="btn btn-outline-secondary btn-sm" title="Clear">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Candidate Evaluation Table -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-people-fill text-primary me-2"></i>Candidate Assessment Roster ({{ total_count }})
+        </h6>
+        <span class="text-muted small">Recommendations computed from exams and attendance. Authorized staff can adjust final outcomes.</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Admission No</th>
+                        <th>Student Name</th>
+                        <th class="text-center">Section</th>
+                        <th class="text-center">Academic Avg</th>
+                        <th class="text-center">Failing Subj</th>
+                        <th class="text-center">Attendance</th>
+                        <th>Recommended</th>
+                        <th>Final Outcome</th>
+                        <th>Assigned Next Class</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="text-muted small">{{ forloop.counter }}</td>
+                        <td class="fw-semibold">{{ r.student.admission_number }}</td>
+                        <td>
+                            <a href="{% url 'student_academic_history' r.student.id %}" class="fw-bold text-dark text-decoration-none" title="View Student Academic Transcript">
+                                {{ r.student.full_name }}
+                            </a>
+                            {% if r.has_incomplete_results %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis ms-1" title="Missing marks recorded in some subjects">Incomplete Marks</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">Sec {{ r.previous_class_offering.section.name }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if r.academic_average is not None %}
+                                <strong class="fs-6 {% if r.academic_average >= 50 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ r.academic_average }}%
+                                </strong>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if r.total_failing_subjects > 0 %}
+                                <span class="badge bg-danger">{{ r.total_failing_subjects }} Fail</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if r.attendance_percentage is not None %}
+                                <span class="small fw-semibold">{{ r.attendance_percentage }}%</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.recommended_outcome == 'PROMOTED' %}
+                                <span class="badge bg-success-subtle text-success">Promote</span>
+                            {% elif r.recommended_outcome == 'REPEATED' %}
+                                <span class="badge bg-danger-subtle text-danger">Repeat</span>
+                            {% elif r.recommended_outcome == 'GRADUATED' %}
+                                <span class="badge bg-primary-subtle text-primary">Graduate</span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis">Review</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if r.final_outcome == 'PROMOTED' %}bg-success{% elif r.final_outcome == 'REPEATED' %}bg-danger{% elif r.final_outcome == 'GRADUATED' %}bg-primary{% elif r.final_outcome == 'PENDING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ r.get_final_outcome_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if r.next_class_offering %}
+                                <span class="badge bg-light text-dark border">
+                                    {{ r.next_class_offering.grade.name }} - Sec {{ r.next_class_offering.section.name }}
+                                </span>
+                            {% elif r.next_grade %}
+                                <span class="badge bg-light text-muted border">{{ r.next_grade.name }}</span>
+                            {% else %}
+                                <span class="text-muted small">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if can_edit %}
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ r.id }}" title="Adjust Candidate Decision">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            {% else %}
+                            <a href="{% url 'student_academic_history' r.student.id %}" class="btn btn-outline-secondary btn-sm" title="View History">
+                                <i class="bi bi-journal-text"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% if can_edit %}
+                    <!-- Edit Decision Modal -->
+                    <div class="modal fade" id="editModal{{ r.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ r.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="post" action="{% url 'promotion_record_update' r.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h6 class="modal-title fw-bold" id="editModalLabel{{ r.id }}">
+                                            Adjust Outcome: {{ r.student.full_name }}
+                                        </h6>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <div class="small text-muted mb-1">Student Performance Overview:</div>
+                                            <div class="p-2 bg-light rounded small">
+                                                Average: <strong>{{ r.academic_average|default:"N/A" }}%</strong> &bull;
+                                                Failing Subjects: <strong>{{ r.total_failing_subjects }}</strong> &bull;
+                                                Attendance: <strong>{{ r.attendance_percentage|default:"N/A" }}%</strong>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold text-dark small">Authorized Promotion Decision</label>
+                                            <select name="final_outcome" class="form-select form-select-sm" required>
+                                                <option value="PROMOTED" {% if r.final_outcome == 'PROMOTED' %}selected{% endif %}>Promoted to Next Grade</option>
+                                                <option value="REPEATED" {% if r.final_outcome == 'REPEATED' %}selected{% endif %}>Repeat Current Grade</option>
+                                                <option value="GRADUATED" {% if r.final_outcome == 'GRADUATED' %}selected{% endif %}>Graduated (Grade 12 Complete)</option>
+                                                <option value="TRANSFERRED" {% if r.final_outcome == 'TRANSFERRED' %}selected{% endif %}>Transferred Out</option>
+                                                <option value="WITHDRAWN" {% if r.final_outcome == 'WITHDRAWN' %}selected{% endif %}>Withdrawn / Dropped</option>
+                                                <option value="PENDING" {% if r.final_outcome == 'PENDING' %}selected{% endif %}>Pending Administrative Decision</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold text-dark small">Assigned Target Class Offering</label>
+                                            <select name="next_class_offering" class="form-select form-select-sm">
+                                                <option value="">-- Automatic Allocation --</option>
+                                                {% for tc in target_classes %}
+                                                <option value="{{ tc.id }}" {% if r.next_class_offering_id == tc.id %}selected{% endif %}>
+                                                    {{ tc.grade.name }} - Section {{ tc.section.name }} {% if tc.stream %}({{ tc.stream.name }}){% endif %}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold text-dark small">Committee Remarks / Rationale</label>
+                                            <input type="text" name="remarks" class="form-control form-control-sm" value="{{ r.remarks }}" placeholder="Reason or condition...">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">Save Decision</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-2 d-block mb-2"></i>
+                            No candidates match the specified filter criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
