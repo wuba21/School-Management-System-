@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An offline-first School Management and Academic Information System for secondary schools.">
+  <title>School Management System</title>
+  <style>
+    :root { color-scheme: light; --ink: #172033; --muted: #526078; --blue: #175cd3; --pale: #f3f7ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--ink); background: #fff; }
+    header { background: linear-gradient(135deg, #102a56, #175cd3); color: white; padding: 4.5rem 1.25rem; }
+    .wrap { max-width: 1000px; margin: 0 auto; }
+    h1 { margin: 0 0 .75rem; font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.1; }
+    header p { max-width: 720px; margin: 0; color: #e4edff; font-size: 1.15rem; }
+    main { padding: 2rem 1.25rem 4rem; }
+    section { margin: 2rem 0; }
+    h2 { margin-bottom: .5rem; }
+    .notice { padding: 1rem 1.25rem; border-left: 4px solid var(--blue); background: var(--pale); border-radius: .25rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .card { padding: 1.1rem; border: 1px solid #dce4f0; border-radius: .6rem; }
+    .card h3 { margin: 0 0 .4rem; }
+    p, li { color: var(--muted); }
+    a { color: var(--blue); }
+    .links { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+    .button { display: inline-block; padding: .65rem 1rem; border-radius: .4rem; background: white; color: #12356e; text-decoration: none; font-weight: 650; }
+    .button.secondary { background: #e9f0ff; }
+    code { background: #f1f3f6; padding: .1rem .3rem; border-radius: .2rem; }
+    footer { border-top: 1px solid #e3e8f0; padding: 1.5rem 1.25rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>School Management System</h1>
+      <p>An AI-powered, offline-first School Management and Academic Information System designed for secondary schools operating on a local area network.</p>
+      <div class="links">
+        <a class="button" href="https://github.com/wuba21/School-Management-System-">View the source repository</a>
+        <a class="button secondary" href="https://github.com/wuba21/School-Management-System-/blob/main/README.md">Installation instructions</a>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <section>
+      <h2>About the project</h2>
+      <p>Tailored for Majang Zone Secondary School in Gambella Region, Ethiopia, the system supports grades 9–12 and is designed to operate without a cloud or internet dependency once installed on the school network.</p>
+    </section>
+    <section class="notice" aria-label="Important hosting information">
+      <strong>This GitHub Pages site is an informational landing page, not the application.</strong>
+      <p>The school management system is a Django application that requires a Python server and a database. GitHub Pages serves static files only, so it cannot run the Django application. To use the system, install and run it on a school computer or LAN server by following the repository’s README.</p>
+    </section>
+    <section>
+      <h2>System modules</h2>
+      <div class="cards">
+        <article class="card"><h3>School operations</h3><p>Student registration, teacher profiles, academic years, classes, sections, and subject allocations.</p></article>
+        <article class="card"><h3>Teaching and learning</h3><p>Timetables, attendance, examinations, mark entry, grading, and student promotion history.</p></article>
+        <article class="card"><h3>Reports and insights</h3><p>Role-based dashboards, school analytics, printable reports, and offline-first workflows.</p></article>
+      </div>
+    </section>
+    <section>
+      <h2>Documentation</h2>
+      <ul>
+        <li><a href="https://github.com/wuba21/School-Management-System-/blob/main/PROJECT_OVERVIEW.md">Project overview</a></li>
+        <li><a href="https://github.com/wuba21/School-Management-System-/blob/main/SYSTEM_ARCHITECTURE.md">System architecture</a></li>
+        <li><a href="https://github.com/wuba21/School-Management-System-/blob/main/USER_ROLES.md">User roles</a></li>
+        <li><a href="https://github.com/wuba21/School-Management-System-/blob/main/DEVELOPMENT_ROADMAP.md">Development roadmap</a></li>
+      </ul>
+    </section>
+  </main>
+  <footer><div class="wrap">School Management System · Source code and setup instructions are available in the <a href="https://github.com/wuba21/School-Management-System-">GitHub repository</a>.</div></footer>
+</body>
+</html>
