@@ -1,0 +1,841 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SSMS 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-08 21:00+0300\n"
+"PO-Revision-Date: 2026-11-08 21:00+0300\n"
+"Last-Translator: SSMS Localization Team <admin@ssms.local>\n"
+"Language-Team: Amharic <am@ssms.local>\n"
+"Language: am\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Main"
+msgstr "ዋና"
+
+msgid "Dashboard"
+msgstr "ዳሽቦርድ"
+
+msgid "Management"
+msgstr "አስተዳደር"
+
+msgid "Students"
+msgstr "ተማሪዎች"
+
+msgid "Teachers"
+msgstr "መምህራን"
+
+msgid "Academic Years"
+msgstr "የትምህርት ዘመናት"
+
+msgid "Grades & Sections"
+msgstr "ክፍሎች እና ሴክሽኖች"
+
+msgid "Subjects"
+msgstr "የትምህርት ዓይነቶች"
+
+msgid "Class Offerings"
+msgstr "የክፍል ምደባዎች"
+
+msgid "Curriculum Matrix"
+msgstr "የስርዓተ ትምህርት ማትሪክስ"
+
+msgid "Academic"
+msgstr "አካዳሚክ"
+
+msgid "Attendance"
+msgstr "የተማሪዎች መገኘት"
+
+msgid "Examinations"
+msgstr "ፈተናዎች"
+
+msgid "Results"
+msgstr "ውጤቶች"
+
+msgid "Promotion"
+msgstr "የተማሪዎች ዝውውር እና ማለፍ"
+
+msgid "Timetable"
+msgstr "የክፍል የጊዜ ሰሌዳ"
+
+msgid "Reports & Analytics"
+msgstr "ሪፖርቶች እና ትንታኔዎች"
+
+msgid "Analytics Dashboard"
+msgstr "የትንታኔ ዳሽቦርድ"
+
+msgid "Student Reports"
+msgstr "የተማሪዎች ሪፖርት"
+
+msgid "Teacher Reports"
+msgstr "የመምህራን ሪፖርት"
+
+msgid "Attendance Reports"
+msgstr "የመገኘት ሪፖርት"
+
+msgid "Academic & Exams"
+msgstr "አካዳሚክ እና ፈተናዎች"
+
+msgid "Promotion & Graduation"
+msgstr "ማለፍ እና ምረቃ"
+
+msgid "Export Center"
+msgstr "የመረጃ መላኪያ ማዕከል"
+
+msgid "Intelligence & AI"
+msgstr "ሰው ሰራሽ አስተውሎት (AI)"
+
+msgid "AI Dashboard"
+msgstr "የ AI ዳሽቦርድ"
+
+msgid "School Assistant Chat"
+msgstr "የትምህርት ቤት ረዳት ውይይት"
+
+msgid "Academic Diagnostics"
+msgstr "የአካዳሚክ ምርመራ"
+
+msgid "Attendance Intelligence"
+msgstr "የመገኘት ትንተና"
+
+msgid "AI Report Studio"
+msgstr "የ AI ሪፖርት ስቱዲዮ"
+
+msgid "System"
+msgstr "ስርዓት"
+
+msgid "User Management"
+msgstr "የተጠቃሚዎች አስተዳደር"
+
+msgid "Settings"
+msgstr "ቅንብሮች"
+
+msgid "Backup & Recovery"
+msgstr "የመረጃ ቅጂ እና መልሶ ማግኛ"
+
+msgid "Audit Logs"
+msgstr "የክትትል ምዝግብ ማስታወሻዎች"
+
+msgid "Local LAN Mode"
+msgstr "የውስጥ ኔትወርክ (LAN) ሁኔታ"
+
+msgid "Switch Language"
+msgstr "ቋንቋ ይቀይሩ"
+
+msgid "System Notifications"
+msgstr "የስርዓት ማሳወቂያዎች"
+
+msgid "Local School Network"
+msgstr "የአካባቢ ትምህርት ቤት ኔትወርክ"
+
+msgid "Morning attendance submitted"
+msgstr "የጠዋት መገኘት ተመዝግቧል"
+
+msgid "Midterm marks entry open"
+msgstr "የግማሽ ዓመት ውጤት መመዝገቢያ ክፍት ነው"
+
+msgid "Daily backup completed"
+msgstr "የዕለቱ የመረጃ ቅጂ ተጠናቋል"
+
+msgid "My Profile"
+msgstr "መገለጫዬ"
+
+msgid "Change Password"
+msgstr "የይለፍ ቃል ቀይር"
+
+msgid "System Settings"
+msgstr "የስርዓት ቅንብሮች"
+
+msgid "System Administration"
+msgstr "የስርዓት አስተዳደር"
+
+msgid "Sign Out"
+msgstr "ውጣ"
+
+msgid "Sign In"
+msgstr "ይግቡ"
+
+msgid "Login"
+msgstr "ግባ"
+
+msgid "Logout"
+msgstr "ውጣ"
+
+msgid "Actions"
+msgstr "እርምጃዎች"
+
+msgid "Action"
+msgstr "እርምጃ"
+
+msgid "Status"
+msgstr "ሁኔታ"
+
+msgid "Active"
+msgstr "ንቁ"
+
+msgid "Inactive"
+msgstr "ቦዝኗል"
+
+msgid "Save"
+msgstr "አስቀምጥ"
+
+msgid "Save Changes"
+msgstr "ለውጦችን አስቀምጥ"
+
+msgid "Cancel"
+msgstr "ሰርዝ"
+
+msgid "Delete"
+msgstr "አስወግድ"
+
+msgid "Edit"
+msgstr "አስተካክል"
+
+msgid "View"
+msgstr "ተመልከት"
+
+msgid "Create"
+msgstr "አዲስ ፍጠር"
+
+msgid "Add"
+msgstr "ጨምር"
+
+msgid "Submit"
+msgstr "አስገባ"
+
+msgid "Search"
+msgstr "ፈልግ"
+
+msgid "Filter"
+msgstr "አጣራ"
+
+msgid "Reset"
+msgstr "እንደገና ጀምር"
+
+msgid "Export"
+msgstr "ላክ"
+
+msgid "Export PDF"
+msgstr "PDF ላክ"
+
+msgid "Export Excel"
+msgstr "Excel ላክ"
+
+msgid "Download"
+msgstr "አውርድ"
+
+msgid "Upload"
+msgstr "ጫን"
+
+msgid "Print"
+msgstr "አትም"
+
+msgid "Back"
+msgstr "ተመለስ"
+
+msgid "Next"
+msgstr "ቀጣይ"
+
+msgid "Previous"
+msgstr "ቀዳሚ"
+
+msgid "Confirm"
+msgstr "አረጋግጥ"
+
+msgid "Yes"
+msgstr "አዎ"
+
+msgid "No"
+msgstr "አይ"
+
+msgid "All"
+msgstr "ሁሉም"
+
+msgid "Total"
+msgstr "ጠቅላላ"
+
+msgid "Date"
+msgstr "ቀን"
+
+msgid "Time"
+msgstr "ሰዓት"
+
+msgid "Description"
+msgstr "መግለጫ"
+
+msgid "Name"
+msgstr "ስም"
+
+msgid "Email"
+msgstr "ኢሜይል"
+
+msgid "Phone Number"
+msgstr "ስልክ ቁጥር"
+
+msgid "Address"
+msgstr "አድራሻ"
+
+msgid "Role"
+msgstr "ሚና"
+
+msgid "Success"
+msgstr "ተሳክቷል"
+
+msgid "Error"
+msgstr "ስህተት"
+
+msgid "Warning"
+msgstr "ማስጠንቀቂያ"
+
+msgid "Info"
+msgstr "መረጃ"
+
+msgid "Student"
+msgstr "ተማሪ"
+
+msgid "Teacher"
+msgstr "መምህር"
+
+msgid "First Name"
+msgstr "ስም"
+
+msgid "Father's Name"
+msgstr "የአባት ስም"
+
+msgid "Grandfather's Name"
+msgstr "የአያት ስም"
+
+msgid "Mother's Name"
+msgstr "የእናት ስም"
+
+msgid "Gender"
+msgstr "ጾታ"
+
+msgid "Male"
+msgstr "ወንድ"
+
+msgid "Female"
+msgstr "ሴት"
+
+msgid "Date of Birth"
+msgstr "የልደት ቀን"
+
+msgid "Admission Number"
+msgstr "የመግቢያ ቁጥር"
+
+msgid "Roll Number"
+msgstr "የመዝገብ ቁጥር"
+
+msgid "Grade"
+msgstr "ክፍል"
+
+msgid "Section"
+msgstr "ሴክሽን"
+
+msgid "Grade Level"
+msgstr "የክፍል ደረጃ"
+
+msgid "Total Students"
+msgstr "ጠቅላላ ተማሪዎች"
+
+msgid "Total Teachers"
+msgstr "ጠቅላላ መምህራን"
+
+msgid "Total Classes"
+msgstr "ጠቅላላ ክፍሎች"
+
+msgid "Department"
+msgstr "የትምህርት ክፍል"
+
+msgid "Qualification"
+msgstr "የትምህርት ደረጃ"
+
+msgid "Specialization"
+msgstr "ሙያዊ ዘርፍ"
+
+msgid "Employment Date"
+msgstr "የተቀጠሩበት ቀን"
+
+msgid "Academic Year"
+msgstr "የትምህርት ዘመን"
+
+msgid "Semester"
+msgstr "መንፈቀ ትምህርት"
+
+msgid "Semester 1"
+msgstr "1ኛ መንፈቀ ትምህርት"
+
+msgid "Semester 2"
+msgstr "2ኛ መንፈቀ ትምህርት"
+
+msgid "Subject"
+msgstr "የትምህርት ዓይነት"
+
+msgid "Subject Code"
+msgstr "የትምህርት ኮድ"
+
+msgid "Credit Hours"
+msgstr "የክሬዲት ሰዓት"
+
+msgid "Periods Per Week"
+msgstr "በሳምንት የክፍለ ጊዜ ብዛት"
+
+msgid "Attendance Rate"
+msgstr "የመገኘት ምጣኔ"
+
+msgid "Average Attendance"
+msgstr "አማካይ መገኘት"
+
+msgid "Present"
+msgstr "ተገኝቷል"
+
+msgid "Absent"
+msgstr "ቀርቷል"
+
+msgid "Late"
+msgstr "አርፍዷል"
+
+msgid "Excused"
+msgstr "በፈቃድ"
+
+msgid "Mark Attendance"
+msgstr "መገኘት መዝግብ"
+
+msgid "Attendance Summary"
+msgstr "የመገኘት ማጠቃለያ"
+
+msgid "Examination"
+msgstr "ፈተና"
+
+msgid "Exam Title"
+msgstr "የፈተና ርዕስ"
+
+msgid "Exam Type"
+msgstr "የፈተና ዓይነት"
+
+msgid "Max Score"
+msgstr "ከፍተኛ ውጤት"
+
+msgid "Weight Percentage"
+msgstr "የክብደት መቶኛ"
+
+msgid "Score"
+msgstr "ውጤት"
+
+msgid "Total Score"
+msgstr "ጠቅላላ ውጤት"
+
+msgid "Average Score"
+msgstr "አማካይ ውጤት"
+
+msgid "Rank"
+msgstr "ደረጃ"
+
+msgid "Passing Score"
+msgstr "ማለፊያ ውጤት"
+
+msgid "Passed"
+msgstr "አልፏል"
+
+msgid "Failed"
+msgstr "ወድቋል"
+
+msgid "Pass Rate"
+msgstr "የማለፍ ምጣኔ"
+
+msgid "Grade Letter"
+msgstr "የውጤት ፊደል"
+
+msgid "Remarks"
+msgstr "አስተያየት"
+
+msgid "Promoted"
+msgstr "አልፏል"
+
+msgid "Retained"
+msgstr "ተደግሟል"
+
+msgid "Transferred"
+msgstr "ተዛውሯል"
+
+msgid "Pending"
+msgstr "በመጠባበቅ ላይ"
+
+msgid "Promotion Status"
+msgstr "የማለፍ/የዝውውር ሁኔታ"
+
+msgid "Process Promotion"
+msgstr "የማለፍ ሂደትን ፈጽም"
+
+msgid "Excellent"
+msgstr "እጅግ በጣም ጥሩ"
+
+msgid "Very Good"
+msgstr "በጣም ጥሩ"
+
+msgid "Good"
+msgstr "ጥሩ"
+
+msgid "Satisfactory"
+msgstr "አጥጋቢ"
+
+msgid "Poor"
+msgstr "ዝቅተኛ"
+
+msgid "Very Poor"
+msgstr "እጅግ ዝቅተኛ"
+
+msgid "Report Card"
+msgstr "የትምህርት ማስረጃ (ካርድ)"
+
+msgid "Student Transcript"
+msgstr "የትምህርት ትራንስክሪፕት"
+
+msgid "Official Roster"
+msgstr "ኦፊሴላዊ የተማሪዎች መዝገብ (ሮስተር)"
+
+msgid "Academic Summary"
+msgstr "የአካዳሚክ ማጠቃለያ"
+
+msgid "Class Roster"
+msgstr "የክፍል መዝገብ"
+
+msgid "Smart School Management System"
+msgstr "ስማርት የትምህርት ቤት አስተዳደር ስርዓት"
+
+msgid "Academic Information System (SSMS)"
+msgstr "የአካዳሚክ መረጃ ስርዓት (SSMS)"
+
+msgid "Majang Zone, Gambella Region, Ethiopia"
+msgstr "ማጃንግ ዞን፣ ጋምቤላ ክልል፣ ኢትዮጵያ"
+
+msgid "Metti Secondary School"
+msgstr "ሜቲ 2ኛ ደረጃ ትምህርት ቤት"
+
+msgid "Grades 9-12"
+msgstr "ከ9ኛ እስከ 12ኛ ክፍል"
+
+msgid "Staff Authentication"
+msgstr "የሰራተኞች ማረጋገጫ (ግባ)"
+
+msgid ""
+"Enter your institutional credentials to access your administrative "
+"workspace."
+msgstr "የስራ ቦታዎን ለማግኘት የተሰጠዎትን የተጠቃሚ ስም እና የይለፍ ቃል ያስገቡ።"
+
+msgid "Sign In to School Portal"
+msgstr "ወደ ትምህርት ቤት ፖርታል ይግቡ"
+
+msgid "Remember this terminal"
+msgstr "ይህንን ኮምፒውተር አስታውስ"
+
+msgid ""
+"For account assistance or password resets, contact your School System "
+"Administrator."
+msgstr "የመለያ ድጋፍ ወይም የይለፍ ቃል ዳግም ለማስጀመር፣ የትምህርት ቤቱን የስርዓት አስተዳዳሪ ያነጋግሩ።"
+
+msgid "Show Password"
+msgstr "የይለፍ ቃል አሳይ"
+
+msgid "Hide Password"
+msgstr "የይለፍ ቃል ደብቅ"
+
+msgid "Offline Local LAN Mode"
+msgstr "የውስጥ ኔትወርክ (LAN) ሁኔታ"
+
+msgid "Ethiopian Calendar"
+msgstr "የኢትዮጵያ ዘመን አቆጣጠር"
+
+msgid "Gregorian Calendar"
+msgstr "የጎርጎሮሳውያን ዘመን አቆጣጠር"
+
+msgid "Executive Dashboard & Academic Analytics"
+msgstr "የስራ አመራር ዳሽቦርድ እና አካዳሚክ ትንታኔ"
+
+msgid "Active Classes"
+msgstr "ንቁ ክፍሎች"
+
+msgid "Today's Attendance"
+msgstr "የዛሬው መገኘት"
+
+msgid "Pending Exams"
+msgstr "በመጠባበቅ ላይ ያሉ ፈተናዎች"
+
+msgid "Student Enrollment by Grade Level"
+msgstr "የተማሪዎች ምዝገባ በየክፍል ደረጃ"
+
+msgid "Attendance Rate Trajectory (%)"
+msgstr "የመገኘት ምጣኔ ሂደት (%)"
+
+msgid "Overall Attendance Breakdown"
+msgstr "አጠቃላይ የመገኘት ዝርዝር"
+
+msgid "Student Gender Demographics"
+msgstr "የተማሪዎች የጾታ ስብጥር"
+
+msgid "Recent Operational Activities"
+msgstr "የቅርብ ጊዜ የስራ እንቅስቃሴዎች"
+
+msgid "Database Grounded"
+msgstr "ከመረጃ ቋት የተረጋገጠ"
+
+msgid "Recent Sessions"
+msgstr "የቅርብ ጊዜ ክፍለ ጊዜያት"
+
+msgid "Current Academic Year"
+msgstr "የአሁኑ የትምህርት ዘመን"
+
+msgid "Active enrollees"
+msgstr "ንቁ ተማሪዎች"
+
+msgid "Appointed teachers"
+msgstr "የተመደቡ መምህራን"
+
+msgid "Sections running"
+msgstr "በስራ ላይ ያሉ ሴክሽኖች"
+
+msgid "Curriculum cycles"
+msgstr "የትምህርት ዑደቶች"
+
+msgid "marks recorded"
+msgstr "ውጤቶች ተመዝግበዋል"
+
+msgid "All Sections"
+msgstr "ሁሉም ሴክሽኖች"
+
+msgid "Enrolled"
+msgstr "የተመዘገቡ"
+
+msgid "Capacity"
+msgstr "አቅም"
+
+msgid "Cumulative Attendance Compliance:"
+msgstr "አጠቃላይ የመገኘት ተገዢነት:"
+
+msgid "Male Students"
+msgstr "ወንድ ተማሪዎች"
+
+msgid "Female Students"
+msgstr "ሴት ተማሪዎች"
+
+msgid "Teacher Workload Dashboard"
+msgstr "የመምህራን የስራ ጫና ዳሽቦርድ"
+
+msgid "Record Attendance"
+msgstr "መገኘት መዝግብ"
+
+msgid "Enter Exam Marks"
+msgstr "የፈተና ውጤት አስገባ"
+
+msgid "Registrar Operations Panel"
+msgstr "የሬጅስትራር ስራዎች ፓነል"
+
+msgid "Register New Student"
+msgstr "አዲስ ተማሪ መዝግብ"
+
+msgid "Generate Transcripts"
+msgstr "ትራንስክሪፕት አውጣ"
+
+msgid "System Administrator Center"
+msgstr "የስርዓት አስተዳዳሪ ማዕከል"
+
+msgid "Manage Accounts"
+msgstr "ተጠቃሚዎችን አስተዳድር"
+
+msgid "View Audit Logs"
+msgstr "የክትትል ምዝግብ ማስታወሻዎችን ተመልከት"
+
+msgid "Created"
+msgstr "ተፈጥሯል"
+
+msgid "Updated"
+msgstr "ተሻሽሏል"
+
+msgid "Auth"
+msgstr "ማረጋገጫ"
+
+msgid "By:"
+msgstr "በ:"
+
+msgid "ago"
+msgstr "በፊት"
+
+msgid "No Student Enrollees Found"
+msgstr "ምንም የተመዘገቡ ተማሪዎች አልተገኙም"
+
+msgid "No Attendance Sessions Recorded"
+msgstr "ምንም የተመዘገበ የመገኘት ክፍለ ጊዜ የለም"
+
+msgid "Record Daily Attendance"
+msgstr "የዕለቱን መገኘት መዝግብ"
+
+msgid "Ask School Assistant"
+msgstr "የትምህርት ቤት ረዳቱን ይጠይቁ"
+
+msgid "Ask a question in English or Amharic"
+msgstr "ጥያቄዎን በእንግሊዝኛ ወይም በአማርኛ ይጠይቁ"
+
+msgid "How can I help you today?"
+msgstr "ዛሬ በምን ላግዝዎት እችላለሁ?"
+
+msgid "Clear Conversation"
+msgstr "ውይይቱን አጽዳ"
+
+msgid "Send"
+msgstr "ላክ"
+
+msgid "Thinking..."
+msgstr "በማሰብ ላይ..."
+
+msgid "AI Recommendations"
+msgstr "የሰው ሰራሽ አስተውሎት ምክሮች"
+
+msgid "High Risk"
+msgstr "ከፍተኛ ስጋት"
+
+msgid "Moderate Risk"
+msgstr "መካከለኛ ስጋት"
+
+msgid "Low Risk"
+msgstr "ዝቅተኛ ስጋት"
+
+msgid "Normal"
+msgstr "መደበኛ"
+
+msgid "Welcome to Our School"
+msgstr "እንኳን ወደ ትምህርት ቤታችን በደህና መጡ"
+
+msgid "Empowering Students Through Quality Education"
+msgstr "ተማሪዎችን በጥራት ትምህርት ማብቃት"
+
+msgid "Smart School Management and Academic Information System"
+msgstr "ስማርት የትምህርት ቤት አስተዳደር እና የአካዳሚክ መረጃ ስርዓት"
+
+msgid "Welcome Back"
+msgstr "እንኳን ደህና ተመለሱ"
+
+msgid "Sign in to access your school account"
+msgstr "የትምህርት ቤት መለያዎን ለመጠቀም ይግቡ"
+
+msgid "Signing In..."
+msgstr "በመግባት ላይ..."
+
+msgid "Remember Me"
+msgstr "አስታውሰኝ"
+
+msgid "Student Information"
+msgstr "የተማሪዎች መረጃ"
+
+msgid "Academic Records"
+msgstr "የአካዳሚክ መዝገቦች"
+
+msgid "Attendance & Timetable"
+msgstr "መገኘት እና የጊዜ ሰሌዳ"
+
+msgid "Performance Analytics"
+msgstr "የአፈፃፀም ትንታኔ"
+
+msgid ""
+"A comprehensive platform for managing students, teachers, attendance, "
+"examinations, academic performance, and school information efficiently."
+msgstr ""
+"ተማሪዎችን፣ መምህራንን፣ መገኘትን፣ ፈተናዎችን፣ የአካዳሚክ አፈፃፀምን እና የትምህርት ቤት መረጃዎችን በብቃት "
+"ለማስተዳደር የተዘጋጀ አጠቃላይ ስርዓት።"
+
+msgid "Need password assistance? Contact the school IT System Administrator."
+msgstr "የይለፍ ቃል እገዛ ይፈልጋሉ? የትምህርት ቤቱን የአይቲ ሲስተም አስተዳዳሪ ያነጋግሩ።"
+
+msgid "Home"
+msgstr "መነሻ"
+
+msgid "About School"
+msgstr "ስለ ትምህርት ቤቱ"
+
+msgid "School Services"
+msgstr "የትምህርት ቤት አገልግሎቶች"
+
+msgid "Contact"
+msgstr "አድራሻ"
+
+msgid "ACCESS SCHOOL PORTAL"
+msgstr "ወደ ትምህርት ቤት ፖርታል ይግቡ"
+
+msgid "STUDENT MANAGEMENT"
+msgstr "የተማሪዎች አስተዳደር"
+
+msgid "ACADEMIC MANAGEMENT"
+msgstr "የአካዳሚክ አስተዳደር"
+
+msgid "SCHOOL ADMINISTRATION"
+msgstr "የትምህርት ቤት አስተዳደር"
+
+msgid ""
+"Manage student profiles, registrations, enrollment, and academic history."
+msgstr "የተማሪዎችን መገለጫ፣ ምዝገባ፣ የክፍል ምደባ እና የአካዳሚክ ታሪክን ማስተዳደር።"
+
+msgid ""
+"Manage subjects, classes, examinations, marks, and academic performance."
+msgstr "የትምህርት ዓይነቶችን፣ ክፍሎችን፣ ፈተናዎችን፣ ውጤቶችን እና የአካዳሚክ አፈፃፀምን ማስተዳደር።"
+
+msgid "Support attendance, timetables, reports, and school administration."
+msgstr "መገኘትን፣ የጊዜ ሰሌዳዎችን፣ ሪፖርቶችን እና የትምህርት ቤት አስተዳደርን መደገፍ።"
+
+msgid "LOGIN"
+msgstr "ይግቡ"
+
+msgid "About Our School"
+msgstr "ስለ ትምህርት ቤታችን"
+
+msgid "Academic Levels (Grades 9–12)"
+msgstr "የትምህርት ደረጃዎች (ከ9ኛ እስከ 12ኛ ክፍል)"
+
+msgid "Quality Secondary Education"
+msgstr "ጥራት ያለው ሁለተኛ ደረጃ ትምህርት"
+
+msgid "Faculty & Teaching Staff"
+msgstr "መምህራን እና የማስተማር ሰራተኞች"
+
+msgid "Offline Local Area Network"
+msgstr "የውስጥ አካባቢያዊ ኔትወርክ (LAN)"
+
+msgid ""
+"Smart School Management and Academic Information System provides a "
+"centralized platform for managing student information, teachers, attendance,"
+" examinations, academic performance, and school activities."
+msgstr ""
+"ስማርት የትምህርት ቤት አስተዳደር እና የአካዳሚክ መረጃ ስርዓት የተማሪዎችን መረጃ፣ መምህራንን፣ መገኘትን፣ ፈተናዎችን፣"
+" የአካዳሚክ አፈፃፀምን እና የትምህርት ቤት እንቅስቃሴዎችን ለማስተዳደር የተማከለ ስርዓት ያቀርባል።"
+
+msgid "School Services & Core Modules"
+msgstr "የትምህርት ቤት አገልግሎቶች እና ሞጁሎች"
+
+msgid "Comprehensive Academic & Administrative Systems"
+msgstr "አጠቃላይ የአካዳሚክ እና አስተዳደራዊ ስርዓቶች"
+
+msgid "Get In Touch"
+msgstr "ያግኙን"
+
+msgid "Campus Location & Institutional Contact"
+msgstr "የትምህርት ቤቱ አድራሻ እና የስራ ግንኙነት"
+
+msgid "School Campus"
+msgstr "የትምህርት ቤት ግቢ"
+
+msgid "Office & Class Hours"
+msgstr "የቢሮ እና የክፍል ሰዓታት"
+
+msgid "LAN & Technical Support"
+msgstr "የውስጥ ኔትወርክ (LAN) እና ቴክኒካል ድጋፍ"
+
+msgid "Access Staff Portal"
+msgstr "የሰራተኞች ፖርታል ይግቡ"
+
+msgid "Campus Gate & Administrative Office"
+msgstr "የግቢው ዋና በር እና አስተዳደር ቢሮ"
+
+msgid "Monday – Friday: 8:00 AM – 5:00 PM"
+msgstr "ከሰኞ እስከ አርብ፡ ከጠዋቱ 2:00 - ከሰዓት 11:00"
+
+msgid "ICT Server Room & IT Support Desk"
+msgstr "የ ICT ሰርቨር ክፍል እና የመረጃ ድጋፍ መስጫ"

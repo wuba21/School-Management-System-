@@ -117,6 +117,7 @@ class TimetableEntryForm(forms.ModelForm):
     def __init__(self, timetable=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if timetable:
+            self.instance.timetable = timetable
             ay = timetable.academic_year
             # Only instructional non-break active periods
             self.fields['period'].queryset = Period.objects.filter(

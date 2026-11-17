@@ -504,50 +504,67 @@ class ConversationalAssistantService:
         ('STUDENT_COUNT', [
             r'how many students', r'total students', r'registered students',
             r'number of students', r'student count', r'student population',
-            r'how many active students', r'boys and girls', r'gender breakdown'
+            r'how many active students', r'boys and girls', r'gender breakdown',
+            r'ስንት ተማሪ', r'የተማሪ(?:ዎች)?\s*ብዛት', r'ጠቅላላ\s*ተማሪ', r'የተመዘገቡ\s*ተማሪዎች', r'የተማሪዎች\s*ቁጥር',
         ]),
         # 2. Teacher Count / Info
         ('TEACHER_COUNT', [
             r'how many teachers', r'total teachers', r'number of teachers',
-            r'teacher count', r'registered staff', r'teaching staff'
+            r'teacher count', r'registered staff', r'teaching staff',
+            r'ስንት መምህራን', r'የመምህራን\s*ብዛት', r'ጠቅላላ\s*መምህራን', r'የመምህራን\s*ቁጥር',
         ]),
         # 3. Lowest Scoring Subjects / Subjects Needing Attention
         ('LOW_SCORING_SUBJECTS', [
             r'lowest average', r'lowest score', r'lowest performing',
             r'subjects? (need|requir|requiring) attention', r'weakest subjects?',
-            r'struggling subjects?', r'which subjects.*fail', r'worst subjects?'
+            r'struggling subjects?', r'which subjects.*fail', r'worst subjects?',
+            r'ዝቅተኛ ውጤት', r'ትኩረት የሚሹ ትምህርቶች', r'ደካማ ውጤት', r'የወደቁባቸው', r'አነስተኛ ውጤት',
         ]),
         # 4. Grade / Class Attendance
         ('GRADE_ATTENDANCE', [
             r'attendance percentage', r'attendance of grade', r'attendance rate',
-            r'how is attendance', r'what is the attendance', r'absenteeism rate'
+            r'how is attendance', r'what is the attendance', r'absenteeism rate',
+            r'የመገኘት ምጣኔ', r'መገኘት', r'ተማሪዎች መገኘት', r'የመገኘት ሁኔታ', r'ስንት ተማሪ ተገኘ',
         ]),
         # 5. Grade Academic Summary
         ('GRADE_ACADEMIC_SUMMARY', [
             r'summarize grade', r'summary of grade', r'performance of grade',
-            r'how is grade.*performing', r'grade.*results', r'academic summary'
+            r'how is grade.*performing', r'grade.*results', r'academic summary',
+            r'የአካዳሚክ ማጠቃለያ', r'ውጤት ማጠቃለያ', r'የክፍል ውጤት', r'አጠቃላይ ውጤት',
         ]),
         # 6. Chronic Absentees
         ('CHRONIC_ABSENTEES', [
             r'chronic absent', r'frequent absent', r'who is absent',
-            r'missing classes', r'repeated absence', r'absentee list'
+            r'missing classes', r'repeated absence', r'absentee list',
+            r'በተደጋጋሚ የቀሩ', r'የቀሩ ተማሪዎች', r'ተደጋጋሚ መቅረት', r'ቀርተዋል',
         ]),
         # 7. Timetable / Schedule
         ('TIMETABLE_INFO', [
             r'period', r'timetable', r'schedule', r'when does.*start',
-            r'working days', r'school hours', r'bell schedule'
+            r'working days', r'school hours', r'bell schedule',
+            r'የጊዜ ሰሌዳ', r'ክፍለ ጊዜ', r'የትምህርት ሰዓት', r'ፕሮግራም',
         ]),
         # 8. Promotion Criteria
         ('PROMOTION_CRITERIA', [
             r'promotion criteri', r'how.*promoted', r'pass mark',
-            r'requirements for promotion', r'criteria for grade'
+            r'requirements for promotion', r'criteria for grade',
+            r'የ?ማለፊያ\s*መስፈርት', r'የ?ማለፊያ\s*ነጥብ', r'የ?ማለፍ\s*መስፈርት', r'የ?ዝውውር\s*መስፈርት',
         ]),
         # 9. System Capabilities / Help
         ('HELP', [
             r'what can you do', r'help', r'who are you', r'capabilities',
-            r'commands', r'supported questions'
+            r'commands', r'supported questions',
+            r'እርዳታ', r'ምን መስራት ትችላለህ', r'ምን ትሰራለህ', r'አጋዥ', r'ትዕዛዞች',
         ]),
     ]
+
+    @classmethod
+    def is_amharic_request(cls, text):
+        """Detects whether query is in Amharic or session is Amharic."""
+        from django.utils import translation
+        if translation.get_language() == 'am':
+            return True
+        return bool(re.search(r'[\u1200-\u137f]', text))
 
     @classmethod
     def match_intent(cls, text):
@@ -565,15 +582,17 @@ class ConversationalAssistantService:
         clean_text = text.lower()
         entities = {}
 
-        # Grade extraction (e.g. Grade 9, Grade 10, G11, 12th grade)
-        grade_match = re.search(r'(?:grade|g)\s*(\d{1,2})', clean_text)
+        # Grade extraction (e.g. Grade 9, Grade 10, G11, 12th grade, 9ኛ ክፍል, ክፍል 9)
+        grade_match = re.search(r'(?:grade|g|ክፍል)\s*(\d{1,2})', clean_text)
         if not grade_match:
-            grade_match = re.search(r'\b(9|10|11|12)(?:th)?\s*grade\b', clean_text)
+            grade_match = re.search(r'\b(9|10|11|12)(?:th|ኛ)?\s*(?:grade|ክፍል)?\b', clean_text)
         if grade_match:
             entities['grade_level'] = int(grade_match.group(1))
 
-        # Section extraction (e.g. Section A, Sec B)
-        sec_match = re.search(r'(?:section|sec)\s*([a-z])', clean_text)
+        # Section extraction (e.g. Section A, Sec B, ሴክሽን A)
+        sec_match = re.search(r'(?:section|sec|ሴክሽን)\s*([a-zA-Z])', clean_text)
+        if not sec_match:
+            sec_match = re.search(r'\b([a-dA-D])\s*ሴክሽን\b', clean_text)
         if sec_match:
             entities['section_name'] = sec_match.group(1).upper()
 
@@ -591,10 +610,11 @@ class ConversationalAssistantService:
     def handle_query(cls, query_text, user):
         """
         Central processing dispatch: matches intent, verifies role-based permissions,
-        retrieves actual database facts, and structures a markdown response.
+        retrieves actual database facts, and structures a markdown response in English or Amharic.
         """
         intent = cls.match_intent(query_text)
         entities = cls.extract_entities(query_text)
+        is_am = cls.is_amharic_request(query_text)
         user_role = getattr(user.role, 'code', 'STAFF') if getattr(user, 'role', None) else 'STAFF'
 
         # Audit logging of AI query
@@ -622,18 +642,31 @@ class ConversationalAssistantService:
             grade_breakdown = []
             for g in Grade.objects.filter(is_active=True).order_by('level'):
                 cnt = StudentEnrollment.objects.filter(class_offering__grade=g, status='ACTIVE').count()
-                grade_breakdown.append(f"• **{g.name}:** {cnt} students")
+                unit = "ተማሪዎች" if is_am else "students"
+                grade_breakdown.append(f"• **{g.name}:** {cnt} {unit}")
 
-            response_md = (
-                f"### 📊 Student Population Statistics\n\n"
-                f"• **Total Registered Students:** {total_students}\n"
-                f"• **Currently Active Students:** {active_students}\n"
-                f"• **Male Students:** {male_count}\n"
-                f"• **Female Students:** {female_count}\n\n"
-                f"**Active Enrollment by Grade Level:**\n"
-                + "\n".join(grade_breakdown) + "\n\n"
-                f"*Data sourced directly from live student enrollment records.*"
-            )
+            if is_am:
+                response_md = (
+                    f"### 📊 የተማሪዎች ብዛት ስታቲስቲክስ\n\n"
+                    f"• **ጠቅላላ የተመዘገቡ ተማሪዎች:** {total_students}\n"
+                    f"• **በአሁኑ ሰዓት ንቁ ተማሪዎች:** {active_students}\n"
+                    f"• **ወንድ ተማሪዎች:** {male_count}\n"
+                    f"• **ሴት ተማሪዎች:** {female_count}\n\n"
+                    f"**ንቁ ተማሪዎች በየክፍሉ ደረጃ:**\n"
+                    + "\n".join(grade_breakdown) + "\n\n"
+                    f"*መረጃው በቀጥታ ከተማሪዎች የምዝገባ ሰነድ የተወሰደ ነው።*"
+                )
+            else:
+                response_md = (
+                    f"### 📊 Student Population Statistics\n\n"
+                    f"• **Total Registered Students:** {total_students}\n"
+                    f"• **Currently Active Students:** {active_students}\n"
+                    f"• **Male Students:** {male_count}\n"
+                    f"• **Female Students:** {female_count}\n\n"
+                    f"**Active Enrollment by Grade Level:**\n"
+                    + "\n".join(grade_breakdown) + "\n\n"
+                    f"*Data sourced directly from live student enrollment records.*"
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -649,14 +682,23 @@ class ConversationalAssistantService:
             active_teachers = Teacher.objects.filter(is_active=True).count()
             teachers_with_classes = TeacherAssignment.objects.values('teacher').distinct().count()
 
-            response_md = (
-                f"### 👨‍🏫 Teaching Faculty Statistics\n\n"
-                f"• **Total Registered Teachers:** {total_teachers}\n"
-                f"• **Active Instructors:** {active_teachers}\n"
-                f"• **Teachers with Active Class Allocations:** {teachers_with_classes}\n\n"
-                f"Faculty members are allocated to instruction across Grades 9–12 subjects in alignment with "
-                f"Majang Zone secondary staffing guidelines."
-            )
+            if is_am:
+                response_md = (
+                    f"### 👨‍🏫 የመምህራን ስታቲስቲክስ\n\n"
+                    f"• **ጠቅላላ የተመዘገቡ መምህራን:** {total_teachers}\n"
+                    f"• **ንቁ መምህራን:** {active_teachers}\n"
+                    f"• **የክፍል ምደባ ያላቸው መምህራን:** {teachers_with_classes}\n\n"
+                    f"መምህራን ከ9ኛ እስከ 12ኛ ክፍል ባሉ የትምህርት ዓይነቶች በማጃንግ ዞን የሁለተኛ ደረጃ ትምህርት መመሪያ መሰረት ተመድበው በማስተማር ላይ ይገኛሉ።"
+                )
+            else:
+                response_md = (
+                    f"### 👨‍🏫 Teaching Faculty Statistics\n\n"
+                    f"• **Total Registered Teachers:** {total_teachers}\n"
+                    f"• **Active Instructors:** {active_teachers}\n"
+                    f"• **Teachers with Active Class Allocations:** {teachers_with_classes}\n\n"
+                    f"Faculty members are allocated to instruction across Grades 9–12 subjects in alignment with "
+                    f"Majang Zone secondary staffing guidelines."
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -675,11 +717,18 @@ class ConversationalAssistantService:
             attention_items = AcademicAnalysisService.get_subjects_requiring_attention(grade=grade_obj, user=user)
 
             if not attention_items:
-                response_md = (
-                    "### ✅ Academic Performance Diagnostics\n\n"
-                    "All evaluated subjects currently meet standard passing thresholds (overall pass rate ≥ 60% "
-                    "and average scores at or above passing mark). No critical subjects requiring urgent intervention were detected."
-                )
+                if is_am:
+                    response_md = (
+                        "### ✅ የአካዳሚክ ውጤት ምርመራ\n\n"
+                        "ሁሉም የተገመገሙ የትምህርት ዓይነቶች የማለፊያ መስፈርቱን ያሟላሉ (አጠቃላይ የማለፍ ምጣኔ ≥ 60% "
+                        "እና አማካይ ውጤት ከማለፊያ ነጥብ በላይ ነው)። አፋጣኝ ክትትል የሚሻ የትምህርት ዓይነት አልተገኘም።"
+                    )
+                else:
+                    response_md = (
+                        "### ✅ Academic Performance Diagnostics\n\n"
+                        "All evaluated subjects currently meet standard passing thresholds (overall pass rate ≥ 60% "
+                        "and average scores at or above passing mark). No critical subjects requiring urgent intervention were detected."
+                    )
             else:
                 rows = []
                 for idx, item in enumerate(attention_items[:5], 1):
@@ -688,16 +737,28 @@ class ConversationalAssistantService:
                         f"{item['average_score']} / {item['max_marks']} | {item['pass_rate']}% | {item['attention_reason']} |"
                     )
 
-                response_md = (
-                    f"### ⚠️ Subjects Requiring Academic Attention\n\n"
-                    f"The following {len(attention_items)} subject(s) exhibit sub-optimal pass rates or averages below passing marks:\n\n"
-                    f"| # | Subject (Grade) | Average Score | Pass Rate | Diagnostic Reason |\n"
-                    f"|---|-----------------|---------------|-----------|-------------------|\n"
-                    + "\n".join(rows) + "\n\n"
-                    f"**Advisory Recommendations:**\n"
-                    f"1. Schedule targeted peer-mentoring and tutorial sessions for foundational topics.\n"
-                    f"2. Department heads should conduct syllabus coverage reviews with assigned teachers."
-                )
+                if is_am:
+                    response_md = (
+                        f"### ⚠️ ትኩረት የሚሹ የትምህርት ዓይነቶች\n\n"
+                        f"የሚከተሉት {len(attention_items)} የትምህርት ዓይነቶች የማለፍ ምጣኔያቸው ዝቅተኛ ወይም ከአማካይ በታች ናቸው:\n\n"
+                        f"| # | የትምህርት ዓይነት (ክፍል) | አማካይ ውጤት | የማለፍ ምጣኔ | የስጋት ምክንያት |\n"
+                        f"|---|-----------------------|-------------|-------------|----------------|\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"**የመፍትሔ ምክሮች:**\n"
+                        f"1. በተለዩት ርዕሶች ላይ ተጨማሪ የማጠናከሪያ ትምህርት ማዘጋጀት።\n"
+                        f"2. የትምህርት ክፍሎች ከመምህራኑ ጋር የይዘት ሽፋን ግምገማ ማድረግ።"
+                    )
+                else:
+                    response_md = (
+                        f"### ⚠️ Subjects Requiring Academic Attention\n\n"
+                        f"The following {len(attention_items)} subject(s) exhibit sub-optimal pass rates or averages below passing marks:\n\n"
+                        f"| # | Subject (Grade) | Average Score | Pass Rate | Diagnostic Reason |\n"
+                        f"|---|-----------------|---------------|-----------|-------------------|\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"**Advisory Recommendations:**\n"
+                        f"1. Schedule targeted peer-mentoring and tutorial sessions for foundational topics.\n"
+                        f"2. Department heads should conduct syllabus coverage reviews with assigned teachers."
+                    )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -719,25 +780,37 @@ class ConversationalAssistantService:
                 if teacher:
                     teaches_grade = TeacherAssignment.objects.filter(teacher=teacher, class_offering__grade=grade_obj).exists()
                     if not teaches_grade:
+                        msg = f"🔒 **የፈቃድ ማስታወቂያ:** የክፍል {entities['grade_level']} የመገኘት መረጃን ለማየት አስተዳደራዊ ፈቃድ ያስፈልጋል።" if is_am else f"🔒 **Permission Notice:** You are assigned to specific classes. Grade {entities['grade_level']} attendance summary is restricted to authorized administrative staff or assigned instructors."
                         return {
                             'intent': intent,
-                            'content': f"🔒 **Permission Notice:** You are assigned to specific classes. Grade {entities['grade_level']} attendance summary is restricted to authorized administrative staff or assigned instructors.",
+                            'content': msg,
                             'entities': entities,
                             'payload': {}
                         }
 
             overview = AttendanceAnalysisService.get_attendance_overview(grade=grade_obj, user=user)
-            title_suffix = f"for {grade_obj.name}" if grade_obj else "Across the School"
-
-            response_md = (
-                f"### 📋 Attendance Intelligence {title_suffix}\n\n"
-                f"• **Overall Presence Rate:** **{overview['presence_rate']}%**\n"
-                f"• **Total Recorded Sessions:** {overview['total_records']}\n"
-                f"• **Present:** {overview['present_count']} | **Late:** {overview['late_count']}\n"
-                f"• **Confirmed Unexcused Absences:** {overview['absent_count']} ({overview['absence_rate']}%)\n"
-                f"• **Excused Absences:** {overview['excused_count']} ({overview['excused_rate']}%)\n\n"
-                f"*(Note: In accordance with school policy, Late arrivals count as present for instructional attendance percentage).* "
-            )
+            if is_am:
+                title_suffix = f"ለ{grade_obj.name}" if grade_obj else "በመላው ትምህርት ቤቱ"
+                response_md = (
+                    f"### 📋 የተማሪዎች መገኘት ትንተና {title_suffix}\n\n"
+                    f"• **አጠቃላይ የመገኘት ምጣኔ:** **{overview['presence_rate']}%**\n"
+                    f"• **የተመዘገቡ ክፍለ ጊዜያት:** {overview['total_records']}\n"
+                    f"• **የተገኙ:** {overview['present_count']} | **ያረፈዱ:** {overview['late_count']}\n"
+                    f"• **ያለፈቃድ የቀሩ:** {overview['absent_count']} ({overview['absence_rate']}%)\n"
+                    f"• **በፈቃድ የቀሩ:** {overview['excused_count']} ({overview['excused_rate']}%)\n\n"
+                    f"*(ማስታወሻ: በትምህርት ቤቱ መመሪያ መሰረት ማርፈድ እንደ መገኘት ይቆጠራል)*"
+                )
+            else:
+                title_suffix = f"for {grade_obj.name}" if grade_obj else "Across the School"
+                response_md = (
+                    f"### 📋 Attendance Intelligence {title_suffix}\n\n"
+                    f"• **Overall Presence Rate:** **{overview['presence_rate']}%**\n"
+                    f"• **Total Recorded Sessions:** {overview['total_records']}\n"
+                    f"• **Present:** {overview['present_count']} | **Late:** {overview['late_count']}\n"
+                    f"• **Confirmed Unexcused Absences:** {overview['absent_count']} ({overview['absence_rate']}%)\n"
+                    f"• **Excused Absences:** {overview['excused_count']} ({overview['excused_rate']}%)\n\n"
+                    f"*(Note: In accordance with school policy, Late arrivals count as present for instructional attendance percentage).* "
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -757,28 +830,41 @@ class ConversationalAssistantService:
             if user_role == 'TEACHER' and grade_obj:
                 teacher = getattr(user, 'teacher_profile', None)
                 if teacher and not TeacherAssignment.objects.filter(teacher=teacher, class_offering__grade=grade_obj).exists():
+                    msg = f"🔒 **የፈቃድ ማስታወቂያ:** የክፍል {entities['grade_level']} የአካዳሚክ ማጠቃለያን ለማየት አስተዳደራዊ ፈቃድ ያስፈልጋል።" if is_am else f"🔒 **Permission Notice:** As a teacher, your access is scoped to your assigned subjects and sections. Academic summaries for Grade {entities['grade_level']} require management permissions."
                     return {
                         'intent': intent,
-                        'content': f"🔒 **Permission Notice:** As a teacher, your access is scoped to your assigned subjects and sections. Academic summaries for Grade {entities['grade_level']} require management permissions.",
+                        'content': msg,
                         'entities': entities,
                         'payload': {}
                     }
 
             matrix = AcademicAnalysisService.get_class_comparison_matrix(grade=grade_obj, user=user)
             if not matrix:
-                response_md = f"No verified examination broadsheets or class offerings found for Grade {entities.get('grade_level', 'all')}."
+                response_md = f"ለክፍል {entities.get('grade_level', 'ሁሉም')} የተረጋገጠ የፈተና ውጤት አልተገኘም።" if is_am else f"No verified examination broadsheets or class offerings found for Grade {entities.get('grade_level', 'all')}."
             else:
-                grade_label = grade_obj.name if grade_obj else "All Grades"
                 rows = []
                 for row in matrix:
-                    rows.append(f"• **{row['class_name']}:** Average Score: **{row['class_average']}%** | Pass Rate: {row['pass_rate']}% ({row['enrolled_students']} students)")
+                    if is_am:
+                        rows.append(f"• **{row['class_name']}:** አማካይ ውጤት: **{row['class_average']}%** | የማለፍ ምጣኔ: {row['pass_rate']}% ({row['enrolled_students']} ተማሪዎች)")
+                    else:
+                        rows.append(f"• **{row['class_name']}:** Average Score: **{row['class_average']}%** | Pass Rate: {row['pass_rate']}% ({row['enrolled_students']} students)")
 
-                response_md = (
-                    f"### 📈 Academic Performance Summary: {grade_label}\n\n"
-                    f"Comparative performance across active class offerings:\n\n"
-                    + "\n".join(rows) + "\n\n"
-                    f"*Scores are compiled from verified semester examinations.*"
-                )
+                if is_am:
+                    grade_label = grade_obj.name if grade_obj else "ሁሉም ክፍሎች"
+                    response_md = (
+                        f"### 📈 የአካዳሚክ ውጤት ማጠቃለያ: {grade_label}\n\n"
+                        f"የክፍሎች የውጤት ንፅፅር:\n\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"*ውጤቶቹ ከተረጋገጡ የመንፈቀ ትምህርት (ሴሚስተር) ፈተናዎች የተሰሉ ናቸው።*"
+                    )
+                else:
+                    grade_label = grade_obj.name if grade_obj else "All Grades"
+                    response_md = (
+                        f"### 📈 Academic Performance Summary: {grade_label}\n\n"
+                        f"Comparative performance across active class offerings:\n\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"*Scores are compiled from verified semester examinations.*"
+                    )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -798,19 +884,30 @@ class ConversationalAssistantService:
             absentees = patterns['frequent_absentees']
 
             if not absentees:
-                response_md = "### ✅ Attendance Audit\n\nNo students currently meet or exceed the threshold for chronic unexcused absences (≥ 3 sessions)."
+                response_md = "### ✅ የመገኘት ክትትል\n\nተደጋጋሚ ያለፈቃድ የቀሩ ተማሪዎች (≥ 3 ክፍለ ጊዜያት) አልተገኙም።" if is_am else "### ✅ Attendance Audit\n\nNo students currently meet or exceed the threshold for chronic unexcused absences (≥ 3 sessions)."
             else:
                 rows = []
                 for idx, a in enumerate(absentees[:5], 1):
-                    rows.append(f"• **{a['student_name']}** ({a['admission_number']}) - {a['grade_section']}: **{a['unexcused_absences']} absences**")
+                    if is_am:
+                        rows.append(f"• **{a['student_name']}** ({a['admission_number']}) - {a['grade_section']}: **{a['unexcused_absences']} ጊዜ ቀርተዋል**")
+                    else:
+                        rows.append(f"• **{a['student_name']}** ({a['admission_number']}) - {a['grade_section']}: **{a['unexcused_absences']} absences**")
 
-                response_md = (
-                    f"### ⚠️ Students Requiring Attendance Follow-Up\n\n"
-                    f"The following {len(absentees)} student(s) have accumulated 3 or more unexcused absences:\n\n"
-                    + "\n".join(rows) + "\n\n"
-                    f"**Supportive Guidance:** This indicator is strictly non-punitive. It identifies pupils who may require "
-                    f"pastoral counseling, health checks, or parental engagement."
-                )
+                if is_am:
+                    response_md = (
+                        f"### ⚠️ የመገኘት ክትትል የሚሹ ተማሪዎች\n\n"
+                        f"የሚከተሉት {len(absentees)} ተማሪዎች 3 ወይም ከዚያ በላይ ጊዜያት ያለፈቃድ ቀርተዋል:\n\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"**የድጋፍ መመሪያ:** ይህ ክትትል ተማሪዎችን ለመቅጣት ሳይሆን የምክር፣ የጤና ወይም የወላጅ ድጋፍ ለመስጠት ያለመ ነው።"
+                    )
+                else:
+                    response_md = (
+                        f"### ⚠️ Students Requiring Attendance Follow-Up\n\n"
+                        f"The following {len(absentees)} student(s) have accumulated 3 or more unexcused absences:\n\n"
+                        + "\n".join(rows) + "\n\n"
+                        f"**Supportive Guidance:** This indicator is strictly non-punitive. It identifies pupils who may require "
+                        f"pastoral counseling, health checks, or parental engagement."
+                    )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -828,16 +925,28 @@ class ConversationalAssistantService:
             day_names = [d.name for d in days] if days.exists() else ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
             period_lines = []
             for p in periods:
-                tag = f" *(Break: {p.get_break_type_display()})*" if p.is_break else ""
+                if is_am:
+                    tag = " *(የዕረፍት ሰዓት)*" if p.is_break else ""
+                else:
+                    tag = f" *(Break: {p.get_break_type_display()})*" if p.is_break else ""
                 period_lines.append(f"• **{p.name}:** {p.start_time.strftime('%H:%M')} – {p.end_time.strftime('%H:%M')}{tag}")
 
-            response_md = (
-                f"### ⏰ School Working Hours & Period Schedule\n\n"
-                f"• **Instructional Working Days:** {', '.join(day_names)}\n\n"
-                f"**Daily Period Layout:**\n"
-                + ("\n".join(period_lines) if period_lines else "• Standard Schedule: 08:30 – 15:30 (Periods 1–7)") + "\n\n"
-                f"*Schedules can be modified in the Timetable Management module.*"
-            )
+            if is_am:
+                response_md = (
+                    f"### ⏰ የትምህርት ቤት የሥራ ሰዓት እና የጊዜ ሰሌዳ\n\n"
+                    f"• **የትምህርት የሥራ ቀናት:** ሰኞ፣ ማክሰኞ፣ ረቡዕ፣ ሐሙስ፣ አርብ\n\n"
+                    f"**የዕለቱ የክፍለ ጊዜያት አደረጃጀት:**\n"
+                    + ("\n".join(period_lines) if period_lines else "• መደበኛ የትምህርት ሰዓት: 08:30 – 15:30 (ክፍለ ጊዜ 1–7)") + "\n\n"
+                    f"*የጊዜ ሰሌዳውን በጊዜ ሰሌዳ አስተዳደር ሞጁል ውስጥ ማስተካከል ይቻላል።*"
+                )
+            else:
+                response_md = (
+                    f"### ⏰ School Working Hours & Period Schedule\n\n"
+                    f"• **Instructional Working Days:** {', '.join(day_names)}\n\n"
+                    f"**Daily Period Layout:**\n"
+                    + ("\n".join(period_lines) if period_lines else "• Standard Schedule: 08:30 – 15:30 (Periods 1–7)") + "\n\n"
+                    f"*Schedules can be modified in the Timetable Management module.*"
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -857,16 +966,29 @@ class ConversationalAssistantService:
             max_fail = criteria.max_failing_subjects if criteria else 2
             core_req = "Mandatory" if (criteria and criteria.require_all_core_passed) else "Standard"
 
-            response_md = (
-                f"### 📜 Majang Secondary School Promotion Policy\n\n"
-                f"In accordance with regional curriculum guidelines:\n"
-                f"• **Minimum Passing Average:** **{min_avg}%** overall academic average.\n"
-                f"• **Maximum Permitted Failing Subjects:** **{max_fail} subjects**.\n"
-                f"• **Core Curriculum Passing:** {core_req}.\n"
-                f"• **Grade 10 to Grade 11 Transition:** Students must achieve promotion and select either **Natural Sciences** or **Social Sciences** stream.\n"
-                f"• **Grade 12 Graduation:** Requires completion of secondary curriculum and national examination eligibility.\n\n"
-                f"*Note: AI insights are advisory. All final promotion outcomes are authorized by the School Principal and Examination Committee.*"
-            )
+            if is_am:
+                core_req_am = "ግዴታ ነው" if (criteria and criteria.require_all_core_passed) else "መደበኛ"
+                response_md = (
+                    f"### 📜 የማጃንግ ሁለተኛ ደረጃ ትምህርት ቤት የተማሪዎች ማለፊያ መስፈርት\n\n"
+                    f"በክልሉ የትምህርት መመሪያ መሰረት:\n"
+                    f"• **ዝቅተኛው የማለፊያ አማካይ:** **{min_avg}%** አጠቃላይ የዓመት ውጤት።\n"
+                    f"• **የተፈቀደ የወደቁ የትምህርት ዓይነቶች ብዛት:** ቢበዛ **{max_fail} የትምህርት ዓይነቶች**።\n"
+                    f"• **ዋና የትምህርት ዓይነቶችን ማለፍ:** {core_req_am}።\n"
+                    f"• **ከ10ኛ ወደ 11ኛ ክፍል ዝውውር:** ተማሪዎች ወደ ተፈጥሮ ሳይንስ ወይም ማህበራዊ ሳይንስ ዘርፍ ይዛወራሉ።\n"
+                    f"• **የ12ኛ ክፍል ምረቃ:** የሁለተኛ ደረጃ ትምህርት ማጠናቀቅ እና ለሀገር አቀፍ ፈተና ብቁ መሆን።\n\n"
+                    f"*ማስታወሻ: ይህ ምክረ-ሃሳብ ሲሆን የመጨረሻው ውሳኔ በትምህርት ቤቱ ርዕሰ መምህር እና የፈተና ኮሚቴ የሚጸድቅ ይሆናል።*"
+                )
+            else:
+                response_md = (
+                    f"### 📜 Majang Secondary School Promotion Policy\n\n"
+                    f"In accordance with regional curriculum guidelines:\n"
+                    f"• **Minimum Passing Average:** **{min_avg}%** overall academic average.\n"
+                    f"• **Maximum Permitted Failing Subjects:** **{max_fail} subjects**.\n"
+                    f"• **Core Curriculum Passing:** {core_req}.\n"
+                    f"• **Grade 10 to Grade 11 Transition:** Students must achieve promotion and select either **Natural Sciences** or **Social Sciences** stream.\n"
+                    f"• **Grade 12 Graduation:** Requires completion of secondary curriculum and national examination eligibility.\n\n"
+                    f"*Note: AI insights are advisory. All final promotion outcomes are authorized by the School Principal and Examination Committee.*"
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -878,20 +1000,35 @@ class ConversationalAssistantService:
         # 9. HELP & CAPABILITIES
         # ---------------------------------------------------------------------
         elif intent == 'HELP':
-            response_md = (
-                f"### 🤖 Local AI School Assistant Capabilities\n\n"
-                f"I am your offline academic assistant, operating directly on the Majang secondary school server. "
-                f"I can answer questions regarding:\n\n"
-                f"1. **Student Demographics:** *\"How many students are registered?\"*\n"
-                f"2. **Subject Diagnostics:** *\"Which subjects have the lowest average scores?\"*\n"
-                f"3. **Attendance Intelligence:** *\"What is the attendance percentage of Grade 10?\"*\n"
-                f"4. **Academic Summaries:** *\"Summarize Grade 11 academic performance.\"*\n"
-                f"5. **Staffing & Faculty:** *\"How many teachers are registered?\"*\n"
-                f"6. **Absenteeism Monitoring:** *\"Who are the frequent absentees?\"*\n"
-                f"7. **Timetables & Bell Schedule:** *\"What are the school periods and working days?\"*\n"
-                f"8. **Promotion Rules:** *\"What are the promotion criteria from Grade 10 to 11?\"*\n\n"
-                f"*All responses respect your user permissions and use actual database records.*"
-            )
+            if is_am:
+                response_md = (
+                    f"### 🤖 የትምህርት ቤት ረዳት AI አገልግሎቶች\n\n"
+                    f"እኔ በማጃንግ ሁለተኛ ደረጃ ትምህርት ቤት ሰርቨር ላይ በቀጥታ የምሰራ የውስጥ ረዳት ነኝ። የሚከተሉትን ጥያቄዎች መመለስ እችላለሁ:\n\n"
+                    f"1. **የተማሪዎች ብዛት:** *\"ስንት ተማሪዎች ተመዝግበዋል?\"*\n"
+                    f"2. **የትምህርት ዓይነቶች ምርመራ:** *\"ዝቅተኛ ውጤት የተመዘገበባቸው የትምህርት ዓይነቶች የትኞቹ ናቸው?\"*\n"
+                    f"3. **የተማሪዎች መገኘት:** *\"የ10ኛ ክፍል የመገኘት ምጣኔ ስንት ነው?\"*\n"
+                    f"4. **የአካዳሚክ ማጠቃለያ:** *\"የ11ኛ ክፍል ውጤት ማጠቃለያ አሳየኝ።\"*\n"
+                    f"5. **የመምህራን መረጃ:** *\"ስንት መምህራን አሉ?\"*\n"
+                    f"6. **ተደጋጋሚ የቀሩ:** *\"በተደጋጋሚ የቀሩ ተማሪዎች እነማን ናቸው?\"*\n"
+                    f"7. **የጊዜ ሰሌዳ:** *\"የትምህርት ሰዓት እና የጊዜ ሰሌዳ እንዴት ነው?\"*\n"
+                    f"8. **የማለፊያ መስፈርት:** *\"የ10ኛ ክፍል የማለፊያ መስፈርቶች ምንድን ናቸው?\"*\n\n"
+                    f"*ሁሉም ምላሾች የተጠቃሚዎን ሚና መሰረት በማድረግ ከተረጋገጠ የመረጃ ቋት የተገኙ ናቸው።*"
+                )
+            else:
+                response_md = (
+                    f"### 🤖 Local AI School Assistant Capabilities\n\n"
+                    f"I am your offline academic assistant, operating directly on the Majang secondary school server. "
+                    f"I can answer questions regarding:\n\n"
+                    f"1. **Student Demographics:** *\"How many students are registered?\"*\n"
+                    f"2. **Subject Diagnostics:** *\"Which subjects have the lowest average scores?\"*\n"
+                    f"3. **Attendance Intelligence:** *\"What is the attendance percentage of Grade 10?\"*\n"
+                    f"4. **Academic Summaries:** *\"Summarize Grade 11 academic performance.\"*\n"
+                    f"5. **Staffing & Faculty:** *\"How many teachers are registered?\"*\n"
+                    f"6. **Absenteeism Monitoring:** *\"Who are the frequent absentees?\"*\n"
+                    f"7. **Timetables & Bell Schedule:** *\"What are the school periods and working days?\"*\n"
+                    f"8. **Promotion Rules:** *\"What are the promotion criteria from Grade 10 to 11?\"*\n\n"
+                    f"*All responses respect your user permissions and use actual database records.*"
+                )
             return {
                 'intent': intent,
                 'content': response_md,
@@ -903,18 +1040,30 @@ class ConversationalAssistantService:
         # 10. UNKNOWN / FALLBACK
         # ---------------------------------------------------------------------
         else:
-            response_md = (
-                f"I understood your question, but could not match it to a verified data query.\n\n"
-                f"**Here are questions I can answer right now:**\n"
-                f"• *\"How many students are registered?\"*\n"
-                f"• *\"Which subjects have the lowest average scores?\"*\n"
-                f"• *\"What is the attendance percentage of Grade 10?\"*\n"
-                f"• *\"Summarize Grade 11 academic performance.\"*\n"
-                f"• *\"How many teachers are registered?\"*\n"
-                f"• *\"What are the school periods and working days?\"*\n"
-                f"• *\"What are the promotion criteria?\"*\n\n"
-                f"Feel free to click any of the suggested prompt buttons above."
-            )
+            if is_am:
+                response_md = (
+                    f"ጥያቄዎን ተመልክቻለሁ፤ ነገር ግን ከተረጋገጠ የመረጃ ጥያቄ ጋር ማዛመድ አልቻልኩም።\n\n"
+                    f"**አሁን ሊጠይቋቸው የሚችሏቸው ጥያቄዎች:**\n"
+                    f"• *\"ስንት ተማሪዎች አሉ?\"*\n"
+                    f"• *\"ዝቅተኛ ውጤት የተመዘገበባቸው የትምህርት ዓይነቶች የትኞቹ ናቸው?\"*\n"
+                    f"• *\"የ10ኛ ክፍል የመገኘት ምጣኔ ስንት ነው?\"*\n"
+                    f"• *\"ስንት መምህራን አሉ?\"*\n"
+                    f"• *\"የማለፊያ መስፈርቶች ምንድን ናቸው?\"*\n\n"
+                    f"ከላይ ከተዘረዘሩት ምሳሌዎች አንዱን መምረጥ ይችላሉ።"
+                )
+            else:
+                response_md = (
+                    f"I understood your question, but could not match it to a verified data query.\n\n"
+                    f"**Here are questions I can answer right now:**\n"
+                    f"• *\"How many students are registered?\"*\n"
+                    f"• *\"Which subjects have the lowest average scores?\"*\n"
+                    f"• *\"What is the attendance percentage of Grade 10?\"*\n"
+                    f"• *\"Summarize Grade 11 academic performance.\"*\n"
+                    f"• *\"How many teachers are registered?\"*\n"
+                    f"• *\"What are the school periods and working days?\"*\n"
+                    f"• *\"What are the promotion criteria?\"*\n\n"
+                    f"Feel free to click any of the suggested prompt buttons above."
+                )
             return {
                 'intent': 'UNKNOWN',
                 'content': response_md,
@@ -966,10 +1115,16 @@ class AIReportService:
         )
 
         styles = getSampleStyleSheet()
+        from core.utils.font_helper import register_nyala_font
+        has_nyala = register_nyala_font()
+        font_main = 'Nyala' if has_nyala else 'Helvetica'
+        font_bold = 'Nyala' if has_nyala else 'Helvetica-Bold'
+        font_oblique = 'Nyala' if has_nyala else 'Helvetica-Oblique'
+
         header_title = ParagraphStyle(
             'AITitle',
             parent=styles['Heading1'],
-            fontName='Helvetica-Bold',
+            fontName=font_bold,
             fontSize=16,
             leading=20,
             textColor=colors.HexColor('#1E3A8A'),
@@ -978,7 +1133,7 @@ class AIReportService:
         subtitle = ParagraphStyle(
             'AISubtitle',
             parent=styles['Normal'],
-            fontName='Helvetica-Bold',
+            fontName=font_bold,
             fontSize=10,
             leading=14,
             textColor=colors.HexColor('#4B5563'),
@@ -987,7 +1142,7 @@ class AIReportService:
         disclaimer = ParagraphStyle(
             'AIDisclaimer',
             parent=styles['Normal'],
-            fontName='Helvetica-Oblique',
+            fontName=font_oblique,
             fontSize=8,
             leading=11,
             textColor=colors.HexColor('#6B7280'),
@@ -996,7 +1151,7 @@ class AIReportService:
         body = ParagraphStyle(
             'AIBody',
             parent=styles['Normal'],
-            fontName='Helvetica',
+            fontName=font_main,
             fontSize=9,
             leading=13,
             textColor=colors.HexColor('#1F2937')
@@ -1022,7 +1177,7 @@ class AIReportService:
                 t.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A8A')),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTNAME', (0, 0), (-1, 0), font_bold),
                     ('FONTSIZE', (0, 0), (-1, -1), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
                     ('TOPPADDING', (0, 0), (-1, -1), 4),

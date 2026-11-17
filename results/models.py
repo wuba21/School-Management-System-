@@ -139,8 +139,13 @@ class Mark(models.Model):
                 fields=['student_enrollment', 'exam_subject'],
                 name='unique_student_mark_per_exam_subject'
             ),
+            # Compatible with both Django 4.x (check=) and Django 5.x+ (condition=)
             models.CheckConstraint(
-                check=models.Q(marks_obtained__isnull=True) | models.Q(marks_obtained__gte=0.00),
+                **({
+                    'condition': models.Q(marks_obtained__isnull=True) | models.Q(marks_obtained__gte=0.00)
+                } if hasattr(models.CheckConstraint, '__init__') and 'condition' in models.CheckConstraint.__init__.__code__.co_varnames else {
+                    'check': models.Q(marks_obtained__isnull=True) | models.Q(marks_obtained__gte=0.00)
+                }),
                 name='check_marks_obtained_non_negative_or_null'
             )
         ]
@@ -279,3 +284,12 @@ class StudentResultSummary(models.Model):
     @property
     def total_max_marks(self):
         return self.total_max
+
+    @property
+    def is_passing(self):
+        """Pass if zero subjects failed and at least one passed, or average >= 50%."""
+        if self.subjects_failed > 0:
+            return False
+        if self.subjects_passed > 0:
+            return True
+        return self.average_mark >= 50.0

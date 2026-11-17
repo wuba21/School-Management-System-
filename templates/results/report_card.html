@@ -1,152 +1,190 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Report Card - {{ data.student.full_name }}{% endblock %}
+{% block title %}Report Card - {{ data.student.full_name }} | Metti Secondary School{% endblock %}
 {% block page_title %}Official Student Report Card{% endblock %}
 
 {% block extra_css %}
 <style>
 @media print {
-    .no-print {
+    .no-print, .app-sidebar, .app-navbar, .app-footer, .sidebar-overlay {
         display: none !important;
     }
+    .app-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    .content-canvas {
+        padding: 0 !important;
+    }
     body {
-        background: #fff !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt !important;
     }
     .report-card-container {
         box-shadow: none !important;
-        border: none !important;
+        border: 1px solid #cbd5e1 !important;
+        margin: 0 !important;
+        padding: 1.5rem !important;
+        width: 100% !important;
     }
+    .report-card-header {
+        border-bottom: 2px solid #1e3a8a !important;
+    }
+}
+.report-card-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+.report-card-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Top Header & Actions (hidden during print) -->
+<!-- Top Header & Actions Toolbar (hidden during print) -->
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
     <div>
         <h5 class="fw-bold mb-1 text-dark">
             <i class="bi bi-file-earmark-person-fill text-primary me-2"></i>Official Academic Report Card
         </h5>
-        <p class="text-muted small mb-0">Individual assessment breakdown and verified subject marks</p>
+        <p class="text-muted small mb-0">
+            Verified academic performance records &bull; Metti Secondary School &bull; English Version
+        </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a href="?format=pdf" class="btn btn-danger btn-sm">
-            <i class="bi bi-file-pdf me-1"></i> Download PDF Report Card
+            <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF Report Card
         </a>
         <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-printer me-1"></i> Print
+            <i class="bi bi-printer me-1"></i> Print Report Card
         </button>
-        <a href="{% url 'published_results' data.examination.id %}" class="btn btn-outline-primary btn-sm">
+        <a href="{% url 'report_card_hub' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-search me-1"></i> Report Cards Hub
+        </a>
+        <a href="{% url 'published_results' data.examination.id %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Back to Gradebook
         </a>
     </div>
 </div>
 
-<!-- Official Report Card Sheet -->
+<!-- Official Printable Report Card Sheet -->
 <div class="card border-0 shadow-sm rounded-3 p-4 mb-4 report-card-container">
-    <!-- School Header -->
-    <div class="text-center pb-3 border-bottom mb-4">
-        <h4 class="fw-bold text-dark mb-1">SMART SECONDARY SCHOOL</h4>
-        <div class="text-muted small mb-2">Majang Zone, Gambella Region, Ethiopia &bull; Academic Information System</div>
-        <h5 class="fw-bold text-primary mb-0 text-uppercase">{{ data.examination.name }}</h5>
-        <div class="text-muted small">Academic Year: {{ data.academic_year.name }} &bull; Semester {{ data.examination.semester }}</div>
-    </div>
-
-    <!-- Student & Class Metadata -->
-    <div class="row g-3 mb-4 p-3 bg-light rounded-3">
-        <div class="col-12 col-md-4">
-            <div class="text-muted small">Student Full Name:</div>
-            <strong class="text-dark fs-6">{{ data.student.full_name }}</strong>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="text-muted small">Admission Number:</div>
-            <strong class="text-dark">{{ data.student.admission_number }}</strong>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="text-muted small">Class & Section:</div>
-            <strong class="text-dark">{{ data.class_offering.grade.name }} - Section {{ data.class_offering.section.name }}</strong>
-        </div>
-        <div class="col-12 col-md-2 text-md-end">
-            <div class="text-muted small">Class Rank:</div>
-            {% if data.summary.rank %}
-                <span class="badge bg-warning text-dark fs-6">#{{ data.summary.rank }}</span>
-            {% else %}
-                <span class="badge bg-secondary">Unranked</span>
-            {% endif %}
+    <!-- School Header & Emblem -->
+    <div class="pb-3 border-bottom mb-4 report-card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <img src="{% static 'images/school_logo.png' %}" alt="Metti Secondary School Crest" width="56" height="56" class="rounded-circle border p-1" style="background:#f8fafc;">
+                <div>
+                    <h4 class="fw-bold mb-0 text-primary" style="letter-spacing: -0.3px;">METTI SECONDARY SCHOOL</h4>
+                    <div class="fw-semibold text-secondary small">Smart School Management and Academic Information System (SSMS)</div>
+                    <div class="text-muted text-xs" style="font-size: 0.75rem;">
+                        Majang Zone, Gambella Region, Ethiopia &bull; Ministry of Education General Secondary &amp; Preparatory Curriculum
+                    </div>
+                </div>
+            </div>
+            <div class="text-md-end text-start">
+                <span class="badge bg-primary text-white text-uppercase px-2.5 py-1.5" style="letter-spacing: 0.5px;">
+                    Official Academic Report Card
+                </span>
+                <div class="text-muted small mt-1 font-monospace">Document ID: MSS-RC-{{ data.student.admission_number }}-{{ data.examination.id }}</div>
+            </div>
         </div>
     </div>
 
-    <!-- Key Performance Summary -->
-    <div class="row g-3 mb-4 text-center">
-        <div class="col-6 col-md-3">
-            <div class="border rounded-3 p-2">
-                <div class="text-muted small">Total Obtained</div>
-                <h5 class="fw-bold text-dark mb-0">{{ data.summary.total_marks_obtained|default:"0.00" }} / {{ data.summary.total_max_marks|default:"0.00" }}</h5>
+    <!-- Student & Class Metadata Grid -->
+    <div class="card bg-light border-0 rounded-3 p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Student Full Name</span>
+                <strong class="text-dark fs-6">{{ data.student.full_name }}</strong>
             </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-3 p-2">
-                <div class="text-muted small">Average Percentage</div>
-                <h5 class="fw-bold text-primary mb-0">{{ data.summary.average_mark|default:"0.00" }}%</h5>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Admission Number</span>
+                <strong class="text-primary font-monospace">{{ data.student.admission_number }}</strong>
             </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-3 p-2">
-                <div class="text-muted small">Overall Grade</div>
-                <h5 class="fw-bold text-success mb-0">{{ data.summary.overall_grade|default:"&mdash;" }}</h5>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Gender</span>
+                <span class="fw-semibold text-dark">{{ data.student.get_gender_display }}</span>
             </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-3 p-2">
-                <div class="text-muted small">Academic Standing</div>
-                {% if data.summary.is_passing %}
-                    <span class="badge bg-success-subtle text-success fs-6 mt-1">Promoted / Passed</span>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Grade &amp; Section</span>
+                <strong class="text-dark">{{ data.grade_name }} &bull; Section {{ data.section_name }}</strong>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Curriculum Stream</span>
+                <span class="badge bg-secondary-subtle text-secondary border fw-semibold">
+                    {{ data.stream_name }}
+                </span>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Class Rank</span>
+                {% if data.metrics.rank %}
+                    <span class="badge bg-warning text-dark fw-bold">#{{ data.metrics.rank }}</span>
                 {% else %}
-                    <span class="badge bg-danger-subtle text-danger fs-6 mt-1">Academic Warning</span>
+                    <span class="badge bg-light text-muted border">Unranked</span>
                 {% endif %}
             </div>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Academic Year</span>
+                <span class="fw-bold text-dark">{{ data.academic_year_display }}</span>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Examination Assessment Cycle</span>
+                <span class="fw-bold text-primary">{{ data.examination.name }} (Semester {{ data.examination.semester }})</span>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <span class="text-muted small d-block">Date Issued</span>
+                <span class="text-dark">{{ data.issued_date_display }}</span>
+            </div>
         </div>
     </div>
 
-    <!-- Detailed Subject Marks Table -->
+    <!-- Detailed Subject Examination Marks Table -->
     <div class="table-responsive mb-4">
-        <table class="table table-bordered align-middle mb-0">
-            <thead class="table-light">
+        <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 0.85rem;">
+            <thead class="table-light text-uppercase text-secondary" style="font-size: 0.72rem; letter-spacing: 0.05em;">
                 <tr>
-                    <th style="width: 50px;">#</th>
+                    <th style="width: 40px;" class="text-center">#</th>
                     <th>Subject Description</th>
-                    <th style="width: 100px;" class="text-center">Max Marks</th>
-                    <th style="width: 100px;" class="text-center">Pass Mark</th>
-                    <th style="width: 120px;" class="text-center">Obtained</th>
-                    <th style="width: 100px;" class="text-center">Score %</th>
-                    <th style="width: 80px;" class="text-center">Grade</th>
-                    <th style="width: 90px;" class="text-center">Status</th>
-                    <th>Remarks</th>
+                    <th style="width: 80px;" class="text-center">Code</th>
+                    <th style="width: 80px;" class="text-center">Max Marks</th>
+                    <th style="width: 80px;" class="text-center">Pass Mark</th>
+                    <th style="width: 90px;" class="text-center">Score</th>
+                    <th style="width: 80px;" class="text-center">Score %</th>
+                    <th style="width: 70px;" class="text-center">Grade</th>
+                    <th style="width: 80px;" class="text-center">Status</th>
+                    <th>Teacher Remarks</th>
                 </tr>
             </thead>
             <tbody>
                 {% for subj in data.subjects %}
                 <tr>
-                    <td class="text-muted small">{{ forloop.counter }}</td>
+                    <td class="text-center text-muted small">{{ forloop.counter }}</td>
                     <td>
-                        <strong>{{ subj.subject_name }}</strong>
-                        <div class="small text-muted">{{ subj.subject_code }}</div>
+                        <strong class="text-dark">{{ subj.subject_name }}</strong>
                     </td>
+                    <td class="text-center font-monospace small text-muted">{{ subj.subject_code }}</td>
                     <td class="text-center">{{ subj.max_marks }}</td>
                     <td class="text-center text-muted">{{ subj.pass_marks }}</td>
                     <td class="text-center">
                         {% if subj.is_absent %}
-                            <span class="badge bg-warning text-dark">Absent</span>
+                            <span class="badge bg-warning text-dark">ABSENT</span>
                         {% elif subj.marks_obtained is not None %}
-                            <strong class="fs-6 {% if subj.is_passing %}text-success{% else %}text-danger{% endif %}">
+                            <strong class="{% if subj.is_passing %}text-success{% else %}text-danger{% endif %}">
                                 {{ subj.marks_obtained }}
                             </strong>
                         {% else %}
                             <span class="text-muted">&mdash;</span>
                         {% endif %}
                     </td>
-                    <td class="text-center">
+                    <td class="text-center font-monospace">
                         {% if subj.percentage is not None %}
                             {{ subj.percentage }}%
                         {% else %}
@@ -163,34 +201,162 @@
                             <span class="badge bg-danger">Fail</span>
                         {% endif %}
                     </td>
-                    <td class="small text-muted">{{ subj.remarks|default:"" }}</td>
+                    <td class="small text-muted">{{ subj.remarks|default:"Satisfactory performance" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="text-center py-4 text-muted">No examination subjects recorded.</td>
+                    <td colspan="10" class="text-center py-4 text-muted">
+                        No subject marks have been recorded for this examination cycle.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="3" class="text-end text-uppercase pe-3">Total / Weighted Average:</td>
+                    <td class="text-center">{{ data.metrics.total_max|default:"0.00" }}</td>
+                    <td class="text-center">&mdash;</td>
+                    <td class="text-center text-primary fs-6">{{ data.metrics.total_obtained|default:"0.00" }}</td>
+                    <td class="text-center text-primary fs-6">{{ data.metrics.percentage|default:"0.00" }}%</td>
+                    <td class="text-center text-success fs-6">{{ data.metrics.overall_grade|default:"&mdash;" }}</td>
+                    <td class="text-center">
+                        {% if data.metrics.standing|slice:":4" == "Pass" %}
+                            <span class="badge bg-success">Pass</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Review</span>
+                        {% endif %}
+                    </td>
+                    <td class="small">{{ data.metrics.standing }}</td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
-    <!-- Signatures & Validation Footer -->
-    <div class="row pt-5 mt-4 border-top">
-        <div class="col-4 text-center">
-            <div class="border-top pt-2">
-                <small class="text-muted d-block">Class Teacher Signature</small>
+    <!-- Academic Summary & Attendance Profile Grid -->
+    <div class="row g-3 mb-4">
+        <!-- Academic Summary Card -->
+        <div class="col-md-6">
+            <div class="card h-100 border rounded-3 p-3 bg-light">
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-award-fill me-1"></i> Academic Performance Summary
+                </h6>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Total Marks Obtained:</span>
+                    <strong>{{ data.metrics.total_obtained|default:"0.00" }} / {{ data.metrics.total_max|default:"0.00" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Overall Average Percentage:</span>
+                    <strong class="text-primary">{{ data.metrics.average_mark|default:"0.00" }}%</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Grade Conferred:</span>
+                    <strong class="text-success">{{ data.metrics.overall_grade|default:"&mdash;" }} ({{ data.metrics.grade_description|default:"Standard" }})</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Subject Pass Ratio:</span>
+                    <strong>{{ data.metrics.subjects_passed }} Passed &bull; {{ data.metrics.subjects_failed }} Failed</strong>
+                </div>
+                <div class="d-flex justify-content-between pt-1 small">
+                    <span class="text-muted">Academic Standing:</span>
+                    <span class="badge {% if data.metrics.standing|slice:':4' == 'Pass' %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %} border">
+                        {{ data.metrics.standing }}
+                    </span>
+                </div>
             </div>
         </div>
-        <div class="col-4 text-center">
-            <div class="border-top pt-2">
-                <small class="text-muted d-block">Exam Officer / Registrar</small>
-            </div>
-        </div>
-        <div class="col-4 text-center">
-            <div class="border-top pt-2">
-                <small class="text-muted d-block">Principal / Official Seal</small>
+
+        <!-- Student Attendance Summary Card -->
+        <div class="col-md-6">
+            <div class="card h-100 border rounded-3 p-3 bg-light">
+                <h6 class="fw-bold text-success mb-3">
+                    <i class="bi bi-calendar-check-fill me-1"></i> Student Attendance Record
+                </h6>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Total Instructional Sessions:</span>
+                    <strong>{{ data.attendance.total_sessions }} Days</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Days Present:</span>
+                    <strong class="text-success">{{ data.attendance.present }} Days</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Days Absent / Times Late:</span>
+                    <strong class="text-danger">{{ data.attendance.absent }} Absent</strong> &bull; <span class="text-muted">{{ data.attendance.late }} Late</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                    <span class="text-muted">Officially Excused:</span>
+                    <span>{{ data.attendance.excused }} Sessions</span>
+                </div>
+                <div class="d-flex justify-content-between pt-1 small">
+                    <span class="text-muted">Net Attendance Rate:</span>
+                    <strong class="fs-6 {% if data.attendance.rate >= 80 %}text-success{% elif data.attendance.rate > 0 %}text-warning{% else %}text-muted{% endif %}">
+                        {{ data.attendance.rate }}%
+                    </strong>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Official End-of-Year Promotion Decision Box -->
+    <div class="card mb-4 border rounded-3 p-3 {% if data.promotion.is_approved %}bg-success-subtle border-success{% else %}bg-warning-subtle border-warning{% endif %}">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h6 class="fw-bold mb-1 {% if data.promotion.is_approved %}text-success{% else %}text-warning-emphasis{% endif %}">
+                    <i class="bi {% if data.promotion.is_approved %}bi-check-circle-fill text-success{% else %}bi-clock-history text-warning{% endif %} me-2"></i>
+                    {% if data.promotion.is_approved %}
+                        OFFICIAL PROMOTION OUTCOME: {{ data.promotion.status|upper }}
+                        {% if data.promotion.next_grade %}to {{ data.promotion.next_grade|upper }}{% endif %}
+                    {% else %}
+                        ANNUAL PROMOTION STATUS: {{ data.promotion.status|upper }}
+                    {% endif %}
+                </h6>
+                <p class="small mb-0 text-muted">
+                    {{ data.promotion.comments }}
+                </p>
+            </div>
+            <div>
+                <span class="badge {% if data.promotion.is_approved %}bg-success text-white{% else %}bg-warning text-dark{% endif %} px-3 py-1.5">
+                    {{ data.promotion.decision_status }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Signatures & School Seal Section -->
+    <div class="row pt-4 mt-2 border-top text-center">
+        <div class="col-4">
+            <div class="border-top pt-2">
+                <strong class="text-dark d-block small">Homeroom Teacher</strong>
+                <span class="text-muted text-xs" style="font-size: 0.72rem;">Signature &amp; Date</span>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="border-top pt-2">
+                <strong class="text-dark d-block small">Exam Officer / Registrar</strong>
+                <span class="text-muted text-xs" style="font-size: 0.72rem;">Signature &amp; Date</span>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="border-top pt-2">
+                <strong class="text-dark d-block small">School Principal</strong>
+                <span class="text-muted text-xs" style="font-size: 0.72rem;">Signature, Date &amp; Official School Seal</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official System Footer -->
+    <div class="text-center pt-3 mt-3 border-top text-muted" style="font-size: 0.7rem;">
+        Metti Secondary School &bull; Majang Zone, Gambella Region, Ethiopia &bull; Offline Local Area Network (LAN) Build &bull; English Only
+    </div>
 </div>
+
+{% if auto_print %}
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            window.print();
+        }, 500);
+    });
+</script>
+{% endif %}
 {% endblock %}

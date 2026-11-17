@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify Student Certificate - Metti Secondary School{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- Header Card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 text-center">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-shield-check fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Official Certificate Verification Portal</h3>
+                    <p class="text-muted mb-0">Metti Secondary School &bull; Godere Woreda, Majang Zone, Gambella Region</p>
+                    <small class="text-muted fst-italic">Authorized Internal Institutional Record Verification</small>
+                </div>
+            </div>
+
+            <!-- Search Form Card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <form method="get" action="{% url 'certificate_verify' %}" class="row g-3 align-items-center">
+                        <div class="col-md-9">
+                            <label for="id_query" class="form-label fw-semibold">Certificate Reference Number or Security UUID</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" name="query" id="id_query" class="form-control bg-light border-start-0" 
+                                       placeholder="e.g. MSS-TC-2023-0001 or 3fa85f64-5717-..." 
+                                       value="{{ query }}" required autofocus>
+                            </div>
+                            <div class="form-text">
+                                Enter the official reference number (e.g., MSS-TC-... or MSS-LC-...) printed on the top of the certificate.
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-grid">
+                            <label class="form-label d-none d-md-block">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-lg rounded-3">
+                                <i class="bi bi-search me-1"></i> Verify Record
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            {% if searched %}
+                {% if certificate %}
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                        <div class="card-header {% if certificate.status == 'ISSUED' %}bg-success{% elif certificate.status == 'REVOKED' %}bg-danger{% else %}bg-warning{% endif %} text-white py-3 px-4 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                {% if certificate.status == 'ISSUED' %}
+                                    <i class="bi bi-check-circle-fill fs-3 me-2"></i>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Authentic &amp; Valid Certificate</h5>
+                                        <small class="opacity-75">Verified against the institution's official record database</small>
+                                    </div>
+                                {% elif certificate.status == 'REVOKED' %}
+                                    <i class="bi bi-x-octagon-fill fs-3 me-2"></i>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Revoked Certificate</h5>
+                                        <small class="opacity-75">This document has been officially cancelled and invalidated</small>
+                                    </div>
+                                {% else %}
+                                    <i class="bi bi-exclamation-triangle-fill fs-3 me-2"></i>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Unissued / Inactive Record ({{ certificate.get_status_display }})</h5>
+                                        <small class="opacity-75">This record is not yet officially published or issued</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-white {% if certificate.status == 'ISSUED' %}text-success{% elif certificate.status == 'REVOKED' %}text-danger{% else %}text-warning{% endif %} px-3 py-2 fs-6 fw-bold">
+                                {{ certificate.get_certificate_type_display }}
+                            </span>
+                        </div>
+
+                        <div class="card-body p-4">
+                            {% if certificate.status == 'REVOKED' %}
+                                <div class="alert alert-danger rounded-3 mb-4">
+                                    <div class="d-flex">
+                                        <i class="bi bi-exclamation-octagon fs-4 me-3"></i>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Revocation Notice</h6>
+                                            <p class="mb-1"><strong>Reason:</strong> {{ certificate.revocation_reason }}</p>
+                                            <small class="text-muted">Revoked by {% if certificate.revoked_by %}{{ certificate.revoked_by.get_full_name|default:certificate.revoked_by.username }}{% else %}Administrator{% endif %} on {{ certificate.revoked_at|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1" style="width: 40%;">Certificate No:</td>
+                                                <td class="fw-bold text-primary py-1">{{ certificate.certificate_number|default:"Pending Assignment" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Student Name:</td>
+                                                <td class="fw-bold py-1">{{ certificate.student.get_full_name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Admission Number:</td>
+                                                <td class="fw-bold py-1">{{ certificate.student.admission_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Grade / Section:</td>
+                                                <td class="py-1">Grade {{ certificate.last_grade }} - {{ certificate.section_name }}{% if certificate.stream_name %} ({{ certificate.stream_name }}){% endif %}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Academic Year:</td>
+                                                <td class="py-1">{{ certificate.academic_year.name }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="col-md-6 border-start-md">
+                                    <table class="table table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1" style="width: 40%;">Certificate Type:</td>
+                                                <td class="fw-bold py-1">{{ certificate.get_certificate_type_display }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Effective Date:</td>
+                                                <td class="py-1">{{ certificate.effective_date|date:"M d, Y" }}</td>
+                                            </tr>
+                                            {% if certificate.certificate_type == 'TRANSFER' %}
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Destination School:</td>
+                                                <td class="fw-bold text-dark py-1">{{ certificate.destination_school|default:"N/A" }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Academic Standing:</td>
+                                                <td class="py-1"><span class="badge bg-light text-dark border">{{ certificate.academic_standing }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted ps-0 py-1">Issue Date:</td>
+                                                <td class="py-1">{{ certificate.issue_date|date:"M d, Y"|default:"Not Issued" }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <small class="text-muted d-block">
+                                        <strong>UUID:</strong> <code>{{ certificate.certificate_uuid }}</code>
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <strong>Approved By:</strong> {% if certificate.approved_by %}{{ certificate.approved_by.get_full_name|default:certificate.approved_by.username }}{% else %}Pending Approval{% endif %}
+                                    </small>
+                                </div>
+                                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                    <a href="{% url 'certificate_preview' certificate.id %}" class="btn btn-outline-primary me-2">
+                                        <i class="bi bi-eye me-1"></i> View Full Preview
+                                    </a>
+                                    {% if certificate.status == 'ISSUED' %}
+                                        <a href="{% url 'certificate_pdf' certificate.id %}" class="btn btn-success">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-5 text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 64px; height: 64px;">
+                                <i class="bi bi-shield-x fs-2"></i>
+                            </div>
+                            <h4 class="fw-bold text-danger mb-2">No Matching Certificate Record Found</h4>
+                            <p class="text-muted mb-4">
+                                No certificate was found matching the query "<strong>{{ query }}</strong>".<br>
+                                Please double check the reference number or verify that the certificate was legitimately prepared and issued by Metti Secondary School.
+                            </p>
+                            <a href="{% url 'certificate_hub' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Return to Certificate Registry
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Return Link -->
+            <div class="text-center">
+                <a href="{% url 'certificate_hub' %}" class="text-decoration-none text-muted">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Certificate Management Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

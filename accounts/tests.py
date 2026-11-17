@@ -85,12 +85,19 @@ class AuthenticationAndRBACTests(TestCase):
         self.assertFalse('_auth_user_id' in self.client.session)
         self.assertContains(response, 'Invalid username or password')
 
-    # 3. Logout
+    # 3. Logout (POST-only enforcement)
     def test_logout(self):
         self.client.login(username='test_principal', password='SecretPassword123!')
-        response = self.client.get(reverse('logout'))
-        self.assertRedirects(response, reverse('login'))
+        # GET request must be rejected with 405 Method Not Allowed
+        get_response = self.client.get(reverse('logout'))
+        self.assertEqual(get_response.status_code, 405)
+        self.assertTrue('_auth_user_id' in self.client.session)
+
+        # POST request terminates the session
+        post_response = self.client.post(reverse('logout'))
+        self.assertRedirects(post_response, reverse('login'))
         self.assertFalse('_auth_user_id' in self.client.session)
+
 
     # 4. Protected Pages redirect unauthenticated users
     def test_protected_pages_redirect_unauthenticated(self):

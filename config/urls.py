@@ -19,6 +19,9 @@ urlpatterns = [
     # Built-in Django Admin Interface
     path('admin/', admin.site.urls),
 
+    # Django i18n language switcher
+    path('i18n/', include('django.conf.urls.i18n')),
+
     # Accounts app: auth + user management (replaces old /login/ and /users/ in core)
     path('', include('accounts.urls')),
 
@@ -44,11 +47,16 @@ urlpatterns = [
     # Intelligence & AI Modules
     path('ai-assistant/', include('ai_assistant.urls')),
 
+    # System Backup & Recovery (Step 17)
+    path('backups/', include('backup.urls')),
+
     # System & Administration Modules (legacy routes redirect to accounts app)
     path('system/users/', core_views.system_users_view, name='system_users'),
     path('settings/', core_views.system_settings_view, name='system_settings'),
     path('audit/', core_views.system_audit_view, name='system_audit'),
+    path('audit/export/', core_views.audit_log_export_csv_view, name='audit_log_export'),
 ]
+
 
 # Serve media and static files in development mode
 if settings.DEBUG:

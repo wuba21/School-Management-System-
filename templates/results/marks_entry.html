@@ -30,6 +30,14 @@
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        {% if not exam_subject.is_locked %}
+        <a href="{% url 'marks_import' %}?exam_subject={{ exam_subject.id }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel/CSV
+        </a>
+        <a href="{% url 'marks_template_download' %}?exam_subject={{ exam_subject.id }}&format=xlsx" class="btn btn-outline-secondary btn-sm" title="Download Official Excel Template">
+            <i class="bi bi-download me-1"></i> Excel Template
+        </a>
+        {% endif %}
         <a href="{% url 'examination_detail' exam_subject.examination.id %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Exam Details
         </a>

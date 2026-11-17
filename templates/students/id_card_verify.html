@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}ID Card Verification - Smart School Management{% endblock %}
+{% block page_title %}Student Credential Verification{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-6 col-md-8">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Institutional Header Bar -->
+            <div class="p-4 text-center text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                <img src="{% static 'images/school_logo.png' %}" alt="School Crest" style="width: 58px; height: 58px; object-fit: contain;" class="mb-2">
+                <h5 class="fw-bold mb-0 text-white">METTI SECONDARY SCHOOL</h5>
+                <div class="text-warning small fw-semibold" style="letter-spacing: 0.05em;">STUDENT CREDENTIAL VERIFICATION SYSTEM</div>
+                <div class="text-white-50 text-xs mt-1">Majang Zone, Gambella Region, Ethiopia &bull; Local School LAN</div>
+            </div>
+
+            <!-- Verification Status Banner -->
+            {% if verification_status == 'VALID' %}
+                <div class="p-3 text-center bg-success text-white">
+                    <i class="bi bi-patch-check-fill fs-2 d-block mb-1"></i>
+                    <h5 class="fw-bold mb-0">OFFICIAL STUDENT ID — VERIFIED &amp; ACTIVE</h5>
+                    <div class="small opacity-90">This credential is valid and registered in the active SSMS student database.</div>
+                </div>
+            {% elif verification_status == 'REVOKED' %}
+                <div class="p-3 text-center bg-danger text-white">
+                    <i class="bi bi-shield-x fs-2 d-block mb-1"></i>
+                    <h5 class="fw-bold mb-0">REVOKED / INVALID ID CARD</h5>
+                    <div class="small opacity-90">This credential has been officially invalidated by the school administration.</div>
+                </div>
+            {% elif verification_status == 'EXPIRED' %}
+                <div class="p-3 text-center bg-warning text-dark">
+                    <i class="bi bi-clock-history fs-2 d-block mb-1"></i>
+                    <h5 class="fw-bold mb-0">EXPIRED CREDENTIAL</h5>
+                    <div class="small">The academic validity period of this identification card has elapsed.</div>
+                </div>
+            {% elif verification_status == 'REPLACED' %}
+                <div class="p-3 text-center bg-secondary text-white">
+                    <i class="bi bi-arrow-repeat fs-2 d-block mb-1"></i>
+                    <h5 class="fw-bold mb-0">REPLACED ID CARD</h5>
+                    <div class="small opacity-90">A new credential was issued for this student. This prior card is no longer active.</div>
+                </div>
+            {% else %}
+                <div class="p-3 text-center bg-danger text-white">
+                    <i class="bi bi-exclamation-octagon-fill fs-2 d-block mb-1"></i>
+                    <h5 class="fw-bold mb-0">UNRECOGNIZED CARD TOKEN</h5>
+                    <div class="small opacity-90">No matching student credential record was found in the school server.</div>
+                </div>
+            {% endif %}
+
+            <!-- Verification Body Details -->
+            {% if id_card %}
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <!-- Photo -->
+                    {% if id_card.student.photo %}
+                        <img src="{{ id_card.student.photo.url }}" alt="{{ id_card.student.full_name }}" class="rounded-3 border shadow-sm" style="width: 72px; height: 86px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-3 bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width: 72px; height: 86px;">
+                            <i class="bi bi-person-fill fs-1 text-secondary opacity-50"></i>
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark">{{ id_card.student.full_name }}</h5>
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1 mb-1">
+                            ID: {{ id_card.student.admission_number }}
+                        </div>
+                        <div class="small text-muted">
+                            Enrollment Status: <strong class="text-success">{{ id_card.student.get_status_display }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credential Summary Grid -->
+                <div class="row g-3 small mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">CLASS &amp; SECTION</div>
+                            <div class="fw-bold text-dark mt-1">
+                                {% if id_card.enrollment and id_card.enrollment.class_offering %}
+                                    {{ id_card.enrollment.class_offering.grade.name }} - Section {{ id_card.enrollment.class_offering.section.name }}
+                                {% else %}
+                                    Secondary Cohort
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">CURRICULUM STREAM</div>
+                            <div class="fw-bold text-dark mt-1">
+                                {% if id_card.enrollment and id_card.enrollment.class_offering.stream %}
+                                    {{ id_card.enrollment.class_offering.stream.name }}
+                                {% else %}
+                                    General Secondary
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">ACADEMIC YEAR</div>
+                            <div class="fw-bold text-dark mt-1">{{ id_card.academic_year.name }} G.C.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">CARD IDENTIFIER</div>
+                            <div class="fw-bold font-monospace text-dark mt-1">{{ id_card.card_number }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">ISSUE DATE</div>
+                            <div class="fw-bold text-dark mt-1">{{ id_card.issue_date|date:"F d, Y" }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded bg-light">
+                            <div class="text-muted text-xs">VALIDITY EXPIRY</div>
+                            <div class="fw-bold text-dark mt-1">{{ id_card.expiry_date|date:"F d, Y"|default:"End of Academic Cycle" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if id_card.status == 'REVOKED' and id_card.revocation_reason %}
+                <div class="alert alert-danger py-2 px-3 small mb-3">
+                    <strong>Revocation Rationale:</strong> {{ id_card.revocation_reason }}<br>
+                    <small class="text-muted">Revoked on: {{ id_card.revoked_at|date:"F d, Y H:i" }}</small>
+                </div>
+                {% endif %}
+
+                <!-- Privacy & Zero PII Disclosure Guarantee -->
+                <div class="p-3 border rounded bg-light text-muted small mb-3" style="font-size: 0.72rem;">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    <strong>Privacy Compliance Notice:</strong>
+                    In accordance with institutional student data protection standards, private confidential records (home addresses, guardian contact numbers, academic scores, and attendance histories) are strictly withheld from public verification scans.
+                </div>
+
+                <!-- Staff Action -->
+                {% if is_staff_user %}
+                <div class="d-grid mt-3">
+                    <a href="{% url 'student_detail' id_card.student.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person-badge me-1"></i> Open Full Student Profile (Staff Access)
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="card-body p-4 text-center text-muted">
+                <i class="bi bi-qr-code text-secondary fs-1 d-block mb-3"></i>
+                <h6>Card Credential Not Found</h6>
+                <p class="small mb-3">The scanned QR code token is not linked to any recognized student record on this school server.</p>
+                <a href="{% url 'students_list' %}" class="btn btn-outline-primary btn-sm">
+                    Return to Student Directory
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="card-footer bg-light p-3 text-center text-muted text-xs border-top">
+                Metti Secondary School &bull; Godere Woreda, Majang Zone, Gambella Region, Ethiopia &bull; Offline Local Area Network (LAN)
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

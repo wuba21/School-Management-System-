@@ -24,6 +24,12 @@ local_settings.py
 media/
 uploads/
 
+# System Backups (database dumps, media archives)
+backups/
+*.dump
+*.sql.gz
+*.sqlite3.gz
+
 # Collected static files for production
 staticfiles/
 

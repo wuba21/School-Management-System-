@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} | SSMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'certificate_hub' %}" class="text-decoration-none">Certificates</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Request Certificate</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <!-- Student Context Card -->
+            {% if student %}
+            <div class="card border-0 shadow-sm mb-4 bg-white">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if student.photo %}
+                            <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary border border-primary-subtle d-flex align-items-center justify-content-center fw-bold fs-5" style="width: 60px; height: 60px;">
+                                {{ student.first_name|first }}{{ student.father_name|first }}
+                            </div>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-secondary-subtle text-secondary font-monospace border">{{ student.admission_number }}</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">{{ student.get_status_display }}</span>
+                            </div>
+                            <h4 class="h5 fw-bold text-dark mb-0">{{ student.full_name }}</h4>
+                            <div class="text-muted small">
+                                Gender: {{ student.get_gender_display }} &bull; Admitted: {{ student.admission_date|date:"M d, Y" }}
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'student_detail' student.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Full Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Certificate Request Form Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-file-earmark-plus text-primary me-2"></i>Official Certificate Request
+                    </h5>
+                    <div class="text-muted small">Prepare an official Transfer Certificate or Leaving Certificate for review and principal authorization.</div>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        {% if not student %}
+                        <!-- Student Selector -->
+                        <div class="mb-4 p-3 bg-light rounded-3 border">
+                            <label class="form-label fw-bold text-dark">Select Student <span class="text-danger">*</span></label>
+                            <input type="number" name="student_id" class="form-control" placeholder="Enter Student ID / Admission Record Number..." required>
+                            <div class="form-text small">Enter the student database ID or select from student directory.</div>
+                        </div>
+                        {% endif %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small mb-3">
+                            {% for error in form.non_field_errors %}
+                                <div><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Certificate Type Selection -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark">Certificate Type <span class="text-danger">*</span></label>
+                                {{ form.certificate_type }}
+                                {% if form.certificate_type.errors %}
+                                    <div class="text-danger small mt-1">{{ form.certificate_type.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">Select whether the student is transferring to another school or officially leaving/graduating.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark">Effective Date of Departure <span class="text-danger">*</span></label>
+                                {{ form.effective_date }}
+                                {% if form.effective_date.errors %}
+                                    <div class="text-danger small mt-1">{{ form.effective_date.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">Date on which the student officially leaves or transfers.</div>
+                            </div>
+                        </div>
+
+                        <!-- Academic Record Section -->
+                        <h6 class="fw-bold text-primary text-uppercase text-xs border-bottom pb-2 mb-3">
+                            <i class="bi bi-mortarboard me-1"></i> Academic Record at Departure
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Academic Year <span class="text-danger">*</span></label>
+                                {{ form.academic_year }}
+                                {% if form.academic_year.errors %}
+                                    <div class="text-danger small mt-1">{{ form.academic_year.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Last Attended Grade <span class="text-danger">*</span></label>
+                                {{ form.last_grade }}
+                                {% if form.last_grade.errors %}
+                                    <div class="text-danger small mt-1">{{ form.last_grade.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Section Name</label>
+                                {{ form.section_name }}
+                                {% if form.section_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.section_name.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark">Curriculum Stream</label>
+                                {{ form.stream_name }}
+                                {% if form.stream_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.stream_name.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Particulars & Transfer Reason -->
+                        <h6 class="fw-bold text-primary text-uppercase text-xs border-bottom pb-2 mb-3">
+                            <i class="bi bi-info-circle me-1"></i> Transfer & Clearance Details
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12" id="div_destination_school">
+                                <label class="form-label small fw-semibold text-dark">
+                                    Destination School Name <span class="text-danger" id="dest_star">*</span>
+                                </label>
+                                {{ form.destination_school }}
+                                {% if form.destination_school.errors %}
+                                    <div class="text-danger small mt-1">{{ form.destination_school.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">Receiving institution (e.g. Gambella Secondary School, Bonga Secondary School).</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark">Official Reason for Transfer / Leaving</label>
+                                {{ form.reason }}
+                                {% if form.reason.errors %}
+                                    <div class="text-danger small mt-1">{{ form.reason.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">e.g. Family relocation, completed Grade 12 National Examinations, personal reasons.</div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold text-dark">Verified Academic Standing</label>
+                                {{ form.academic_standing }}
+                                {% if form.academic_standing.errors %}
+                                    <div class="text-danger small mt-1">{{ form.academic_standing.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">e.g. Promoted to Grade 10, Completed Grade 12 National Exams, In Good Standing.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-dark">Student Conduct & Character</label>
+                                {{ form.conduct }}
+                                {% if form.conduct.errors %}
+                                    <div class="text-danger small mt-1">{{ form.conduct.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark">Official Remarks / Exam Highlights</label>
+                                {{ form.remarks }}
+                                {% if form.remarks.errors %}
+                                    <div class="text-danger small mt-1">{{ form.remarks.errors|first }}</div>
+                                {% endif %}
+                                <div class="form-text small">Optional remarks to appear on the official certificate.</div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                            <a href="{% url 'certificate_hub' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-file-earmark me-1"></i> Save Draft
+                                </button>
+                                <button type="submit" name="submit_now" value="1" class="btn btn-primary">
+                                    <i class="bi bi-send-check me-1"></i> Save &amp; Submit for Review
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const certTypeSelect = document.getElementById('id_certificate_type');
+        const destSchoolDiv = document.getElementById('div_destination_school');
+        const destStar = document.getElementById('dest_star');
+
+        function toggleDest() {
+            if (certTypeSelect && certTypeSelect.value === 'LEAVING') {
+                if (destStar) destStar.style.display = 'none';
+            } else {
+                if (destStar) destStar.style.display = 'inline';
+            }
+        }
+
+        if (certTypeSelect) {
+            certTypeSelect.addEventListener('change', toggleDest);
+            toggleDest();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Breadcrumbs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'results_index' %}" class="text-decoration-none">Results Hub</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'marks_import' %}" class="text-decoration-none">Marks Import</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Validation Preview</li>
+            </ol>
+        </nav>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>Marks Import Validation &amp; Dry-Run Preview
+        </h5>
+        <p class="text-muted small mb-0">
+            Subject: <strong class="text-dark">{{ exam_subject.subject.name }}</strong> ({{ exam_subject.grade.name }})
+            &bull; Examination: <strong>{{ exam_subject.examination.name }}</strong>
+            &bull; Source File: <span class="badge bg-light text-dark border">{{ validation.original_filename }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'marks_import' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-repeat me-1"></i> Upload Another File
+        </a>
+    </div>
+</div>
+
+<!-- KPI Metrics Summary Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Rows -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Total Parsed Rows</div>
+                    <div class="fs-4 fw-bold text-dark mt-1">{{ validation.total_rows }}</div>
+                    <div class="small text-muted">Rows from uploaded file</div>
+                </div>
+                <div class="bg-light text-secondary rounded-3 p-3">
+                    <i class="bi bi-table fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Valid Rows Ready to Import -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Valid Rows</div>
+                    <div class="fs-4 fw-bold text-success mt-1">{{ validation.valid_count }}</div>
+                    <div class="small text-muted">Ready to commit safely</div>
+                </div>
+                <div class="bg-success-subtle text-success rounded-3 p-3">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invalid Rows (Errors) -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Errors Detected</div>
+                    <div class="fs-4 fw-bold {% if validation.invalid_count > 0 %}text-danger{% else %}text-muted{% endif %} mt-1">
+                        {{ validation.invalid_count }}
+                    </div>
+                    <div class="small text-muted">Failed integrity checks</div>
+                </div>
+                <div class="{% if validation.invalid_count > 0 %}bg-danger-subtle text-danger{% else %}bg-light text-muted{% endif %} rounded-3 p-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operations Breakdown -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Operation Breakdown</div>
+                    <div class="fs-6 fw-bold text-dark mt-1">
+                        <span class="text-primary">{{ new_records_count }} New</span> &bull; 
+                        <span class="text-info">{{ updated_records_count }} Updates</span>
+                    </div>
+                    <div class="small text-muted">Max Score: {{ exam_subject.max_marks }}</div>
+                </div>
+                <div class="bg-primary-subtle text-primary rounded-3 p-3">
+                    <i class="bi bi-arrow-left-right fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- If Errors Exist: Prominent Alert and Error Report Section -->
+{% if validation.invalid_count > 0 %}
+<div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-danger border-4">
+    <div class="card-header bg-danger-subtle py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h6 class="mb-0 fw-bold text-danger">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>Integrity Errors Detected ({{ validation.invalid_count }} Rows)
+            </h6>
+            <small class="text-muted">These rows violate database validation rules and will NOT be imported.</small>
+        </div>
+        <a href="{% url 'marks_import_errors' %}" class="btn btn-danger btn-sm shadow-sm">
+            <i class="bi bi-download me-1"></i> Download Error Report (.csv)
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th class="text-center" style="width: 70px;">Row #</th>
+                        <th>Admission No</th>
+                        <th>Student Name</th>
+                        <th class="text-center">Submitted Mark</th>
+                        <th>Error Description</th>
+                        <th>Recommended Fix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for err in validation.invalid_rows %}
+                    <tr class="table-danger border-bottom">
+                        <td class="text-center fw-bold">{{ err.row_num }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ err.admission_number }}</span></td>
+                        <td><strong>{{ err.student_name }}</strong></td>
+                        <td class="text-center fw-bold text-danger">{{ err.submitted_mark|default:"—" }}</td>
+                        <td class="text-danger small">{{ err.error_message }}</td>
+                        <td class="text-muted small">{{ err.recommended_fix }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Valid Rows Section -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h6 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-check2-circle text-success me-2 fs-5"></i>Valid Rows Ready for Confirmation ({{ validation.valid_count }})
+            </h6>
+            <small class="text-muted">Preview of scores that will be committed to the database upon confirmation.</small>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+            Verified Clean: {{ validation.valid_count }} / {{ validation.total_rows }}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if validation.valid_rows %}
+        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small sticky-top">
+                    <tr>
+                        <th class="text-center" style="width: 60px;">#</th>
+                        <th>Admission No</th>
+                        <th>Student Name</th>
+                        <th>Section</th>
+                        <th class="text-center">Current Database Score</th>
+                        <th class="text-center">New Score to Import</th>
+                        <th class="text-center">Action</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in validation.valid_rows %}
+                    <tr>
+                        <td class="text-center text-muted small">{{ row.row_num }}</td>
+                        <td><span class="fw-semibold">{{ row.admission_number }}</span></td>
+                        <td><strong>{{ row.student_name }}</strong></td>
+                        <td><span class="badge bg-light text-dark border">{{ row.section }}</span></td>
+                        <td class="text-center text-muted small">{{ row.current_mark }}</td>
+                        <td class="text-center">
+                            {% if row.is_absent %}
+                                <span class="badge bg-warning text-dark">ABSENT</span>
+                            {% elif row.mark_obtained is not None %}
+                                <span class="badge bg-primary fs-6 px-3 py-1">{{ row.mark_obtained }} / {{ exam_subject.max_marks }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary">UNMARKED</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.action_type == 'CREATE' %}
+                                <span class="badge bg-success-subtle text-success">New Record</span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info">Update Existing</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ row.remarks|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <i class="bi bi-x-circle text-danger fs-1 mb-2 d-block"></i>
+            <h6>No Valid Rows Found</h6>
+            <p class="small mb-0">None of the rows in the uploaded spreadsheet passed validation checks. Please download the error report, correct the issues, and re-upload.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Confirmation Actions Footer -->
+    <div class="card-footer bg-light border-top p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <a href="{% url 'marks_import' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Cancel &amp; Discard
+            </a>
+        </div>
+        {% if validation.valid_count > 0 %}
+        <form method="post" action="{% url 'marks_import_confirm' %}" class="m-0" id="confirmImportForm">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-lg px-4 shadow-sm" onclick="return confirm('Are you sure you want to commit {{ validation.valid_count }} validated marks into the database? This transaction is logged in the security audit trail.');">
+                <i class="bi bi-check2-all me-2"></i>Confirm &amp; Commit {{ validation.valid_count }} Marks
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -319,26 +319,33 @@ class TimetableEntry(models.Model):
 
     def clean(self):
         # 1. Validate period is not a break
-        if self.period and self.period.is_break:
-            raise ValidationError({'period': f"Cannot schedule instructional lesson during break: '{self.period.name}'."})
+        if self.period_id and hasattr(self, 'period') and self.period:
+            if self.period.is_break:
+                raise ValidationError({'period': f"Cannot schedule instructional lesson during break: '{self.period.name}'."})
 
         # 2. Synchronize class offering from timetable
-        if self.timetable and not self.class_offering_id:
-            self.class_offering = self.timetable.class_offering
-        elif self.timetable and self.class_offering_id != self.timetable.class_offering_id:
-            raise ValidationError("Timetable entry class offering must match the parent timetable.")
+        if self.timetable_id and hasattr(self, 'timetable') and self.timetable:
+            if not self.class_offering_id:
+                self.class_offering = self.timetable.class_offering
+            elif self.class_offering_id != self.timetable.class_offering_id:
+                raise ValidationError("Timetable entry class offering must match the parent timetable.")
 
         # 3. Validate teacher is active
-        if self.teacher and not self.teacher.is_active:
-            raise ValidationError({'teacher': f"Teacher '{self.teacher.full_name}' is inactive and cannot be scheduled."})
+        if self.teacher_id and hasattr(self, 'teacher') and self.teacher:
+            if not self.teacher.is_active:
+                raise ValidationError({'teacher': f"Teacher '{self.teacher.full_name}' is inactive and cannot be scheduled."})
 
         # 4. Validate classroom is active
-        if self.classroom and not self.classroom.is_active:
-            raise ValidationError({'classroom': f"Classroom '{self.classroom.name}' is inactive and cannot be allocated."})
+        if self.classroom_id and hasattr(self, 'classroom') and self.classroom:
+            if not self.classroom.is_active:
+                raise ValidationError({'classroom': f"Classroom '{self.classroom.name}' is inactive and cannot be allocated."})
 
     def save(self, *args, **kwargs):
-        if self.timetable and not self.class_offering_id:
-            self.class_offering = self.timetable.class_offering
+        try:
+            if self.timetable_id and self.timetable and not self.class_offering_id:
+                self.class_offering = self.timetable.class_offering
+        except Exception:
+            pass
         self.clean()
         super().save(*args, **kwargs)
 

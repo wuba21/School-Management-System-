@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load ethiopian_calendar_tags %}
 
 {% block title %}Examinations Directory - Smart School Management{% endblock %}
 {% block page_title %}Examinations Directory{% endblock %}
@@ -98,7 +99,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            <small class="text-muted">{{ exam.start_date|date:"M d, Y" }} &ndash; {{ exam.end_date|date:"M d, Y" }}</small>
+                            <div class="fw-semibold text-dark">{{ exam.start_date|to_ethiopian }} &ndash; {{ exam.end_date|to_ethiopian }}</div>
+                            <div class="text-xs text-muted">({{ exam.start_date|date:"M d, Y" }} &ndash; {{ exam.end_date|date:"M d, Y" }})</div>
                         </td>
                         <td>
                             <span class="badge bg-secondary-subtle text-secondary">{{ exam.exam_subjects.count }} Subjects</span>

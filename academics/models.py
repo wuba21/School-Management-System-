@@ -32,6 +32,32 @@ class AcademicYear(models.Model):
             AcademicYear.objects.filter(is_current=True).exclude(pk=self.pk).update(is_current=False)
         super().save(*args, **kwargs)
 
+    @property
+    def ethiopian_start_date(self):
+        """Ethiopian calendar representation of start date."""
+        from core.utils.ethiopian_calendar import gregorian_to_ethiopian
+        return gregorian_to_ethiopian(self.start_date) if self.start_date else None
+
+    @property
+    def ethiopian_end_date(self):
+        """Ethiopian calendar representation of end date."""
+        from core.utils.ethiopian_calendar import gregorian_to_ethiopian
+        return gregorian_to_ethiopian(self.end_date) if self.end_date else None
+
+    @property
+    def ethiopian_year_display(self):
+        """Displays academic year in Ethiopian notation (e.g. '2018/2019 E.C.')."""
+        from core.utils.ethiopian_calendar import gregorian_to_ethiopian
+        if self.start_date:
+            eth_start = gregorian_to_ethiopian(self.start_date)
+            if self.end_date:
+                eth_end = gregorian_to_ethiopian(self.end_date)
+                if eth_start.year == eth_end.year:
+                    return f"{eth_start.year} E.C."
+                return f"{eth_start.year}/{eth_end.year} E.C."
+            return f"{eth_start.year} E.C."
+        return self.name
+
 
 class Grade(models.Model):
     """

@@ -13,6 +13,7 @@ Computes real-time, aggregated statistics from the relational database:
 from decimal import Decimal
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
+from django.conf import settings
 from datetime import timedelta
 
 from students.models import Student, StudentEnrollment
@@ -23,6 +24,8 @@ from examinations.models import Examination, ExamSubject
 from results.models import Mark
 from accounts.models import User
 from core.models import AuditLog
+from backup.models import BackupRecord
+from timetable.models import TimetableEntry
 
 
 class DashboardService:
@@ -264,7 +267,7 @@ class DashboardService:
             teacher_obj = Teacher.objects.filter(user=user).first()
             if teacher_obj:
                 assignments = TeacherAssignment.objects.filter(teacher=teacher_obj).select_related(
-                    'class_offering__grade', 'class_offering__section', 'subject'
+                    'class_offering__grade', 'class_offering__section', 'class_offering__stream', 'subject'
                 )
                 assigned_classes = assignments.values('class_offering').distinct()
                 assigned_students_count = StudentEnrollment.objects.filter(
@@ -274,12 +277,27 @@ class DashboardService:
                     recorded_by=teacher_obj
                 ).select_related('class_offering__grade', 'class_offering__section').order_by('-date')[:5]
 
+                # Today's timetable (1=Monday ... 7=Sunday)
+                today_dow = timezone.localdate().isoweekday()
+                today_timetable = TimetableEntry.objects.filter(
+                    teacher=teacher_obj,
+                    day_of_week=today_dow
+                ).select_related(
+                    'period', 'subject', 'class_offering__grade', 'class_offering__section', 'classroom'
+                ).order_by('period__period_number')
+
+                active_exams_for_teacher = Examination.objects.filter(
+                    is_active=True, is_locked=False
+                ).select_related('academic_year').order_by('-start_date')[:4]
+
                 context['teacher_profile'] = teacher_obj
                 context['teacher_assignments'] = assignments
                 context['teacher_classes_count'] = assigned_classes.count()
                 context['teacher_subjects_count'] = assignments.values('subject').distinct().count()
                 context['teacher_students_count'] = assigned_students_count
                 context['recent_teacher_sessions'] = recent_teacher_sessions
+                context['today_timetable'] = today_timetable
+                context['active_exams'] = active_exams_for_teacher
             else:
                 context['teacher_profile'] = None
                 context['teacher_assignments'] = []
@@ -287,9 +305,14 @@ class DashboardService:
                 context['teacher_subjects_count'] = 0
                 context['teacher_students_count'] = 0
                 context['recent_teacher_sessions'] = []
+                context['today_timetable'] = []
+                context['active_exams'] = []
 
         elif role_code == 'REGISTRAR':
-            # Unassigned students (students without active enrollment in any class)
+            current_year = AcademicYear.objects.filter(is_current=True).first()
+            total_registered_students = Student.objects.count()
+            active_students_count = Student.objects.filter(status='ACTIVE').count()
+
             enrolled_student_ids = StudentEnrollment.objects.filter(
                 status='ACTIVE'
             ).values_list('student_id', flat=True)
@@ -297,10 +320,54 @@ class DashboardService:
                 status='ACTIVE'
             ).exclude(id__in=enrolled_student_ids).count()
 
+            new_registrations_count = StudentEnrollment.objects.filter(
+                status='ACTIVE'
+            ).count()
+
+            recent_enrollments = StudentEnrollment.objects.select_related(
+                'student', 'class_offering__grade', 'class_offering__section', 'academic_year'
+            ).order_by('-enrollment_date')[:6]
+
+            class_capacity_list = ClassOffering.objects.select_related(
+                'grade', 'section', 'stream'
+            ).annotate(
+                enrolled_count=Count('student_enrollments', filter=Q(student_enrollments__status='ACTIVE'))
+            ).order_by('grade__level', 'section__name')[:8]
+
+            context['total_registered_students'] = total_registered_students
+            context['active_students_count'] = active_students_count
             context['unassigned_students_count'] = unassigned_students_count
-            context['recent_enrollments'] = StudentEnrollment.objects.select_related(
-                'student', 'class_offering__grade', 'class_offering__section'
-            ).order_by('-enrollment_date')[:5]
+            context['new_registrations_count'] = new_registrations_count
+            context['recent_enrollments'] = recent_enrollments
+            context['class_capacity_list'] = class_capacity_list
+
+        elif role_code == 'PRINCIPAL':
+            total_students = Student.objects.filter(status='ACTIVE').count()
+            total_teachers = Teacher.objects.filter(is_active=True).count()
+            teachers_allocated = TeacherAssignment.objects.values('teacher').distinct().count()
+
+            marks_qs = Mark.objects.filter(marks_obtained__isnull=False)
+            marks_count = marks_qs.count()
+            avg_score = marks_qs.aggregate(a=Avg('marks_obtained'))['a']
+            passed_marks = marks_qs.filter(marks_obtained__gte=50).count()
+            pass_rate = round((passed_marks / marks_count) * 100, 1) if marks_count > 0 else 0.0
+
+            class_matrix = ClassOffering.objects.select_related(
+                'grade', 'section', 'stream'
+            ).annotate(
+                enrolled_count=Count('student_enrollments', filter=Q(student_enrollments__status='ACTIVE'))
+            ).order_by('grade__level', 'section__name')[:8]
+
+            recent_exams = Examination.objects.select_related('academic_year').order_by('-start_date')[:5]
+
+            context['total_students'] = total_students
+            context['total_teachers'] = total_teachers
+            context['teachers_allocated'] = teachers_allocated
+            context['school_avg_score'] = round(float(avg_score), 1) if avg_score is not None else 0.0
+            context['school_pass_rate'] = pass_rate
+            context['total_evaluated_marks'] = marks_count
+            context['class_matrix'] = class_matrix
+            context['recent_exams'] = recent_exams
 
         elif role_code in ('ADMIN', None) and (user.is_superuser or role_code == 'ADMIN'):
             user_counts_by_role = User.objects.values('role__name').annotate(count=Count('id'))
@@ -308,10 +375,35 @@ class DashboardService:
             inactive_users_count = User.objects.filter(is_active=False).count()
             audit_logs_count = AuditLog.objects.count()
 
+            latest_db_backup = BackupRecord.objects.filter(backup_type='DATABASE').order_by('-created_at').first()
+            latest_media_backup = BackupRecord.objects.filter(backup_type='MEDIA').order_by('-created_at').first()
+            total_backups_count = BackupRecord.objects.count()
+            db_engine = settings.DATABASES.get('default', {}).get('ENGINE', '').split('.')[-1]
+
+            # Real database connection and health check
+            from django.db import connection
+            try:
+                connection.ensure_connection()
+                db_connected = True
+                db_health = 'Healthy'
+            except Exception:
+                db_connected = False
+                db_health = 'Warning'
+
             context['user_counts_by_role'] = user_counts_by_role
             context['active_users_count'] = active_users_count
             context['inactive_users_count'] = inactive_users_count
             context['audit_logs_count'] = audit_logs_count
+            context['latest_db_backup'] = latest_db_backup
+            context['latest_media_backup'] = latest_media_backup
+            context['total_backups_count'] = total_backups_count
+            context['db_engine'] = 'PostgreSQL' if 'postgresql' in db_engine else db_engine.upper()
+            context['db_connected'] = db_connected
+            context['db_health'] = db_health
+            context['app_status'] = 'Operational'
+            context['lan_status'] = '100% Offline LAN Mode'
+            context['backup_available'] = total_backups_count > 0
+            context['system_health'] = 'Operational'
 
         return context
 

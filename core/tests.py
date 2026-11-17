@@ -580,3 +580,14 @@ class SystemWideIntegrationWorkflowTests(TestCase):
         self.assertEqual(student1_portfolio['promotions'][0].final_outcome, 'PROMOTED')
 
 
+# -----------------------------------------------------------------------------
+# STEP 18: ETHIOPIAN CALENDAR TEST SUITE INTEGRATION
+# -----------------------------------------------------------------------------
+from core.tests_ethiopian_calendar import (
+    EthiopianCalendarEngineTests,
+    EthiopianTemplateTagsTests,
+    EthiopianModelIntegrationTests,
+)
+
+
+

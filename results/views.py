@@ -31,8 +31,8 @@ from students.models import Student, StudentEnrollment
 from teachers.models import Teacher, TeacherAssignment
 from examinations.models import Examination, ExamSubject
 from results.models import GradingScale, GradingRange, Mark, ResultApproval, StudentResultSummary
-from results.forms import GradingScaleForm, GradingRangeForm, MarksReviewForm
-from results.services import MarksService, ResultCalculationService, ReportCardService
+from results.forms import GradingScaleForm, GradingRangeForm, MarksReviewForm, ReportCardFilterForm, MarksImportUploadForm, MarksExportForm
+from results.services import MarksService, ResultCalculationService, ReportCardService, MarksExportImportService
 
 
 def _get_user_role(user):
@@ -442,41 +442,192 @@ def published_results_view(request, exam_id=None):
 
 
 # -----------------------------------------------------------------------------
-# 6. STUDENT REPORT CARDS (WEB & PDF)
+# 6. STUDENT REPORT CARDS (MANAGEMENT HUB, PREVIEW & PDF)
 # -----------------------------------------------------------------------------
+
+@any_authenticated_role_required
+def report_card_hub_view(request):
+    """
+    Step 20: Dedicated Student Report Card Management & Search Hub.
+    Allows authorized school staff (Admin, Principal, Registrar, Teachers) to search,
+    filter by academic year, grade/section, examination, and preview/download/print
+    official English-only report cards.
+    """
+    user = request.user
+    user_role = _get_user_role(user)
+    if user_role not in ('ADMIN', 'PRINCIPAL', 'REGISTRAR', 'TEACHER'):
+        raise PermissionDenied("You do not have authorization to access student report cards.")
+
+    teacher_profile = getattr(user, 'teacher_profile', None) if user_role == 'TEACHER' else None
+    form = ReportCardFilterForm(request.GET or None, teacher=teacher_profile)
+
+    current_year = AcademicYear.objects.filter(is_current=True).first()
+    selected_year = current_year
+    selected_exam = None
+    selected_offering = None
+    search_q = request.GET.get('search', '').strip()
+
+    # Base query for active enrollments
+    enrollments_qs = StudentEnrollment.objects.filter(status='ACTIVE').select_related(
+        'student',
+        'academic_year',
+        'class_offering__grade',
+        'class_offering__section',
+        'class_offering__stream'
+    )
+
+    # Scoping for teachers: only their assigned classrooms
+    if user_role == 'TEACHER':
+        if not teacher_profile:
+            raise PermissionDenied("Teacher profile not linked to active account.")
+        assigned_offerings = ClassOffering.objects.filter(teacher_assignments__teacher=teacher_profile).values_list('id', flat=True)
+        enrollments_qs = enrollments_qs.filter(class_offering_id__in=assigned_offerings)
+
+    # Apply Filters
+    if request.GET.get('academic_year'):
+        try:
+            selected_year = AcademicYear.objects.get(pk=request.GET.get('academic_year'))
+            enrollments_qs = enrollments_qs.filter(academic_year=selected_year)
+        except AcademicYear.DoesNotExist:
+            pass
+    elif current_year:
+        enrollments_qs = enrollments_qs.filter(academic_year=current_year)
+
+    if request.GET.get('class_offering'):
+        try:
+            selected_offering = ClassOffering.objects.get(pk=request.GET.get('class_offering'))
+            enrollments_qs = enrollments_qs.filter(class_offering=selected_offering)
+        except ClassOffering.DoesNotExist:
+            pass
+
+    if search_q:
+        enrollments_qs = enrollments_qs.filter(
+            Q(student__first_name__icontains=search_q) |
+            Q(student__father_name__icontains=search_q) |
+            Q(student__grandfather_name__icontains=search_q) |
+            Q(student__admission_number__icontains=search_q)
+        )
+
+    # Examination selection
+    exams_qs = Examination.objects.all().order_by('-start_date')
+    if selected_year:
+        exams_qs = exams_qs.filter(academic_year=selected_year)
+
+    if request.GET.get('examination'):
+        try:
+            selected_exam = Examination.objects.get(pk=request.GET.get('examination'))
+        except Examination.DoesNotExist:
+            selected_exam = exams_qs.first()
+    else:
+        selected_exam = exams_qs.filter(status='PUBLISHED').first() or exams_qs.first()
+
+    # Pagination (25 students per page)
+    paginator = Paginator(
+        enrollments_qs.order_by('class_offering__grade__level', 'class_offering__section__name', 'student__first_name'),
+        25
+    )
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Attach summary stats for each enrollment on current page
+    student_records = []
+    for enr in page_obj:
+        summary = None
+        has_marks = False
+        if selected_exam:
+            summary = StudentResultSummary.objects.filter(
+                student_enrollment=enr,
+                examination=selected_exam
+            ).first()
+            has_marks = Mark.objects.filter(
+                student_enrollment=enr,
+                exam_subject__examination=selected_exam
+            ).exists()
+
+        student_records.append({
+            'enrollment': enr,
+            'student': enr.student,
+            'class_offering': enr.class_offering,
+            'summary': summary,
+            'has_marks': has_marks,
+            'exam': selected_exam,
+        })
+
+    context = {
+        'active_menu': 'report_cards',
+        'page_title': 'Student Report Card Management',
+        'form': form,
+        'page_obj': page_obj,
+        'student_records': student_records,
+        'selected_year': selected_year,
+        'selected_exam': selected_exam,
+        'available_exams': exams_qs,
+        'total_count': enrollments_qs.count(),
+        'user_role': user_role,
+        'is_teacher': user_role == 'TEACHER',
+    }
+    return render(request, 'results/report_card_hub.html', context)
+
 
 @any_authenticated_role_required
 def student_report_card_view(request, exam_id, student_id):
     """
-    Displays an individual student report card, with 1-click PDF download.
+    Step 20: Displays an individual official English-only student report card,
+    with 1-click PDF download and browser print support.
+    Enforces strict role-based access control.
     """
+    from django.utils import translation
+
     exam = get_object_or_404(Examination, pk=exam_id)
     student = get_object_or_404(Student, pk=student_id)
 
     enrollment = StudentEnrollment.objects.filter(
         student=student,
         academic_year=exam.academic_year
-    ).first()
+    ).select_related('class_offering__grade', 'class_offering__section', 'class_offering__stream').first()
 
     if not enrollment:
         messages.error(request, "Student has no active enrollment record for this examination's academic year.")
-        return redirect('results_index')
+        return redirect('report_card_hub')
 
-    report_data = ReportCardService.get_report_card_data(enrollment, exam)
+    user_role = _get_user_role(request.user)
+    if user_role not in ('ADMIN', 'PRINCIPAL', 'REGISTRAR', 'TEACHER'):
+        raise PermissionDenied("You do not have authorization to access official student report cards.")
 
-    # Check for PDF export request
-    if request.GET.get('format') == 'pdf':
-        filename = f"ReportCard_{student.admission_number}_{exam.academic_year.code}_{exam.semester}.pdf"
-        return ReportCardService.export_report_card_pdf(report_data, filename=filename)
+    # Strict Teacher RBAC: Teacher must teach in this student's class offering
+    if user_role == 'TEACHER':
+        teacher_profile = getattr(request.user, 'teacher_profile', None)
+        if not teacher_profile:
+            raise PermissionDenied("Teacher profile not linked to active account.")
+        teaches_class = TeacherAssignment.objects.filter(
+            teacher=teacher_profile,
+            class_offering=enrollment.class_offering
+        ).exists()
+        if not teaches_class:
+            raise PermissionDenied("You are only permitted to view report cards for students in your assigned classes.")
 
-    context = {
-        'active_menu': 'results',
-        'page_title': f"Report Card: {student.full_name}",
-        'data': report_data,
-        'exam': exam,
-        'student': student,
-    }
-    return render(request, 'results/report_card.html', context)
+    # Enforce English-only report card generation
+    with translation.override('en'):
+        report_data = ReportCardService.get_report_card_data(enrollment, exam)
+
+        # Check for PDF export request
+        if request.GET.get('format') == 'pdf':
+            safe_adm = student.admission_number.replace('/', '_').replace('\\', '_')
+            filename = f"ReportCard_{safe_adm}_{exam.academic_year.code}_{exam.semester}.pdf"
+            return ReportCardService.export_report_card_pdf(report_data, filename=filename)
+
+        auto_print = request.GET.get('print') == '1'
+
+        context = {
+            'active_menu': 'report_cards',
+            'page_title': f"Report Card: {student.full_name}",
+            'data': report_data,
+            'exam': exam,
+            'student': student,
+            'auto_print': auto_print,
+            'user_role': user_role,
+        }
+        return render(request, 'results/report_card.html', context)
 
 
 # -----------------------------------------------------------------------------
@@ -618,3 +769,283 @@ def grading_configuration_view(request):
         'scale_form': scale_form,
     }
     return render(request, 'results/grading_config.html', context)
+
+
+# -----------------------------------------------------------------------------
+# 11. STEP 21: EXAMINATION MARK EXCEL/CSV IMPORT & EXPORT
+# -----------------------------------------------------------------------------
+
+@any_authenticated_role_required
+def marks_template_download_view(request):
+    """
+    Step 21: Downloads a structured Excel (.xlsx) or CSV (.csv) marks entry template
+    containing actual student enrollments for an examination subject.
+    """
+    exam_subject_id = request.GET.get('exam_subject') or request.GET.get('exam_subject_id')
+    if not exam_subject_id:
+        messages.error(request, "Please select an examination subject to generate a template.")
+        return redirect('marks_import')
+
+    exam_subject = get_object_or_404(
+        ExamSubject.objects.select_related('examination__academic_year', 'subject', 'grade', 'stream'),
+        pk=exam_subject_id
+    )
+
+    user_role = _get_user_role(request.user)
+    if user_role == 'TEACHER':
+        teacher_profile = getattr(request.user, 'teacher_profile', None)
+        if not _is_teacher_assigned_to_exam_subject(teacher_profile, exam_subject):
+            raise PermissionDenied("You can only download templates for subjects assigned to you.")
+
+    class_offering_id = request.GET.get('class_offering') or request.GET.get('class_offering_id')
+    class_offering = None
+    if class_offering_id:
+        class_offering = get_object_or_404(ClassOffering, pk=class_offering_id)
+
+    file_format = request.GET.get('format', 'xlsx').lower()
+    if file_format not in ('xlsx', 'csv'):
+        file_format = 'xlsx'
+
+    return MarksExportImportService.generate_marks_template(
+        exam_subject=exam_subject,
+        class_offering=class_offering,
+        file_format=file_format
+    )
+
+
+@any_authenticated_role_required
+def marks_import_view(request):
+    """
+    Step 21: Multi-step examination marks import hub.
+    Step 1: Upload Excel/CSV -> Validates and renders Preview.
+    Step 2: Preview -> Download error report or confirm import.
+    """
+    user_role = _get_user_role(request.user)
+    teacher_profile = getattr(request.user, 'teacher_profile', None) if user_role == 'TEACHER' else None
+
+    # Handle pre-selected exam_subject from GET
+    initial_data = {}
+    pre_es_id = request.GET.get('exam_subject') or request.GET.get('exam_subject_id')
+    if pre_es_id:
+        initial_data['exam_subject'] = pre_es_id
+        es_obj = ExamSubject.objects.filter(pk=pre_es_id).select_related('examination').first()
+        if es_obj:
+            initial_data['academic_year'] = es_obj.examination.academic_year_id
+            initial_data['examination'] = es_obj.examination_id
+
+    if request.method == 'POST':
+        # Immediate RBAC check: if teacher posted an unassigned exam subject
+        if user_role == 'TEACHER':
+            raw_es_id = request.POST.get('exam_subject')
+            if raw_es_id:
+                es_check = ExamSubject.objects.filter(pk=raw_es_id).select_related('subject', 'grade').first()
+                if es_check and not _is_teacher_assigned_to_exam_subject(teacher_profile, es_check):
+                    raise PermissionDenied("You can only import marks for subjects assigned to you.")
+
+        form = MarksImportUploadForm(request.POST, request.FILES, teacher=teacher_profile)
+        if form.is_valid():
+            exam_subject = form.cleaned_data['exam_subject']
+            class_offering = form.cleaned_data.get('class_offering')
+            uploaded_file = form.cleaned_data['file']
+
+            # Check teacher assignment permissions
+            if user_role == 'TEACHER' and not _is_teacher_assigned_to_exam_subject(teacher_profile, exam_subject):
+                raise PermissionDenied("You can only import marks for subjects assigned to you.")
+
+            validation = MarksExportImportService.validate_import_file(
+                uploaded_file=uploaded_file,
+                exam_subject=exam_subject,
+                class_offering=class_offering,
+                user=request.user
+            )
+
+            if validation.get('fatal_error'):
+                messages.error(request, validation['fatal_error'])
+                return render(request, 'results/marks_import.html', {
+                    'active_menu': 'marks_import',
+                    'page_title': 'Import Examination Marks',
+                    'form': form,
+                    'user_role': user_role,
+                })
+
+            # Store preview in session
+            request.session['marks_import_preview'] = {
+                'exam_subject_id': exam_subject.id,
+                'exam_subject_name': str(exam_subject),
+                'valid_rows': validation['valid_rows'],
+                'invalid_rows': validation['invalid_rows'],
+                'valid_count': validation['valid_count'],
+                'invalid_count': validation['invalid_count'],
+                'total_rows': validation['total_rows'],
+                'original_filename': uploaded_file.name,
+                'class_offering_id': class_offering.id if class_offering else None,
+            }
+
+            # Count action types
+            new_records = sum(1 for r in validation['valid_rows'] if r['action_type'] == 'CREATE')
+            updated_records = sum(1 for r in validation['valid_rows'] if r['action_type'] == 'UPDATE')
+
+            context = {
+                'active_menu': 'marks_import',
+                'page_title': f"Import Preview: {exam_subject.subject.name} ({exam_subject.grade.name})",
+                'exam_subject': exam_subject,
+                'class_offering': class_offering,
+                'validation': validation,
+                'new_records_count': new_records,
+                'updated_records_count': updated_records,
+                'user_role': user_role,
+            }
+            return render(request, 'results/marks_import_preview.html', context)
+    else:
+        form = MarksImportUploadForm(initial=initial_data, teacher=teacher_profile)
+
+    context = {
+        'active_menu': 'marks_import',
+        'page_title': 'Import Examination Marks',
+        'form': form,
+        'user_role': user_role,
+        'preselected_exam_subject_id': pre_es_id,
+    }
+    return render(request, 'results/marks_import.html', context)
+
+
+@any_authenticated_role_required
+@require_POST
+def marks_import_confirm_view(request):
+    """
+    Step 21: Confirms and commits validated marks into the database
+    within an atomic transaction using MarksService.
+    """
+    preview = request.session.get('marks_import_preview')
+    if not preview:
+        messages.error(request, "No active import session found. Please upload your file again.")
+        return redirect('marks_import')
+
+    exam_subject_id = preview.get('exam_subject_id')
+    valid_rows = preview.get('valid_rows', [])
+
+    exam_subject = get_object_or_404(
+        ExamSubject.objects.select_related('examination', 'subject', 'grade', 'stream'),
+        pk=exam_subject_id
+    )
+
+    user_role = _get_user_role(request.user)
+    if user_role == 'TEACHER':
+        teacher_profile = getattr(request.user, 'teacher_profile', None)
+        if not _is_teacher_assigned_to_exam_subject(teacher_profile, exam_subject):
+            raise PermissionDenied("You can only import marks for subjects assigned to you.")
+
+    if not valid_rows:
+        messages.warning(request, "There are no valid student marks to import.")
+        return redirect('marks_import')
+
+    try:
+        result = MarksExportImportService.commit_import_marks(
+            exam_subject_id=exam_subject.id,
+            valid_rows=valid_rows,
+            user=request.user,
+            request=request
+        )
+        if 'marks_import_preview' in request.session:
+            del request.session['marks_import_preview']
+
+        messages.success(
+            request,
+            f"Successfully imported marks for {exam_subject.subject.name}: "
+            f"{result['created']} records created, {result['updated']} updated (Total: {len(valid_rows)})."
+        )
+        return redirect('marks_entry', exam_subject_id=exam_subject.id)
+    except ValidationError as e:
+        messages.error(request, f"Import failed: {str(e)}")
+        return redirect('marks_import')
+
+
+@any_authenticated_role_required
+def marks_import_error_export_view(request):
+    """
+    Step 21: Exports invalid rows and reasons as a downloadable CSV error report.
+    """
+    preview = request.session.get('marks_import_preview')
+    if not preview or not preview.get('invalid_rows'):
+        messages.info(request, "No invalid rows or error report available.")
+        return redirect('marks_import')
+
+    return MarksExportImportService.generate_error_report(
+        invalid_rows=preview['invalid_rows'],
+        exam_subject_name=preview.get('exam_subject_name', 'Marks_Import')
+    )
+
+
+@any_authenticated_role_required
+def marks_export_view(request):
+    """
+    Step 21: Filterable Examination Marks Export Hub.
+    Allows filtering by academic year, exam, grade, section, stream, subject,
+    and downloading as Excel (.xlsx) or CSV (.csv).
+    """
+    user_role = _get_user_role(request.user)
+    teacher_profile = getattr(request.user, 'teacher_profile', None) if user_role == 'TEACHER' else None
+
+    form = MarksExportForm(request.GET or None, teacher=teacher_profile)
+
+    # If export requested
+    if request.GET.get('export') == '1':
+        filters = {}
+        if form.is_valid():
+            cd = form.cleaned_data
+            if cd.get('academic_year'):
+                filters['academic_year'] = cd['academic_year']
+            if cd.get('examination'):
+                filters['examination'] = cd['examination']
+            if cd.get('grade'):
+                filters['grade'] = cd['grade']
+            if cd.get('class_offering'):
+                filters['class_offering'] = cd['class_offering']
+            if cd.get('stream'):
+                filters['stream'] = cd['stream']
+            if cd.get('subject'):
+                filters['subject'] = cd['subject']
+            file_format = cd.get('file_format', 'xlsx')
+        else:
+            file_format = request.GET.get('file_format', 'xlsx')
+
+        # Restrict teacher export strictly to their assigned classes/subjects
+        if user_role == 'TEACHER' and teacher_profile:
+            assigned_subj_ids = TeacherAssignment.objects.filter(
+                teacher=teacher_profile
+            ).values_list('subject_id', flat=True)
+            filters['subject__in'] = assigned_subj_ids
+
+        return MarksExportImportService.export_examination_marks(filters=filters, file_format=file_format)
+
+    # Calculate total records matching current filter for preview count
+    marks_qs = Mark.objects.all()
+    if user_role == 'TEACHER' and teacher_profile:
+        assigned_subj_ids = TeacherAssignment.objects.filter(teacher=teacher_profile).values_list('subject_id', flat=True)
+        marks_qs = marks_qs.filter(exam_subject__subject_id__in=assigned_subj_ids)
+
+    if form.is_valid():
+        cd = form.cleaned_data
+        if cd.get('academic_year'):
+            marks_qs = marks_qs.filter(exam_subject__examination__academic_year=cd['academic_year'])
+        if cd.get('examination'):
+            marks_qs = marks_qs.filter(exam_subject__examination=cd['examination'])
+        if cd.get('grade'):
+            marks_qs = marks_qs.filter(student_enrollment__class_offering__grade=cd['grade'])
+        if cd.get('class_offering'):
+            marks_qs = marks_qs.filter(student_enrollment__class_offering=cd['class_offering'])
+        if cd.get('stream'):
+            marks_qs = marks_qs.filter(student_enrollment__class_offering__stream=cd['stream'])
+        if cd.get('subject'):
+            marks_qs = marks_qs.filter(exam_subject__subject=cd['subject'])
+
+    total_matching = marks_qs.count()
+
+    context = {
+        'active_menu': 'marks_export',
+        'page_title': 'Export Examination Marks',
+        'form': form,
+        'total_matching': total_matching,
+        'user_role': user_role,
+    }
+    return render(request, 'results/marks_export.html', context)

@@ -812,6 +812,14 @@ class ReportExportService:
         from reportlab.lib import colors
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from django.utils import translation
+        from core.utils.font_helper import register_nyala_font
+
+        has_nyala = register_nyala_font()
+        is_amharic = (translation.get_language() == 'am')
+
+        font_main = 'Nyala' if has_nyala else 'Helvetica'
+        font_bold = 'Nyala' if has_nyala else 'Helvetica-Bold'
 
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -828,6 +836,7 @@ class ReportExportService:
         header_title_style = ParagraphStyle(
             'HeaderTitle',
             parent=styles['Heading1'],
+            fontName=font_bold,
             fontSize=13,
             leading=16,
             alignment=1,
@@ -836,6 +845,7 @@ class ReportExportService:
         sub_style = ParagraphStyle(
             'HeaderSub',
             parent=styles['Normal'],
+            fontName=font_main,
             fontSize=8.5,
             leading=11,
             alignment=1,
@@ -844,6 +854,7 @@ class ReportExportService:
         cell_style = ParagraphStyle(
             'CellText',
             parent=styles['Normal'],
+            fontName=font_main,
             fontSize=7.5,
             leading=9.5,
             textColor=colors.HexColor('#1E293B')
@@ -851,31 +862,40 @@ class ReportExportService:
         th_style = ParagraphStyle(
             'THText',
             parent=styles['Normal'],
+            fontName=font_bold,
             fontSize=8,
             leading=10,
             textColor=colors.HexColor('#FFFFFF'),
-            fontName='Helvetica-Bold'
         )
 
         # 1. School Header Banner
-        elements.append(Paragraph("<b>SMART SCHOOL MANAGEMENT SYSTEM (SSMS)</b>", header_title_style))
-        elements.append(Paragraph("Majang Zone Secondary School &bull; Gambella Regional State, Ethiopia", sub_style))
-        elements.append(Paragraph(f"<b>{title.upper()}</b> &bull; Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}", sub_style))
+        from core.utils.ethiopian_calendar import format_ethiopian
+        eth_fmt = 'full_am' if is_amharic else 'full_en'
+        eth_now_str = format_ethiopian(timezone.now(), eth_fmt)
+        if is_amharic:
+            elements.append(Paragraph("<b>ስማርት የትምህርት ቤት አስተዳደር ስርዓት (SSMS)</b>", header_title_style))
+            elements.append(Paragraph("ማጃንግ ዞን 2ኛ ደረጃ ትምህርት ቤት &bull; ጋምቤላ ክልላዊ መንግሥት፣ ኢትዮጵያ", sub_style))
+            elements.append(Paragraph(f"<b>{title.upper()}</b> &bull; ቀን: {eth_now_str} ({timezone.now().strftime('%Y-%m-%d %H:%M')} እ.ኤ.አ)", sub_style))
+        else:
+            elements.append(Paragraph("<b>SMART SCHOOL MANAGEMENT SYSTEM (SSMS)</b>", header_title_style))
+            elements.append(Paragraph("Majang Zone Secondary School &bull; Gambella Regional State, Ethiopia", sub_style))
+            elements.append(Paragraph(f"<b>{title.upper()}</b> &bull; Generated: {eth_now_str} ({timezone.now().strftime('%Y-%m-%d %H:%M')} G.C.)", sub_style))
         elements.append(Spacer(1, 12))
 
         # 2. Table Data Assembly based on report_type
         table_data = []
 
         if report_type == 'students':
-            table_data.append([
-                Paragraph("Admission No", th_style),
-                Paragraph("Student Full Name", th_style),
-                Paragraph("Gender", th_style),
-                Paragraph("Grade & Section", th_style),
-                Paragraph("Stream", th_style),
-                Paragraph("Academic Year", th_style),
-                Paragraph("Status", th_style),
-            ])
+            h_labels = [
+                "የመግቢያ ቁጥር" if is_amharic else "Admission No",
+                "የተማሪ ሙሉ ስም" if is_amharic else "Student Full Name",
+                "ጾታ" if is_amharic else "Gender",
+                "ክፍል እና ሴክሽን" if is_amharic else "Grade & Section",
+                "የትምህርት ዘርፍ" if is_amharic else "Stream",
+                "የትምህርት ዘመን" if is_amharic else "Academic Year",
+                "ሁኔታ" if is_amharic else "Status",
+            ]
+            table_data.append([Paragraph(h, th_style) for h in h_labels])
             for item in context.get('records', [])[:200]:
                 st = item.student
                 co = item.class_offering
@@ -890,16 +910,17 @@ class ReportExportService:
                 ])
 
         elif report_type == 'teachers':
-            table_data.append([
-                Paragraph("Employee ID", th_style),
-                Paragraph("Teacher Full Name", th_style),
-                Paragraph("Gender", th_style),
-                Paragraph("Specialization", th_style),
-                Paragraph("Classes Count", th_style),
-                Paragraph("Subjects Taught", th_style),
-                Paragraph("Weekly Periods", th_style),
-                Paragraph("Status", th_style),
-            ])
+            h_labels = [
+                "የመታወቂያ ቁጥር" if is_amharic else "Employee ID",
+                "የመምህር ሙሉ ስም" if is_amharic else "Teacher Full Name",
+                "ጾታ" if is_amharic else "Gender",
+                "ሙያዊ ዘርፍ" if is_amharic else "Specialization",
+                "የክፍሎች ብዛት" if is_amharic else "Classes Count",
+                "የሚያስተምሯቸው ትምህርቶች" if is_amharic else "Subjects Taught",
+                "የሳምንት ክፍለ ጊዜ" if is_amharic else "Weekly Periods",
+                "ሁኔታ" if is_amharic else "Status",
+            ]
+            table_data.append([Paragraph(h, th_style) for h in h_labels])
             for item in context.get('records', []):
                 t = item['teacher']
                 table_data.append([
@@ -914,15 +935,16 @@ class ReportExportService:
                 ])
 
         elif report_type == 'attendance':
-            table_data.append([
-                Paragraph("Date", th_style),
-                Paragraph("Total Enrolled", th_style),
-                Paragraph("Present", th_style),
-                Paragraph("Late", th_style),
-                Paragraph("Absent", th_style),
-                Paragraph("Excused", th_style),
-                Paragraph("Attendance Rate (%)", th_style),
-            ])
+            h_labels = [
+                "ቀን" if is_amharic else "Date",
+                "ጠቅላላ ተማሪዎች" if is_amharic else "Total Enrolled",
+                "የተገኙ" if is_amharic else "Present",
+                "ያረፈዱ" if is_amharic else "Late",
+                "የቀሩ" if is_amharic else "Absent",
+                "በፈቃድ" if is_amharic else "Excused",
+                "የመገኘት ምጣኔ (%)" if is_amharic else "Attendance Rate (%)",
+            ]
+            table_data.append([Paragraph(h, th_style) for h in h_labels])
             for item in context.get('records', []):
                 table_data.append([
                     Paragraph(str(item['date']), cell_style),
@@ -935,17 +957,18 @@ class ReportExportService:
                 ])
 
         elif report_type in ['examinations', 'academic']:
-            table_data.append([
-                Paragraph("Examination", th_style),
-                Paragraph("Subject", th_style),
-                Paragraph("Grade", th_style),
-                Paragraph("Max / Pass", th_style),
-                Paragraph("Sat", th_style),
-                Paragraph("Average", th_style),
-                Paragraph("Highest", th_style),
-                Paragraph("Lowest", th_style),
-                Paragraph("Pass Rate (%)", th_style),
-            ])
+            h_labels = [
+                "ፈተና" if is_amharic else "Examination",
+                "የትምህርት ዓይነት" if is_amharic else "Subject",
+                "ክፍል" if is_amharic else "Grade",
+                "ከፍተኛ / ማለፊያ" if is_amharic else "Max / Pass",
+                "የተፈተኑ" if is_amharic else "Sat",
+                "አማካይ" if is_amharic else "Average",
+                "ከፍተኛ" if is_amharic else "Highest",
+                "ዝቅተኛ" if is_amharic else "Lowest",
+                "የማለፍ ምጣኔ (%)" if is_amharic else "Pass Rate (%)",
+            ]
+            table_data.append([Paragraph(h, th_style) for h in h_labels])
             for item in context.get('records', []):
                 table_data.append([
                     Paragraph(item['examination_name'], cell_style),
@@ -960,17 +983,18 @@ class ReportExportService:
                 ])
 
         elif report_type == 'promotion':
-            table_data.append([
-                Paragraph("Cohort Batch Name", th_style),
-                Paragraph("Academic Year", th_style),
-                Paragraph("Target Year", th_style),
-                Paragraph("Grade", th_style),
-                Paragraph("Candidates", th_style),
-                Paragraph("Promoted", th_style),
-                Paragraph("Repeated", th_style),
-                Paragraph("Graduated", th_style),
-                Paragraph("Promotion Rate (%)", th_style),
-            ])
+            h_labels = [
+                "የቡድን ስም" if is_amharic else "Cohort Batch Name",
+                "የትምህርት ዘመን" if is_amharic else "Academic Year",
+                "ቀጣይ ዓመት" if is_amharic else "Target Year",
+                "ክፍል" if is_amharic else "Grade",
+                "እጩዎች" if is_amharic else "Candidates",
+                "ያለፉ" if is_amharic else "Promoted",
+                "የደገሙ" if is_amharic else "Repeated",
+                "የተመረቁ" if is_amharic else "Graduated",
+                "የማለፍ ምጣኔ (%)" if is_amharic else "Promotion Rate (%)",
+            ]
+            table_data.append([Paragraph(h, th_style) for h in h_labels])
             for item in context.get('records', []):
                 b = item['batch']
                 table_data.append([
@@ -999,17 +1023,27 @@ class ReportExportService:
             ]))
             elements.append(t)
         else:
-            elements.append(Paragraph("<i>No data records matched the selected query filters.</i>", sub_style))
+            no_data_msg = "<i>ከተመረጡት ማጣሪያዎች ጋር የሚስማማ መረጃ አልተገኘም።</i>" if is_amharic else "<i>No data records matched the selected query filters.</i>"
+            elements.append(Paragraph(no_data_msg, sub_style))
 
         # 3. Footer and Signature Block
         elements.append(Spacer(1, 20))
-        sig_data = [
-            [
-                Paragraph("<b>Prepared By:</b> ___________________________", sub_style),
-                Paragraph("<b>Approved By (Principal):</b> ___________________________", sub_style),
-                Paragraph("<b>Official School Seal:</b> [ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]", sub_style),
+        if is_amharic:
+            sig_data = [
+                [
+                    Paragraph("<b>ያዘጋጀው:</b> ___________________________", sub_style),
+                    Paragraph("<b>ያረጋገጠው (ርዕሰ መምህር):</b> ___________________________", sub_style),
+                    Paragraph("<b>ኦፊሴላዊ ማህተም:</b> [ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]", sub_style),
+                ]
             ]
-        ]
+        else:
+            sig_data = [
+                [
+                    Paragraph("<b>Prepared By:</b> ___________________________", sub_style),
+                    Paragraph("<b>Approved By (Principal):</b> ___________________________", sub_style),
+                    Paragraph("<b>Official School Seal:</b> [ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]", sub_style),
+                ]
+            ]
         sig_table = Table(sig_data, colWidths=[240, 260, 200])
         sig_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -1029,6 +1063,9 @@ class ReportExportService:
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         from openpyxl.utils import get_column_letter
+        from django.utils import translation
+
+        is_amharic = (translation.get_language() == 'am')
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -1051,12 +1088,16 @@ class ReportExportService:
 
         # Header Rows
         ws.merge_cells('A1:G1')
-        ws['A1'] = "SMART SCHOOL MANAGEMENT SYSTEM (SSMS) - MAJANG ZONE SECONDARY SCHOOL"
+        ws['A1'] = "ስማርት የትምህርት ቤት አስተዳደር ስርዓት (SSMS) - ማጃንግ ዞን 2ኛ ደረጃ ትምህርት ቤት" if is_amharic else "SMART SCHOOL MANAGEMENT SYSTEM (SSMS) - MAJANG ZONE SECONDARY SCHOOL"
         ws['A1'].font = title_font
         ws['A1'].alignment = left_align
 
         ws.merge_cells('A2:G2')
-        ws['A2'] = f"{title.upper()} | Generated on: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        from core.utils.ethiopian_calendar import format_ethiopian
+        eth_fmt = 'full_am' if is_amharic else 'full_en'
+        eth_now_str = format_ethiopian(timezone.now(), eth_fmt)
+        date_label = f"ቀን: {eth_now_str} [{timezone.now().strftime('%Y-%m-%d %H:%M')} እ.ኤ.አ]" if is_amharic else f"Generated: {eth_now_str} [{timezone.now().strftime('%Y-%m-%d %H:%M')} G.C.]"
+        ws['A2'] = f"{title.upper()} | {date_label}"
         ws['A2'].font = sub_font
         ws['A2'].alignment = left_align
 
@@ -1064,7 +1105,7 @@ class ReportExportService:
         row_num = 4
 
         if report_type == 'students':
-            headers = ["Admission No", "Student Name", "Gender", "Grade & Section", "Stream", "Academic Year", "Status"]
+            headers = ["የመግቢያ ቁጥር", "የተማሪ ስም", "ጾታ", "ክፍል እና ሴክሽን", "የትምህርት ዘርፍ", "የትምህርት ዘመን", "ሁኔታ"] if is_amharic else ["Admission No", "Student Name", "Gender", "Grade & Section", "Stream", "Academic Year", "Status"]
             ws.append([])  # blank row
             for col_idx, h in enumerate(headers, 1):
                 cell = ws.cell(row=row_num, column=col_idx, value=h)
@@ -1087,7 +1128,7 @@ class ReportExportService:
                 ])
 
         elif report_type == 'teachers':
-            headers = ["Employee ID", "Teacher Name", "Gender", "Specialization", "Classes Count", "Subjects Taught", "Weekly Periods", "Status"]
+            headers = ["የመታወቂያ ቁጥር", "የመምህር ስም", "ጾታ", "ሙያዊ ዘርፍ", "የክፍሎች ብዛት", "የሚያስተምሯቸው ትምህርቶች", "የሳምንት ክፍለ ጊዜ", "ሁኔታ"] if is_amharic else ["Employee ID", "Teacher Name", "Gender", "Specialization", "Classes Count", "Subjects Taught", "Weekly Periods", "Status"]
             for col_idx, h in enumerate(headers, 1):
                 cell = ws.cell(row=row_num, column=col_idx, value=h)
                 cell.font = th_font
@@ -1109,7 +1150,7 @@ class ReportExportService:
                 ])
 
         elif report_type == 'attendance':
-            headers = ["Date", "Total Enrolled", "Present", "Late", "Absent", "Excused", "Attendance Rate (%)"]
+            headers = ["ቀን", "ጠቅላላ ተማሪዎች", "የተገኙ", "ያረፈዱ", "የቀሩ", "በፈቃድ", "የመገኘት ምጣኔ (%)"] if is_amharic else ["Date", "Total Enrolled", "Present", "Late", "Absent", "Excused", "Attendance Rate (%)"]
             for col_idx, h in enumerate(headers, 1):
                 cell = ws.cell(row=row_num, column=col_idx, value=h)
                 cell.font = th_font
@@ -1129,7 +1170,7 @@ class ReportExportService:
                 ])
 
         elif report_type in ['examinations', 'academic']:
-            headers = ["Examination", "Subject", "Grade", "Max Marks", "Pass Marks", "Sat Count", "Average", "Highest", "Lowest", "Pass Rate (%)"]
+            headers = ["ፈተና", "የትምህርት ዓይነት", "ክፍል", "ከፍተኛ ውጤት", "ማለፊያ ውጤት", "የተፈተኑ ብዛት", "አማካይ", "ከፍተኛ", "ዝቅተኛ", "የማለፍ ምጣኔ (%)"] if is_amharic else ["Examination", "Subject", "Grade", "Max Marks", "Pass Marks", "Sat Count", "Average", "Highest", "Lowest", "Pass Rate (%)"]
             for col_idx, h in enumerate(headers, 1):
                 cell = ws.cell(row=row_num, column=col_idx, value=h)
                 cell.font = th_font
@@ -1152,7 +1193,7 @@ class ReportExportService:
                 ])
 
         elif report_type == 'promotion':
-            headers = ["Cohort Batch", "Academic Year", "Target Year", "Grade", "Candidates", "Promoted", "Repeated", "Graduated", "Promotion Rate (%)"]
+            headers = ["የቡድን ስም", "የትምህርት ዘመን", "ቀጣይ ዓመት", "ክፍል", "እጩዎች", "ያለፉ", "የደገሙ", "የተመረቁ", "የማለፍ ምጣኔ (%)"] if is_amharic else ["Cohort Batch", "Academic Year", "Target Year", "Grade", "Candidates", "Promoted", "Repeated", "Graduated", "Promotion Rate (%)"]
             for col_idx, h in enumerate(headers, 1):
                 cell = ws.cell(row=row_num, column=col_idx, value=h)
                 cell.font = th_font

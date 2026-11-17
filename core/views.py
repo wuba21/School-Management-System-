@@ -238,38 +238,145 @@ def system_settings_view(request):
     """
     School system configuration and LAN network parameters.
     """
+    import os
+    from django.conf import settings
+
     context = {
         'active_menu': 'system_settings',
-        'page_title': 'System Settings',
-        'module_title': 'System & Network Settings',
-        'module_description': (
-            'Server LAN IP address, automated backup schedules, '
-            'and institutional metadata.'
-        ),
-        'module_icon': 'bi-gear-fill',
-        'action_btn': 'Save Configuration',
+        'page_title': 'System & Infrastructure Settings',
+        'lan_ip': os.getenv('LAN_SERVER_IP', '192.168.1.100'),
+        'db_engine': os.getenv('DB_ENGINE', 'sqlite3').lower(),
+        'login_max_attempts': getattr(settings, 'LOGIN_MAX_ATTEMPTS', 5),
     }
-    return render(request, 'system_module.html', context)
+    return render(request, 'core/system_settings.html', context)
 
 
 @sysadmin_required
 def system_audit_view(request):
     """
-    Immutable audit logs and activity tracking.
+    Full audit log viewer with filtering and pagination.
     Only System Administrators can review security audit trails.
     """
+    from django.core.paginator import Paginator
     from core.models import AuditLog
-    logs = AuditLog.objects.select_related('actor').order_by('-timestamp')[:200]
+
+    logs = AuditLog.objects.select_related('actor').order_by('-timestamp')
+
+    # ── Filters ─────────────────────────────────────────────────────────────
+    action_filter = request.GET.get('action', '').strip()
+    actor_filter = request.GET.get('actor', '').strip()
+    ip_filter = request.GET.get('ip', '').strip()
+    entity_filter = request.GET.get('entity', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(actor__username__icontains=actor_filter)
+    if ip_filter:
+        logs = logs.filter(ip_address__icontains=ip_filter)
+    if entity_filter:
+        logs = logs.filter(entity_name__icontains=entity_filter)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    # ── KPI summary (today) ──────────────────────────────────────────────────
+    from django.utils import timezone
+    from core.models import LoginAttempt
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    total_today = AuditLog.objects.filter(timestamp__gte=today_start).count()
+    failed_logins_today = LoginAttempt.objects.filter(
+        status=LoginAttempt.STATUS_FAILED,
+        timestamp__gte=today_start,
+    ).count()
+    unique_ips_today = (
+        AuditLog.objects
+        .filter(timestamp__gte=today_start)
+        .exclude(ip_address__isnull=True)
+        .values('ip_address')
+        .distinct()
+        .count()
+    )
+
+    # ── Pagination ───────────────────────────────────────────────────────────
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    action_choices = AuditLog.ACTION_CHOICES
+
     context = {
         'active_menu': 'system_audit',
         'page_title': 'Security Audit Trail',
-        'module_title': 'Security Audit Trail',
-        'module_description': (
-            'Immutable activity logs capturing IP addresses, timestamps, '
-            'and mark edits.'
-        ),
-        'module_icon': 'bi-shield-lock-fill',
-        'action_btn': 'Export Audit Log Archive',
-        'audit_logs': logs,
+        'page_obj': page_obj,
+        'action_filter': action_filter,
+        'actor_filter': actor_filter,
+        'ip_filter': ip_filter,
+        'entity_filter': entity_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'action_choices': action_choices,
+        'total_today': total_today,
+        'failed_logins_today': failed_logins_today,
+        'unique_ips_today': unique_ips_today,
     }
-    return render(request, 'system_module.html', context)
+    return render(request, 'core/audit_log.html', context)
+
+
+@sysadmin_required
+def audit_log_export_csv_view(request):
+    """
+    Export filtered audit logs as a downloadable CSV file.
+    """
+    import csv
+    from django.http import HttpResponse
+    from core.models import AuditLog
+
+    logs = AuditLog.objects.select_related('actor').order_by('-timestamp')
+
+    # Apply same filters as the viewer
+    action_filter = request.GET.get('action', '').strip()
+    actor_filter = request.GET.get('actor', '').strip()
+    ip_filter = request.GET.get('ip', '').strip()
+    entity_filter = request.GET.get('entity', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(actor__username__icontains=actor_filter)
+    if ip_filter:
+        logs = logs.filter(ip_address__icontains=ip_filter)
+    if entity_filter:
+        logs = logs.filter(entity_name__icontains=entity_filter)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    # Limit to 10,000 rows for safety
+    logs = logs[:10000]
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="ssms_audit_log.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Timestamp', 'Actor', 'Action', 'Entity', 'Record ID', 'IP Address', 'Changes'])
+
+    for log in logs:
+        writer.writerow([
+            log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            log.actor.username if log.actor else 'System',
+            log.action,
+            log.entity_name,
+            log.record_id,
+            log.ip_address or '',
+            str(log.changes_json),
+        ])
+
+    return response
+

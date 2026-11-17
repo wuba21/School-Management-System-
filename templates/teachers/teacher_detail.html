@@ -1,5 +1,6 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
+{% load ethiopian_calendar_tags %}
 
 {% block title %}Teacher Profile - {{ teacher.full_name }}{% endblock %}
 {% block page_title %}Faculty Member Profile{% endblock %}
@@ -167,11 +168,21 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between px-0">
                         <span class="text-secondary">Date of Birth</span>
-                        <span class="fw-semibold">{{ teacher.date_of_birth|date:"M d, Y"|default:"Not specified" }}</span>
+                        <span class="fw-semibold text-end">
+                            {% if teacher.date_of_birth %}
+                            <div>{{ teacher.date_of_birth|to_ethiopian }}</div>
+                            <div class="text-muted text-xs">({{ teacher.date_of_birth|date:"M d, Y" }})</div>
+                            {% else %}
+                            Not specified
+                            {% endif %}
+                        </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between px-0">
                         <span class="text-secondary">Employment Date</span>
-                        <span class="fw-semibold">{{ teacher.joining_date|date:"M d, Y" }}</span>
+                        <span class="fw-semibold text-end">
+                            <div>{{ teacher.joining_date|to_ethiopian }}</div>
+                            <div class="text-muted text-xs">({{ teacher.joining_date|date:"M d, Y" }})</div>
+                        </span>
                     </li>
                 </ul>
             </div>

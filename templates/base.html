@@ -1,298 +1,684 @@
 {% load static %}
+{% load i18n %}
+{% load ethiopian_calendar_tags %}
+{% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ CURRENT_LANGUAGE|default:'en' }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Dashboard{% endblock %} - SSMS | Majang Secondary School</title>
-    
+    <title>{% block title %}{% trans "Dashboard" %}{% endblock %} - SSMS | Majang Secondary School</title>
+
     <!-- Offline Local Vendor CSS (Self-contained for school LAN) -->
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
-    
+
     <!-- Custom Project Master Styles -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
-<div class="app-wrapper">
+    <div class="app-wrapper">
 
-    <!-- Mobile Sidebar Backdrop Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- 1. LEFT SIDEBAR NAVIGATION (Dark Navy-Slate) -->
-    <aside class="app-sidebar" id="appSidebar">
-        <!-- Sidebar Brand Header -->
-        <div class="sidebar-header">
-            <a href="{% url 'dashboard' %}" class="sidebar-brand">
-                <span class="fs-4">🏫</span>
-                <div class="d-flex flex-column">
-                    <span class="lh-1">SSMS</span>
-                    <span class="text-xs text-muted fw-normal" style="font-size: 0.65rem; color: #94a3b8 !important;">Majang Secondary</span>
-                </div>
-            </a>
-            <span class="ms-auto sidebar-brand-badge">Grades 9-12</span>
-        </div>
-
-        <!-- Scrollable Navigation Items -->
-        <nav class="sidebar-nav">
-            <!-- MAIN -->
-            <div class="nav-section-title">Main</div>
-            <a href="{% url 'dashboard' %}" class="nav-link-custom {% if active_menu == 'dashboard' %}active{% endif %}">
-                <i class="bi bi-grid-1x2-fill"></i>
-                <span>Dashboard</span>
-            </a>
-
-            <!-- MANAGEMENT -->
-            <div class="nav-section-title">Management</div>
-            <a href="{% url 'students_list' %}" class="nav-link-custom {% if active_menu == 'students' %}active{% endif %}">
-                <i class="bi bi-mortarboard-fill"></i>
-                <span>Students</span>
-            </a>
-            <a href="{% url 'teachers_list' %}" class="nav-link-custom {% if active_menu == 'teachers' %}active{% endif %}">
-                <i class="bi bi-person-badge-fill"></i>
-                <span>Teachers</span>
-            </a>
-            <a href="{% url 'academics_years' %}" class="nav-link-custom {% if active_menu == 'academics_years' %}active{% endif %}">
-                <i class="bi bi-calendar3"></i>
-                <span>Academic Years</span>
-            </a>
-            <a href="{% url 'academics_grades' %}" class="nav-link-custom {% if active_menu == 'academics_grades' %}active{% endif %}">
-                <i class="bi bi-diagram-3-fill"></i>
-                <span>Grades & Sections</span>
-            </a>
-            <a href="{% url 'academics_subjects' %}" class="nav-link-custom {% if active_menu == 'academics_subjects' %}active{% endif %}">
-                <i class="bi bi-book-half"></i>
-                <span>Subjects</span>
-            </a>
-            <a href="{% url 'class_offering_list' %}" class="nav-link-custom {% if active_menu == 'class_offerings' %}active{% endif %}">
-                <i class="bi bi-building"></i>
-                <span>Class Offerings</span>
-            </a>
-            <a href="{% url 'academics_curriculum' %}" class="nav-link-custom {% if active_menu == 'academics_curriculum' %}active{% endif %}">
-                <i class="bi bi-journal-bookmark-fill"></i>
-                <span>Curriculum Matrix</span>
-            </a>
-
-            <!-- ACADEMIC -->
-            <div class="nav-section-title">Academic</div>
-            <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
-                <i class="bi bi-calendar-check-fill"></i>
-                <span>Attendance</span>
-            </a>
-            <a href="{% url 'examinations_index' %}" class="nav-link-custom {% if active_menu == 'examinations' %}active{% endif %}">
-                <i class="bi bi-file-earmark-text-fill"></i>
-                <span>Examinations</span>
-            </a>
-            <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
-                <i class="bi bi-clipboard2-data-fill"></i>
-                <span>Results</span>
-            </a>
-            <a href="{% url 'promotion_index' %}" class="nav-link-custom {% if active_menu == 'promotion' %}active{% endif %}">
-                <i class="bi bi-arrow-up-right-circle-fill"></i>
-                <span>Promotion</span>
-            </a>
-            <a href="{% url 'timetable_index' %}" class="nav-link-custom {% if active_menu == 'timetable' %}active{% endif %}">
-                <i class="bi bi-clock-history"></i>
-                <span>Timetable</span>
-            </a>
-
-            <!-- REPORTS & ANALYTICS -->
-            <div class="nav-section-title">Reports & Analytics</div>
-            <a href="{% url 'reports_dashboard' %}" class="nav-link-custom {% if active_menu == 'reports_dashboard' %}active{% endif %}">
-                <i class="bi bi-speedometer2"></i>
-                <span>Analytics Dashboard</span>
-            </a>
-            <a href="{% url 'reports_students' %}" class="nav-link-custom {% if active_menu == 'reports_students' %}active{% endif %}">
-                <i class="bi bi-file-person"></i>
-                <span>Student Reports</span>
-            </a>
-            <a href="{% url 'reports_teachers' %}" class="nav-link-custom {% if active_menu == 'reports_teachers' %}active{% endif %}">
-                <i class="bi bi-person-lines-fill"></i>
-                <span>Teacher Reports</span>
-            </a>
-            <a href="{% url 'reports_attendance' %}" class="nav-link-custom {% if active_menu == 'reports_attendance' %}active{% endif %}">
-                <i class="bi bi-file-earmark-check"></i>
-                <span>Attendance Reports</span>
-            </a>
-            <a href="{% url 'reports_academic' %}" class="nav-link-custom {% if active_menu == 'reports_academic' or active_menu == 'reports_examinations' %}active{% endif %}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span>Academic & Exams</span>
-            </a>
-            <a href="{% url 'reports_promotion' %}" class="nav-link-custom {% if active_menu == 'reports_promotion' %}active{% endif %}">
-                <i class="bi bi-award"></i>
-                <span>Promotion & Graduation</span>
-            </a>
-            <a href="{% url 'reports_exports' %}" class="nav-link-custom {% if active_menu == 'reports_exports' %}active{% endif %}">
-                <i class="bi bi-cloud-arrow-down-fill"></i>
-                <span>Export Center</span>
-            </a>
-
-            <!-- INTELLIGENCE -->
-            <div class="nav-section-title">Intelligence & AI</div>
-            <a href="{% url 'ai_dashboard' %}" class="nav-link-custom {% if active_menu == 'ai_assistant' %}active{% endif %}">
-                <i class="bi bi-cpu"></i>
-                <span>AI Dashboard</span>
-            </a>
-            <a href="{% url 'ai_chat_assistant' %}" class="nav-link-custom {% if active_menu == 'ai_chat' %}active{% endif %}">
-                <i class="bi bi-robot"></i>
-                <span>School Assistant Chat</span>
-            </a>
-            <a href="{% url 'ai_academic_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_academic' %}active{% endif %}">
-                <i class="bi bi-graph-up-arrow"></i>
-                <span>Academic Diagnostics</span>
-            </a>
-            <a href="{% url 'ai_attendance_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_attendance' %}active{% endif %}">
-                <i class="bi bi-calendar2-check"></i>
-                <span>Attendance Intelligence</span>
-            </a>
-            <a href="{% url 'ai_report_generator' %}" class="nav-link-custom {% if active_menu == 'ai_reports' %}active{% endif %}">
-                <i class="bi bi-file-earmark-medical"></i>
-                <span>AI Report Studio</span>
-            </a>
-
-            <!-- SYSTEM -->
-            <div class="nav-section-title">System</div>
-            <a href="{% url 'system_users' %}" class="nav-link-custom {% if active_menu == 'system_users' %}active{% endif %}">
-                <i class="bi bi-people-fill"></i>
-                <span>User Management</span>
-            </a>
-            <a href="{% url 'system_settings' %}" class="nav-link-custom {% if active_menu == 'system_settings' %}active{% endif %}">
-                <i class="bi bi-gear-fill"></i>
-                <span>Settings</span>
-            </a>
-            <a href="{% url 'system_audit' %}" class="nav-link-custom {% if active_menu == 'system_audit' %}active{% endif %}">
-                <i class="bi bi-shield-lock-fill"></i>
-                <span>Audit Logs</span>
-            </a>
-        </nav>
-
-        <!-- Sidebar Footer -->
-        <div class="sidebar-footer">
-            <div>Majang Zone, Gambella</div>
-            <div class="text-xs" style="font-size: 0.7rem; opacity: 0.7;">Offline LAN Deployment</div>
-        </div>
-    </aside>
-
-    <!-- 2. MAIN APPLICATION WORKSPACE -->
-    <div class="app-main">
-        <!-- Top Sticky Navbar -->
-        <header class="app-navbar">
-            <div class="navbar-left">
-                <button class="navbar-toggle-btn" id="sidebarToggleBtn" type="button" aria-label="Toggle navigation">
-                    <i class="bi bi-list"></i>
-                </button>
-                <div class="page-title-badge">
-                    <span>{% block page_title %}Dashboard{% endblock %}</span>
-                </div>
+        <!-- 1. LEFT SIDEBAR NAVIGATION (Dark Navy-Slate) -->
+        <aside class="app-sidebar" id="appSidebar">
+            <!-- Sidebar Brand Header -->
+            <div class="sidebar-header">
+                <a href="{% url 'dashboard' %}" class="sidebar-brand">
+                    <div class="sidebar-crest-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="d-flex flex-column min-w-0">
+                        <span class="sidebar-brand-name">Metti Secondary</span>
+                        <span class="sidebar-brand-sub">High School</span>
+                    </div>
+                </a>
+                <span class="ms-auto sidebar-brand-badge">Grades 9–12</span>
             </div>
 
-            <div class="navbar-right">
-                <!-- Local LAN Mode Status Indicator -->
-                <div class="lan-status-pill" title="System running over school local area network without external internet dependency">
-                    <span class="lan-pulse-dot"></span>
-                    <span class="lan-pill-text">Local LAN Mode</span>
-                </div>
+            <!-- Scrollable Navigation Items with Strict Role-Based Access Control Filtering -->
+            <nav class="sidebar-nav">
+                <!-- MAIN (Visible to All Roles) -->
+                <div class="nav-section-title">{% trans "Main" %}</div>
+                <a href="{% url 'dashboard' %}" class="nav-link-custom {% if active_menu == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-house-door-fill"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
 
-                <!-- Notifications Bell Icon -->
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-secondary position-relative p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="System Notifications" style="flex-shrink:0;">
-                        <i class="bi bi-bell fs-5"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size: 0.65rem;">
-                            3
-                        </span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-0" style="min-width: 280px;">
-                        <li class="p-3 border-bottom bg-light">
-                            <h6 class="mb-0 fw-bold small">System Notifications</h6>
-                            <span class="text-muted text-xs" style="font-size: 0.7rem;">Local School Network</span>
-                        </li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'attendance_index' %}"><i class="bi bi-check2-circle text-success me-2"></i>Morning attendance submitted</a></li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'examinations_index' %}"><i class="bi bi-exclamation-circle text-warning me-2"></i>Midterm marks entry open</a></li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'system_audit' %}"><i class="bi bi-shield-check text-info me-2"></i>Daily backup completed</a></li>
-                    </ul>
-                </div>
+                {# Determine user's active role flags #}
+                {% if request.user.is_superuser or request.user.role.code == 'ADMIN' %}
+                    {# ==================== SYSTEM ADMINISTRATOR MENU ==================== #}
+                    <!-- MANAGEMENT -->
+                    <div class="nav-section-title">{% trans "Management" %}</div>
+                    <a href="{% url 'students_list' %}" class="nav-link-custom {% if active_menu == 'students' %}active{% endif %}">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>{% trans "Students" %}</span>
+                    </a>
+                    <a href="{% url 'id_card_hub' %}" class="nav-link-custom {% if active_menu == 'id_cards' %}active{% endif %}">
+                        <i class="bi bi-person-badge"></i>
+                        <span>{% trans "Student ID Cards" %}</span>
+                    </a>
+                    <a href="{% url 'certificate_hub' %}" class="nav-link-custom {% if active_menu == 'certificates' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-ruled"></i>
+                        <span>{% trans "Certificates (TC/LC)" %}</span>
+                    </a>
+                    <a href="{% url 'teachers_list' %}" class="nav-link-custom {% if active_menu == 'teachers' %}active{% endif %}">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>{% trans "Teachers" %}</span>
+                    </a>
+                    <a href="{% url 'academics_years' %}" class="nav-link-custom {% if active_menu == 'academics_years' %}active{% endif %}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>{% trans "Academic Years" %}</span>
+                    </a>
+                    <a href="{% url 'academics_grades' %}" class="nav-link-custom {% if active_menu == 'academics_grades' %}active{% endif %}">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        <span>{% trans "Grades & Sections" %}</span>
+                    </a>
+                    <a href="{% url 'academics_subjects' %}" class="nav-link-custom {% if active_menu == 'academics_subjects' %}active{% endif %}">
+                        <i class="bi bi-book-half"></i>
+                        <span>{% trans "Subjects" %}</span>
+                    </a>
+                    <a href="{% url 'class_offering_list' %}" class="nav-link-custom {% if active_menu == 'class_offerings' %}active{% endif %}">
+                        <i class="bi bi-building"></i>
+                        <span>{% trans "Class Offerings" %}</span>
+                    </a>
+                    <a href="{% url 'academics_curriculum' %}" class="nav-link-custom {% if active_menu == 'academics_curriculum' %}active{% endif %}">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                        <span>{% trans "Curriculum Matrix" %}</span>
+                    </a>
 
-                <!-- User Profile Dropdown -->
-                <div class="dropdown">
-                    <button class="user-profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar-circle">
-                            <span>{{ request.user.username|first|upper }}</span>
-                        </div>
-                        <div class="d-none d-md-flex flex-column text-start">
-                            <span class="fw-semibold small text-dark lh-1">
-                                {{ request.user.get_full_name|default:request.user.username }}
-                            </span>
-                            <span class="text-muted" style="font-size: 0.75rem;">
-                                {{ request.user.role.name|default:"No Role" }}
-                            </span>
-                        </div>
-                        <i class="bi bi-chevron-down text-muted small ms-1"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1">
-                        <li class="px-3 py-2 border-bottom">
-                            <p class="mb-0 fw-semibold small">
-                                {{ request.user.get_full_name|default:request.user.username }}
-                            </p>
-                            <p class="mb-0 text-muted text-xs" style="font-size: 0.75rem;">
-                                {{ request.user.email|default:"No email on file" }}
-                            </p>
-                        </li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'password_change' %}"><i class="bi bi-key me-2"></i>Change Password</a></li>
-                        {% if request.user.is_superuser or request.user.role.code == 'ADMIN' %}
-                        <li><a class="dropdown-item py-2 small" href="{% url 'system_settings' %}"><i class="bi bi-sliders me-2"></i>System Settings</a></li>
-                        <li><a class="dropdown-item py-2 small" href="{% url 'admin:index' %}" target="_blank"><i class="bi bi-gear me-2"></i>Django Administration</a></li>
-                        {% endif %}
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li>
-                            <a class="dropdown-item py-2 small text-danger" href="{% url 'logout' %}">
-                                <i class="bi bi-box-arrow-right me-2"></i>Sign Out
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                    <!-- ACADEMIC -->
+                    <div class="nav-section-title">{% trans "Academic" %}</div>
+                    <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        <span>{% trans "Attendance" %}</span>
+                    </a>
+                    <a href="{% url 'examinations_index' %}" class="nav-link-custom {% if active_menu == 'examinations' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                        <span>{% trans "Examinations" %}</span>
+                    </a>
+                    <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
+                        <i class="bi bi-clipboard2-data-fill"></i>
+                        <span>{% trans "Results" %}</span>
+                    </a>
+                    <a href="{% url 'report_card_hub' %}" class="nav-link-custom {% if active_menu == 'report_cards' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                        <span>{% trans "Report Cards" %}</span>
+                    </a>
+                    <a href="{% url 'marks_import' %}" class="nav-link-custom {% if active_menu == 'marks_import' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                        <span>{% trans "Marks Import" %}</span>
+                    </a>
+                    <a href="{% url 'marks_export' %}" class="nav-link-custom {% if active_menu == 'marks_export' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                        <span>{% trans "Marks Export" %}</span>
+                    </a>
+                    <a href="{% url 'promotion_index' %}" class="nav-link-custom {% if active_menu == 'promotion' %}active{% endif %}">
+                        <i class="bi bi-arrow-up-right-circle-fill"></i>
+                        <span>{% trans "Promotion" %}</span>
+                    </a>
+                    <a href="{% url 'timetable_index' %}" class="nav-link-custom {% if active_menu == 'timetable' %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i>
+                        <span>{% trans "Timetable" %}</span>
+                    </a>
+
+                    <!-- REPORTS & ANALYTICS -->
+                    <div class="nav-section-title">{% trans "Reports & Analytics" %}</div>
+                    <a href="{% url 'reports_dashboard' %}" class="nav-link-custom {% if active_menu == 'reports_dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>{% trans "Analytics Dashboard" %}</span>
+                    </a>
+                    <a href="{% url 'reports_students' %}" class="nav-link-custom {% if active_menu == 'reports_students' %}active{% endif %}">
+                        <i class="bi bi-file-person"></i>
+                        <span>{% trans "Student Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_teachers' %}" class="nav-link-custom {% if active_menu == 'reports_teachers' %}active{% endif %}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>{% trans "Teacher Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_attendance' %}" class="nav-link-custom {% if active_menu == 'reports_attendance' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-check"></i>
+                        <span>{% trans "Attendance Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_academic' %}" class="nav-link-custom {% if active_menu == 'reports_academic' or active_menu == 'reports_examinations' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>{% trans "Academic & Exams" %}</span>
+                    </a>
+                    <a href="{% url 'reports_promotion' %}" class="nav-link-custom {% if active_menu == 'reports_promotion' %}active{% endif %}">
+                        <i class="bi bi-award"></i>
+                        <span>{% trans "Promotion & Graduation" %}</span>
+                    </a>
+                    <a href="{% url 'reports_exports' %}" class="nav-link-custom {% if active_menu == 'reports_exports' %}active{% endif %}">
+                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                        <span>{% trans "Export Center" %}</span>
+                    </a>
+
+                    <!-- INTELLIGENCE -->
+                    <div class="nav-section-title">{% trans "Intelligence & AI" %}</div>
+                    <a href="{% url 'ai_dashboard' %}" class="nav-link-custom {% if active_menu == 'ai_assistant' %}active{% endif %}">
+                        <i class="bi bi-cpu"></i>
+                        <span>{% trans "AI Dashboard" %}</span>
+                    </a>
+                    <a href="{% url 'ai_chat_assistant' %}" class="nav-link-custom {% if active_menu == 'ai_chat' %}active{% endif %}">
+                        <i class="bi bi-robot"></i>
+                        <span>{% trans "School Assistant Chat" %}</span>
+                    </a>
+                    <a href="{% url 'ai_academic_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_academic' %}active{% endif %}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>{% trans "Academic Diagnostics" %}</span>
+                    </a>
+                    <a href="{% url 'ai_attendance_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar2-check"></i>
+                        <span>{% trans "Attendance Intelligence" %}</span>
+                    </a>
+                    <a href="{% url 'ai_report_generator' %}" class="nav-link-custom {% if active_menu == 'ai_reports' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-medical"></i>
+                        <span>{% trans "AI Report Studio" %}</span>
+                    </a>
+
+                    <!-- SYSTEM -->
+                    <div class="nav-section-title">{% trans "System Administration" %}</div>
+                    <a href="{% url 'system_users' %}" class="nav-link-custom {% if active_menu == 'system_users' %}active{% endif %}">
+                        <i class="bi bi-people-fill"></i>
+                        <span>{% trans "User Management" %}</span>
+                    </a>
+                    <a href="{% url 'system_settings' %}" class="nav-link-custom {% if active_menu == 'system_settings' %}active{% endif %}">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>{% trans "Settings" %}</span>
+                    </a>
+                    <a href="{% url 'backup_dashboard' %}" class="nav-link-custom {% if active_menu == 'backup' %}active{% endif %}">
+                        <i class="bi bi-hdd-network-fill"></i>
+                        <span>{% trans "Backup & Recovery" %}</span>
+                    </a>
+                    <a href="{% url 'system_audit' %}" class="nav-link-custom {% if active_menu == 'system_audit' %}active{% endif %}">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>{% trans "Audit Logs" %}</span>
+                    </a>
+                    <a href="{% url 'security_dashboard' %}" class="nav-link-custom {% if active_menu == 'security_dashboard' %}active{% endif %}">
+                        <i class="bi bi-shield-exclamation"></i>
+                        <span>{% trans "Security Dashboard" %}</span>
+                    </a>
+                    <a href="{% url 'login_attempt_list' %}" class="nav-link-custom {% if active_menu == 'login_attempts' %}active{% endif %}">
+                        <i class="bi bi-person-lock"></i>
+                        <span>{% trans "Login Attempts" %}</span>
+                    </a>
+
+
+                {% elif request.user.role.code == 'PRINCIPAL' %}
+                    {# ==================== PRINCIPAL MENU ==================== #}
+                    <!-- MANAGEMENT -->
+                    <div class="nav-section-title">{% trans "Management" %}</div>
+                    <a href="{% url 'students_list' %}" class="nav-link-custom {% if active_menu == 'students' %}active{% endif %}">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>{% trans "Students" %}</span>
+                    </a>
+                    <a href="{% url 'id_card_hub' %}" class="nav-link-custom {% if active_menu == 'id_cards' %}active{% endif %}">
+                        <i class="bi bi-person-badge"></i>
+                        <span>{% trans "Student ID Cards" %}</span>
+                    </a>
+                    <a href="{% url 'certificate_hub' %}" class="nav-link-custom {% if active_menu == 'certificates' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-ruled"></i>
+                        <span>{% trans "Certificates (TC/LC)" %}</span>
+                    </a>
+                    <a href="{% url 'teachers_list' %}" class="nav-link-custom {% if active_menu == 'teachers' %}active{% endif %}">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>{% trans "Teachers" %}</span>
+                    </a>
+                    <a href="{% url 'academics_years' %}" class="nav-link-custom {% if active_menu == 'academics_years' %}active{% endif %}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>{% trans "Academic Years" %}</span>
+                    </a>
+                    <a href="{% url 'academics_grades' %}" class="nav-link-custom {% if active_menu == 'academics_grades' %}active{% endif %}">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        <span>{% trans "Grades & Sections" %}</span>
+                    </a>
+                    <a href="{% url 'academics_subjects' %}" class="nav-link-custom {% if active_menu == 'academics_subjects' %}active{% endif %}">
+                        <i class="bi bi-book-half"></i>
+                        <span>{% trans "Subjects" %}</span>
+                    </a>
+                    <a href="{% url 'class_offering_list' %}" class="nav-link-custom {% if active_menu == 'class_offerings' %}active{% endif %}">
+                        <i class="bi bi-building"></i>
+                        <span>{% trans "Class Offerings" %}</span>
+                    </a>
+                    <a href="{% url 'academics_curriculum' %}" class="nav-link-custom {% if active_menu == 'academics_curriculum' %}active{% endif %}">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                        <span>{% trans "Curriculum Matrix" %}</span>
+                    </a>
+
+                    <!-- ACADEMIC -->
+                    <div class="nav-section-title">{% trans "Academic" %}</div>
+                    <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        <span>{% trans "Attendance" %}</span>
+                    </a>
+                    <a href="{% url 'examinations_index' %}" class="nav-link-custom {% if active_menu == 'examinations' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                        <span>{% trans "Examinations" %}</span>
+                    </a>
+                    <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
+                        <i class="bi bi-clipboard2-data-fill"></i>
+                        <span>{% trans "Results" %}</span>
+                    </a>
+                    <a href="{% url 'report_card_hub' %}" class="nav-link-custom {% if active_menu == 'report_cards' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                        <span>{% trans "Report Cards" %}</span>
+                    </a>
+                    <a href="{% url 'marks_import' %}" class="nav-link-custom {% if active_menu == 'marks_import' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                        <span>{% trans "Marks Import" %}</span>
+                    </a>
+                    <a href="{% url 'marks_export' %}" class="nav-link-custom {% if active_menu == 'marks_export' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                        <span>{% trans "Marks Export" %}</span>
+                    </a>
+                    <a href="{% url 'promotion_index' %}" class="nav-link-custom {% if active_menu == 'promotion' %}active{% endif %}">
+                        <i class="bi bi-arrow-up-right-circle-fill"></i>
+                        <span>{% trans "Promotion" %}</span>
+                    </a>
+                    <a href="{% url 'timetable_index' %}" class="nav-link-custom {% if active_menu == 'timetable' %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i>
+                        <span>{% trans "Timetable" %}</span>
+                    </a>
+
+                    <!-- REPORTS & ANALYTICS -->
+                    <div class="nav-section-title">{% trans "Reports & Analytics" %}</div>
+                    <a href="{% url 'reports_dashboard' %}" class="nav-link-custom {% if active_menu == 'reports_dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>{% trans "Analytics Dashboard" %}</span>
+                    </a>
+                    <a href="{% url 'reports_students' %}" class="nav-link-custom {% if active_menu == 'reports_students' %}active{% endif %}">
+                        <i class="bi bi-file-person"></i>
+                        <span>{% trans "Student Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_teachers' %}" class="nav-link-custom {% if active_menu == 'reports_teachers' %}active{% endif %}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>{% trans "Teacher Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_attendance' %}" class="nav-link-custom {% if active_menu == 'reports_attendance' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-check"></i>
+                        <span>{% trans "Attendance Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_academic' %}" class="nav-link-custom {% if active_menu == 'reports_academic' or active_menu == 'reports_examinations' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>{% trans "Academic & Exams" %}</span>
+                    </a>
+                    <a href="{% url 'reports_promotion' %}" class="nav-link-custom {% if active_menu == 'reports_promotion' %}active{% endif %}">
+                        <i class="bi bi-award"></i>
+                        <span>{% trans "Promotion & Graduation" %}</span>
+                    </a>
+                    <a href="{% url 'reports_exports' %}" class="nav-link-custom {% if active_menu == 'reports_exports' %}active{% endif %}">
+                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                        <span>{% trans "Export Center" %}</span>
+                    </a>
+
+                    <!-- INTELLIGENCE -->
+                    <div class="nav-section-title">{% trans "Intelligence & AI" %}</div>
+                    <a href="{% url 'ai_dashboard' %}" class="nav-link-custom {% if active_menu == 'ai_assistant' %}active{% endif %}">
+                        <i class="bi bi-cpu"></i>
+                        <span>{% trans "AI Dashboard" %}</span>
+                    </a>
+                    <a href="{% url 'ai_chat_assistant' %}" class="nav-link-custom {% if active_menu == 'ai_chat' %}active{% endif %}">
+                        <i class="bi bi-robot"></i>
+                        <span>{% trans "School Assistant Chat" %}</span>
+                    </a>
+                    <a href="{% url 'ai_academic_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_academic' %}active{% endif %}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>{% trans "Academic Diagnostics" %}</span>
+                    </a>
+                    <a href="{% url 'ai_attendance_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar2-check"></i>
+                        <span>{% trans "Attendance Intelligence" %}</span>
+                    </a>
+                    <a href="{% url 'ai_report_generator' %}" class="nav-link-custom {% if active_menu == 'ai_reports' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-medical"></i>
+                        <span>{% trans "AI Report Studio" %}</span>
+                    </a>
+
+                {% elif request.user.role.code == 'REGISTRAR' %}
+                    {# ==================== REGISTRAR MENU ==================== #}
+                    <!-- STUDENT RECORDS -->
+                    <div class="nav-section-title">{% trans "Student Records" %}</div>
+                    <a href="{% url 'students_list' %}" class="nav-link-custom {% if active_menu == 'students' %}active{% endif %}">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>{% trans "Students" %}</span>
+                    </a>
+                    <a href="{% url 'id_card_hub' %}" class="nav-link-custom {% if active_menu == 'id_cards' %}active{% endif %}">
+                        <i class="bi bi-person-badge"></i>
+                        <span>{% trans "Student ID Cards" %}</span>
+                    </a>
+                    <a href="{% url 'certificate_hub' %}" class="nav-link-custom {% if active_menu == 'certificates' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-ruled"></i>
+                        <span>{% trans "Certificates (TC/LC)" %}</span>
+                    </a>
+                    <a href="{% url 'academics_years' %}" class="nav-link-custom {% if active_menu == 'academics_years' %}active{% endif %}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>{% trans "Academic Years" %}</span>
+                    </a>
+                    <a href="{% url 'academics_grades' %}" class="nav-link-custom {% if active_menu == 'academics_grades' %}active{% endif %}">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        <span>{% trans "Grades & Sections" %}</span>
+                    </a>
+                    <a href="{% url 'class_offering_list' %}" class="nav-link-custom {% if active_menu == 'class_offerings' %}active{% endif %}">
+                        <i class="bi bi-building"></i>
+                        <span>{% trans "Class Offerings" %}</span>
+                    </a>
+
+                    <!-- ACADEMIC OPERATIONS -->
+                    <div class="nav-section-title">{% trans "Academic Operations" %}</div>
+                    <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        <span>{% trans "Attendance" %}</span>
+                    </a>
+                    <a href="{% url 'examinations_index' %}" class="nav-link-custom {% if active_menu == 'examinations' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                        <span>{% trans "Examinations" %}</span>
+                    </a>
+                    <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
+                        <i class="bi bi-clipboard2-data-fill"></i>
+                        <span>{% trans "Results" %}</span>
+                    </a>
+                    <a href="{% url 'report_card_hub' %}" class="nav-link-custom {% if active_menu == 'report_cards' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                        <span>{% trans "Report Cards" %}</span>
+                    </a>
+                    <a href="{% url 'marks_import' %}" class="nav-link-custom {% if active_menu == 'marks_import' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                        <span>{% trans "Marks Import" %}</span>
+                    </a>
+                    <a href="{% url 'marks_export' %}" class="nav-link-custom {% if active_menu == 'marks_export' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                        <span>{% trans "Marks Export" %}</span>
+                    </a>
+                    <a href="{% url 'promotion_index' %}" class="nav-link-custom {% if active_menu == 'promotion' %}active{% endif %}">
+                        <i class="bi bi-arrow-up-right-circle-fill"></i>
+                        <span>{% trans "Promotion" %}</span>
+                    </a>
+
+                    <!-- REPORTS -->
+                    <div class="nav-section-title">{% trans "Official Reports" %}</div>
+                    <a href="{% url 'reports_students' %}" class="nav-link-custom {% if active_menu == 'reports_students' %}active{% endif %}">
+                        <i class="bi bi-file-person"></i>
+                        <span>{% trans "Student Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_attendance' %}" class="nav-link-custom {% if active_menu == 'reports_attendance' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-check"></i>
+                        <span>{% trans "Attendance Reports" %}</span>
+                    </a>
+                    <a href="{% url 'reports_promotion' %}" class="nav-link-custom {% if active_menu == 'reports_promotion' %}active{% endif %}">
+                        <i class="bi bi-award"></i>
+                        <span>{% trans "Promotion & Graduation" %}</span>
+                    </a>
+                    <a href="{% url 'reports_exports' %}" class="nav-link-custom {% if active_menu == 'reports_exports' %}active{% endif %}">
+                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                        <span>{% trans "Export Center" %}</span>
+                    </a>
+
+                    <!-- INTELLIGENCE -->
+                    <div class="nav-section-title">{% trans "Intelligence" %}</div>
+                    <a href="{% url 'ai_chat_assistant' %}" class="nav-link-custom {% if active_menu == 'ai_chat' %}active{% endif %}">
+                        <i class="bi bi-robot"></i>
+                        <span>{% trans "School Assistant Chat" %}</span>
+                    </a>
+
+                {% elif request.user.role.code == 'TEACHER' %}
+                    {# ==================== TEACHER MENU ==================== #}
+                    <!-- TEACHING & ACADEMIC -->
+                    <div class="nav-section-title">{% trans "Teaching & Academic" %}</div>
+                    <a href="{% url 'attendance_index' %}" class="nav-link-custom {% if active_menu == 'attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        <span>{% trans "Attendance" %}</span>
+                    </a>
+                    <a href="{% url 'results_index' %}" class="nav-link-custom {% if active_menu == 'results' %}active{% endif %}">
+                        <i class="bi bi-clipboard2-data-fill"></i>
+                        <span>{% trans "Enter Exam Marks" %}</span>
+                    </a>
+                    <a href="{% url 'report_card_hub' %}" class="nav-link-custom {% if active_menu == 'report_cards' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                        <span>{% trans "Student Report Cards" %}</span>
+                    </a>
+                    <a href="{% url 'id_card_hub' %}" class="nav-link-custom {% if active_menu == 'id_cards' %}active{% endif %}">
+                        <i class="bi bi-person-badge"></i>
+                        <span>{% trans "Student ID Cards" %}</span>
+                    </a>
+                    <a href="{% url 'marks_import' %}" class="nav-link-custom {% if active_menu == 'marks_import' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                        <span>{% trans "Import Marks" %}</span>
+                    </a>
+                    <a href="{% url 'timetable_index' %}" class="nav-link-custom {% if active_menu == 'timetable' %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i>
+                        <span>{% trans "Teaching Timetable" %}</span>
+                    </a>
+
+                    <!-- INTELLIGENCE & ASSISTANCE -->
+                    <div class="nav-section-title">{% trans "Intelligence & AI" %}</div>
+                    <a href="{% url 'ai_chat_assistant' %}" class="nav-link-custom {% if active_menu == 'ai_chat' %}active{% endif %}">
+                        <i class="bi bi-robot"></i>
+                        <span>{% trans "School Assistant Chat" %}</span>
+                    </a>
+                    <a href="{% url 'ai_academic_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_academic' %}active{% endif %}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>{% trans "Academic Diagnostics" %}</span>
+                    </a>
+                    <a href="{% url 'ai_attendance_analysis' %}" class="nav-link-custom {% if active_menu == 'ai_attendance' %}active{% endif %}">
+                        <i class="bi bi-calendar2-check"></i>
+                        <span>{% trans "Attendance Intelligence" %}</span>
+                    </a>
+
+                {% else %}
+                    {# Fallback menu for unassigned roles #}
+                    <div class="nav-section-title">{% trans "Assigned Access" %}</div>
+                    <a href="{% url 'profile' %}" class="nav-link-custom">
+                        <i class="bi bi-person"></i>
+                        <span>{% trans "My Profile" %}</span>
+                    </a>
+                {% endif %}
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="fw-semibold text-white-50">Majang Zone, Gambella</div>
+                <div class="text-xs" style="font-size: 0.7rem; opacity: 0.6;">Metti Secondary School</div>
             </div>
-        </header>
+        </aside>
 
-        <!-- Main Content Body -->
-        <main class="content-canvas">
-            <!-- Django Messages / Alerts Container -->
-            {% if messages %}
+        <!-- 2. MAIN APPLICATION WORKSPACE -->
+        <div class="app-main">
+            <!-- Top Sticky Navbar -->
+            <header class="app-navbar">
+                <div class="navbar-left">
+                    <button class="navbar-toggle-btn me-2" id="sidebarToggleBtn" type="button" aria-label="Toggle navigation">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <h1 class="navbar-page-title mb-0">{% block page_title %}{% trans "Dashboard" %}{% endblock %}</h1>
+                </div>
+
+                <div class="navbar-right">
+                    <!-- Language Switcher Dropdown Pill -->
+                    <div class="dropdown">
+                        <button class="nav-pill-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{% trans 'Switch Language' %}">
+                            <i class="bi bi-translate text-primary"></i>
+                            <span>{% if CURRENT_LANGUAGE == 'am' %}አማርኛ{% else %}English{% endif %}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="min-width: 140px;">
+                            {% get_available_languages as AVAILABLE_LANGUAGES %}
+                            {% for lang_code, lang_name in AVAILABLE_LANGUAGES %}
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="px-2 py-1 m-0">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="{{ lang_code }}">
+                                    <button type="submit" class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between {% if CURRENT_LANGUAGE == lang_code %}fw-bold text-primary bg-primary bg-opacity-10{% else %}text-dark{% endif %}" style="border: none; border-radius: 6px;">
+                                        <span>{{ lang_name }}</span>
+                                        {% if CURRENT_LANGUAGE == lang_code %}<i class="bi bi-check2"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Ethiopian Calendar Date Pill -->
+                    <div class="nav-pill-static d-none d-md-inline-flex" title="{% trans 'Current Ethiopian Date' %}">
+                        <i class="bi bi-calendar3 text-primary"></i>
+                        <span class="fw-medium">{% current_ethiopian_date 'full_en' %}</span>
+                    </div>
+
+                    <!-- Local LAN Mode Status Pill -->
+                    <div class="lan-status-pill d-none d-sm-inline-flex" title="{% trans 'Local LAN Offline Server' %}">
+                        <span class="lan-pulse-dot"></span>
+                        <span class="lan-pill-text">{% trans "Local LAN Mode" %}</span>
+                    </div>
+
+                    <!-- Notifications Bell Dropdown -->
+                    <div class="dropdown">
+                        <button class="nav-bell-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{% trans 'System Notifications' %}">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle" style="width: 8px; height: 8px; margin-top: 6px; margin-left: -6px;">
+                                <span class="visually-hidden">New alerts</span>
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-0" style="min-width: 290px;">
+                            <li class="p-3 border-bottom bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 fw-bold small text-dark">{% trans "System Notifications" %}</h6>
+                                    <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.65rem;">LAN Active</span>
+                                </div>
+                                <span class="text-muted text-xs d-block mt-1" style="font-size: 0.7rem;">{% trans "Metti Secondary Local School Network" %}</span>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 small border-bottom" href="{% url 'attendance_index' %}">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-check2-circle text-success fs-6 mt-0"></i>
+                                        <div>
+                                            <div class="fw-semibold">{% trans "Attendance Tracking" %}</div>
+                                            <div class="text-muted text-xs">{% trans "Daily class sessions ready for submission" %}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 small border-bottom" href="{% url 'examinations_index' %}">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-pencil-square text-warning fs-6 mt-0"></i>
+                                        <div>
+                                            <div class="fw-semibold">{% trans "Examination Cycle" %}</div>
+                                            <div class="text-muted text-xs">{% trans "Midterm results entry open" %}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            {% if request.user.is_superuser or request.user.role.code == 'ADMIN' %}
+                            <li>
+                                <a class="dropdown-item py-2 px-3 small" href="{% url 'backup_dashboard' %}">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-hdd-network text-info fs-6 mt-0"></i>
+                                        <div>
+                                            <div class="fw-semibold">{% trans "Backup Integrity" %}</div>
+                                            <div class="text-muted text-xs">{% trans "System backups monitored locally" %}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="dropdown">
+                        <button class="user-profile-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar-circle">
+                                <span>{{ request.user.username|first|upper }}</span>
+                            </div>
+                            <div class="d-none d-md-flex flex-column text-start">
+                                <span class="fw-semibold small text-dark lh-1">
+                                    {{ request.user.get_full_name|default:request.user.username }}
+                                </span>
+                                <span class="text-muted" style="font-size: 0.72rem;">
+                                    {{ request.user.role.name|default:"Authorized Staff" }}
+                                </span>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted small ms-1"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="min-width: 220px;">
+                            <li class="px-3 py-2 border-bottom">
+                                <p class="mb-0 fw-semibold small text-dark">
+                                    {{ request.user.get_full_name|default:request.user.username }}
+                                </p>
+                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">
+                                    {{ request.user.role.name|default:"Authorized User" }} &bull; {{ request.user.username }}
+                                </p>
+                            </li>
+                            <li><a class="dropdown-item py-2 small" href="{% url 'profile' %}"><i class="bi bi-person me-2 text-primary"></i>{% trans "My Profile" %}</a></li>
+                            <li><a class="dropdown-item py-2 small" href="{% url 'password_change' %}"><i class="bi bi-key me-2 text-secondary"></i>{% trans "Change Password" %}</a></li>
+                            {% if request.user.is_superuser or request.user.role.code == 'ADMIN' %}
+                            <li><a class="dropdown-item py-2 small" href="{% url 'system_settings' %}"><i class="bi bi-sliders me-2 text-secondary"></i>{% trans "System Settings" %}</a></li>
+                            <li><a class="dropdown-item py-2 small" href="{% url 'backup_dashboard' %}"><i class="bi bi-hdd-network me-2 text-info"></i>{% trans "Backup & Recovery" %}</a></li>
+                            <li><a class="dropdown-item py-2 small" href="{% url 'admin:index' %}" target="_blank"><i class="bi bi-gear me-2 text-secondary"></i>{% trans "Django Administration" %}</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" class="d-inline w-100 m-0 p-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item py-2 small text-danger border-0 bg-transparent w-100 text-start">
+                                        <i class="bi bi-box-arrow-right me-2"></i>{% trans "Sign Out" %}
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Body -->
+            <main class="content-canvas">
+                <!-- Django Messages / Alerts Container -->
+                {% if messages %}
                 <div class="mb-3">
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                     {% endfor %}
                 </div>
-            {% endif %}
+                {% endif %}
 
-            {% block content %}{% endblock %}
-        </main>
+                {% block content %}{% endblock %}
+            </main>
 
-        <!-- Global Footer -->
-        <footer class="app-footer">
-            <div>
-                <strong>Smart School Management System (SSMS)</strong> &bull; Majang Zone, Gambella Region, Ethiopia
-            </div>
-            <div>
-                Grades 9–12 &bull; Version 1.0 (LAN Build)
-            </div>
-        </footer>
+            <!-- Global Footer -->
+            <footer class="app-footer">
+                <div>
+                    <strong>Smart School Management System (SSMS)</strong> &bull; Majang Zone, Gambella Region, Ethiopia
+                </div>
+                <div>
+                    Metti Secondary School (Grades 9–12) &bull; Offline LAN Build
+                </div>
+            </footer>
+        </div>
+
     </div>
 
-</div>
+    <!-- Modals Portal (Rendered directly in body for proper Bootstrap z-index & positioning) -->
+    {% block modals %}{% endblock %}
 
-<!-- Offline Vendor JavaScript -->
-<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+    <!-- Offline Vendor JavaScript -->
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
 
-<!-- Project Master JavaScript -->
-<script src="{% static 'js/main.js' %}"></script>
-{% block extra_js %}{% endblock %}
+    <!-- Project Master JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <!-- Offline Ethiopian Calendar Engine & Date Picker -->
+    <script src="{% static 'js/ethiopian_calendar.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 
 </body>
+
 </html>

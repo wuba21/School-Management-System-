@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Report Cards - SSMS | Metti Secondary School{% endblock %}
+{% block page_title %}Student Report Card Management{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-person-fill text-primary me-2"></i>Official Student Report Cards
+        </h5>
+        <p class="text-muted small mb-0">
+            Metti Secondary School &bull; Majang Zone, Gambella Region &bull; English-Only Official Student Academic Profiles
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'published_results' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Master Gradebook
+        </a>
+        <a href="{% url 'results_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-award me-1"></i> Results Operations Hub
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card metric-card--blue h-100">
+            <div>
+                <div class="metric-label">Matching Enrollees</div>
+                <div class="metric-value text-primary">{{ total_count }}</div>
+                <div class="metric-subtitle">Active student records</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card metric-card--green h-100">
+            <div>
+                <div class="metric-label">Selected Examination</div>
+                <div class="metric-value fs-5 mt-1" style="color: #16a34a;">
+                    {{ selected_exam.name|default:"No Examination Selected" }}
+                </div>
+                <div class="metric-subtitle">
+                    {% if selected_exam %}
+                        Semester {{ selected_exam.semester }} &bull; Status: {{ selected_exam.get_status_display }}
+                    {% else %}
+                        Please choose an exam to view marks
+                    {% endif %}
+                </div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-award-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card metric-card--purple h-100">
+            <div>
+                <div class="metric-label">Academic Year</div>
+                <div class="metric-value fs-5 mt-1" style="color: #0284c7;">
+                    {{ selected_year.name|default:"Active Year" }}
+                </div>
+                <div class="metric-subtitle">
+                    {% if selected_year.ethiopian_year_display %}
+                        {{ selected_year.ethiopian_year_display }} &bull; Ethiopian Calendar
+                    {% else %}
+                        Standard School Calendar
+                    {% endif %}
+                </div>
+            </div>
+            <div class="metric-icon-box metric-icon-purple">
+                <i class="bi bi-calendar3"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filtering Toolbar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3 bg-light">
+        <form method="get" action="{% url 'report_card_hub' %}" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Academic Year</label>
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Examination Cycle</label>
+                {{ form.examination }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Class / Section</label>
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold mb-1">Search Student</label>
+                <div class="input-group input-group-sm">
+                    {{ form.search }}
+                    <button type="submit" class="btn btn-primary" title="Apply Filter">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if request.GET %}
+                    <a href="{% url 'report_card_hub' %}" class="btn btn-outline-secondary" title="Reset Filters">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Student Report Card Roster -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-card-checklist text-primary me-2"></i>Student Roster &amp; Report Card Actions
+        </h6>
+        <span class="badge bg-primary-subtle text-primary">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3" style="width: 130px;">Admission No</th>
+                        <th class="py-3">Student Full Name</th>
+                        <th class="py-3">Grade &amp; Section</th>
+                        <th class="py-3">Stream</th>
+                        <th class="py-3 text-center">Score / Avg</th>
+                        <th class="py-3 text-center">Grade</th>
+                        <th class="py-3 text-center">Class Rank</th>
+                        <th class="py-3 text-center">Status</th>
+                        <th class="text-end pe-3 py-3" style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in student_records %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-primary font-monospace">
+                            {{ row.student.admission_number }}
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ row.student.full_name }}</div>
+                            <div class="text-muted small" style="font-size: 0.75rem;">
+                                Gender: {{ row.student.get_gender_display }} &bull; DOB: {{ row.student.date_of_birth|default:"-" }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ row.class_offering.grade.name }}</span>
+                            <span class="text-muted">Sec {{ row.class_offering.section.name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ row.class_offering.stream.name|default:"General Secondary" }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% if row.summary %}
+                                <strong class="text-dark">{{ row.summary.average_mark }}%</strong>
+                                <div class="text-muted text-xs" style="font-size: 0.72rem;">{{ row.summary.total_obtained }} / {{ row.summary.total_max }}</div>
+                            {% elif row.has_marks %}
+                                <span class="badge bg-warning-subtle text-warning">Marks Entered</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.summary and row.summary.overall_grade %}
+                                <span class="badge bg-primary-subtle text-primary fw-bold">{{ row.summary.overall_grade }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.summary and row.summary.rank %}
+                                <span class="badge bg-warning text-dark fw-bold">#{{ row.summary.rank }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.summary %}
+                                {% if row.summary.is_passing %}
+                                    <span class="badge bg-success-subtle text-success border">Pass</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border">Warning</span>
+                                {% endif %}
+                            {% elif row.has_marks %}
+                                <span class="badge bg-info-subtle text-info border">Provisional</span>
+                            {% else %}
+                                <span class="badge bg-light text-secondary border">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            {% if row.exam %}
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'student_report_card' row.exam.id row.student.id %}" class="btn btn-outline-primary" title="Preview English Report Card">
+                                    <i class="bi bi-eye me-1"></i> Preview
+                                </a>
+                                <a href="{% url 'student_report_card' row.exam.id row.student.id %}?format=pdf" class="btn btn-outline-danger" title="Download Official PDF">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                <a href="{% url 'student_report_card' row.exam.id row.student.id %}?print=1" class="btn btn-outline-secondary" title="Direct Print">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">Select an examination</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-people text-secondary fs-1 d-block mb-2"></i>
+                            No active student enrollments match the selected filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
+        <span class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} students
+        </span>
+        <nav aria-label="Report card pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.academic_year %}&academic_year={{ request.GET.academic_year }}{% endif %}{% if request.GET.examination %}&examination={{ request.GET.examination }}{% endif %}{% if request.GET.class_offering %}&class_offering={{ request.GET.class_offering }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                        Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.academic_year %}&academic_year={{ request.GET.academic_year }}{% endif %}{% if request.GET.examination %}&examination={{ request.GET.examination }}{% endif %}{% if request.GET.class_offering %}&class_offering={{ request.GET.class_offering }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.academic_year %}&academic_year={{ request.GET.academic_year }}{% endif %}{% if request.GET.examination %}&examination={{ request.GET.examination }}{% endif %}{% if request.GET.class_offering %}&class_offering={{ request.GET.class_offering }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                        Next
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

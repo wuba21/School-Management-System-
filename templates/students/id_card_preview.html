@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<style>
+/* CSS Styles for On-Screen Physical Card Mockup */
+.id-card-wrapper {
+    perspective: 1000px;
+}
+.id-card-preview {
+    width: 320px;
+    height: 508px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #cbd5e1;
+    overflow: hidden;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.id-card-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
+    padding: 12px 14px 10px;
+    position: relative;
+}
+.id-card-gold-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+}
+.id-card-photo-box {
+    width: 90px;
+    height: 112px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
+}
+.id-card-photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.id-card-qr-box {
+    width: 86px;
+    height: 86px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.id-card-qr-box svg {
+    width: 100%;
+    height: 100%;
+}
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printableCardArea, #printableCardArea * {
+        visibility: visible;
+    }
+    #printableCardArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+
+<!-- Top Navigation & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'students_list' %}" class="text-decoration-none">Students</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'id_card_hub' %}" class="text-decoration-none">ID Cards</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ student.full_name }}</li>
+            </ol>
+        </nav>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-person-vcard text-primary me-2"></i>Official Student ID Card: {{ student.full_name }}
+        </h5>
+        <p class="text-muted small mb-0">
+            Card Number: <span class="font-monospace fw-bold text-dark">{{ card.card_number }}</span>
+            &bull; Status:
+            {% if card.is_valid %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Active / Valid</span>
+            {% else %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ card.get_status_display }}</span>
+            {% endif %}
+            &bull; Reprints: <span class="badge bg-light text-dark border">{{ card.reprint_count }}</span>
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'id_card_pdf' card.id %}" class="btn btn-success btn-sm shadow-sm">
+            <i class="bi bi-download me-1"></i> Download PDF Card
+        </a>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print();">
+            <i class="bi bi-printer me-1"></i> Browser Print
+        </button>
+        <a href="{% url 'id_card_hub' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to ID Cards
+        </a>
+    </div>
+</div>
+
+<div class="row g-4" id="printableCardArea">
+    <!-- Left Column: Front & Back Mockups -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-card-heading text-primary me-2"></i>CR80 Physical Card Layout (Front &amp; Back)
+                </h6>
+                <span class="badge bg-light text-muted border">Standard CR80 &bull; 54mm &times; 85.6mm</span>
+            </div>
+            <div class="card-body p-4 bg-light d-flex flex-wrap justify-content-center gap-4">
+                
+                <!-- 1. CARD FRONT -->
+                <div class="id-card-preview">
+                    <!-- Header -->
+                    <div class="id-card-header d-flex align-items-center gap-2">
+                        <img src="{% static 'images/school_logo.png' %}" alt="School Crest" style="width: 44px; height: 44px; object-fit: contain;">
+                        <div>
+                            <div class="fw-bold text-white lh-sm" style="font-size: 0.72rem; letter-spacing: 0.02em;">
+                                METTI SECONDARY SCHOOL
+                            </div>
+                            <div class="fw-bold text-warning lh-sm" style="font-size: 0.62rem; letter-spacing: 0.04em;">
+                                STUDENT IDENTITY CARD
+                            </div>
+                            <div class="text-white-50" style="font-size: 0.52rem;">
+                                Majang Zone, Gambella, Ethiopia
+                            </div>
+                        </div>
+                    </div>
+                    <div class="id-card-gold-bar"></div>
+
+                    <!-- Main Student Identity Section -->
+                    <div class="p-3">
+                        <div class="d-flex gap-3 align-items-start mb-3">
+                            <!-- Photo -->
+                            <div class="id-card-photo-box flex-shrink-0">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" alt="{{ student.full_name }}">
+                                {% else %}
+                                    <div class="text-center text-muted p-2">
+                                        <i class="bi bi-person-fill fs-1 text-secondary opacity-50 d-block"></i>
+                                        <div style="font-size: 0.55rem; font-weight: bold; letter-spacing: 0.05em;">NO PHOTO</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Identity Details -->
+                            <div class="flex-grow-1 overflow-hidden">
+                                <h6 class="fw-bold mb-1 text-dark lh-sm" style="font-size: 0.88rem;">
+                                    {{ student.full_name }}
+                                </h6>
+                                <div class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1 mb-2" style="font-size: 0.68rem;">
+                                    ID: {{ student.admission_number }}
+                                </div>
+                                
+                                <div class="text-dark fw-bold mb-1" style="font-size: 0.75rem;">
+                                    {{ data.grade_name }} - Section {{ data.section_name }}
+                                </div>
+                                <div class="text-muted mb-1" style="font-size: 0.68rem;">
+                                    Stream: <strong class="text-secondary">{{ data.stream_name }}</strong>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.65rem;">
+                                    Academic Year: <span class="fw-semibold text-dark">{{ data.academic_year.name }} G.C.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2 border-secondary opacity-25">
+
+                        <!-- Credential Details & QR Code Area -->
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <div>
+                                <div class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.55rem; letter-spacing: 0.05em;">
+                                    Credential Metadata
+                                </div>
+                                <div class="text-dark font-monospace fw-semibold mb-1" style="font-size: 0.68rem;">
+                                    {{ card.card_number }}
+                                </div>
+                                <div class="text-muted mb-1" style="font-size: 0.62rem;">
+                                    Issued: <strong class="text-dark">{{ data.issue_date_gc }}</strong>
+                                </div>
+                                <div class="text-muted mb-2" style="font-size: 0.62rem;">
+                                    Valid Thru: <strong class="text-dark">{{ data.expiry_date_gc }}</strong>
+                                </div>
+
+                                {% if card.is_valid %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.62rem;">
+                                        <i class="bi bi-shield-check me-1"></i>Active / Verified
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.62rem;">
+                                        <i class="bi bi-shield-x me-1"></i>{{ card.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Live QR Code -->
+                            <div class="text-center flex-shrink-0">
+                                <div class="id-card-qr-box mb-1">
+                                    {{ data.qr_svg|safe }}
+                                </div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.55rem;">
+                                    Scan to Verify
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer Microbar -->
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-light border-top px-3 py-1 d-flex justify-content-between align-items-center text-muted" style="font-size: 0.52rem;">
+                        <span>SSMS Local Area Network</span>
+                        <span>Metti Secondary School</span>
+                    </div>
+                </div>
+
+                <!-- 2. CARD BACK -->
+                <div class="id-card-preview d-flex flex-column justify-content-between">
+                    <div>
+                        <!-- Header -->
+                        <div class="id-card-header text-center py-2">
+                            <div class="fw-bold text-white" style="font-size: 0.7rem; letter-spacing: 0.06em;">
+                                TERMS OF IDENTIFICATION
+                            </div>
+                        </div>
+                        <div class="id-card-gold-bar"></div>
+
+                        <!-- Terms Text -->
+                        <div class="p-3 text-secondary" style="font-size: 0.68rem; line-height: 1.45;">
+                            <ol class="ps-3 mb-3">
+                                <li class="mb-1">This credential is the official property of <strong>Metti Secondary School</strong>.</li>
+                                <li class="mb-1">The student must carry this card at all times when on campus or attending official school events.</li>
+                                <li class="mb-1">This credential is non-transferable and must be presented upon request to authorized staff.</li>
+                                <li class="mb-1">Report loss or damage immediately to the <strong>Registrar Office</strong>.</li>
+                            </ol>
+
+                            <div class="p-2 border rounded bg-light mb-2">
+                                <div class="fw-bold text-dark mb-1" style="font-size: 0.65rem;">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>CARD RETURN NOTICE:
+                                </div>
+                                <div class="text-muted" style="font-size: 0.62rem;">
+                                    If found, please return to Metti Secondary School Administration, Godere Woreda, Majang Zone, Gambella Region, Ethiopia.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Authorized Signatures & Seal -->
+                    <div class="p-3 border-top bg-light">
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <div class="text-muted fw-semibold mb-3" style="font-size: 0.55rem; letter-spacing: 0.05em;">
+                                    AUTHORIZED INSTITUTIONAL SIGNATURE:
+                                </div>
+                                <div style="border-bottom: 1px dashed #64748b; width: 140px; margin-bottom: 4px;"></div>
+                                <div class="fw-bold text-dark" style="font-size: 0.65rem;">School Principal / Registrar</div>
+                                <div class="text-muted" style="font-size: 0.58rem;">Metti Secondary School</div>
+                            </div>
+
+                            <!-- Seal Box -->
+                            <div class="border rounded bg-white p-2 text-center" style="width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: #cbd5e1 !important;">
+                                <i class="bi bi-patch-check text-secondary fs-4 mb-0 opacity-50"></i>
+                                <span class="text-muted fw-bold text-uppercase" style="font-size: 0.48rem; letter-spacing: 0.05em;">OFFICIAL<br>SEAL</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-muted mt-2 pt-2 border-top" style="font-size: 0.52rem;">
+                            Smart School Management System (SSMS) &bull; Offline LAN Verified
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Card Actions, QR Security & Audit Info -->
+    <div class="col-lg-4 no-print">
+        <!-- Card Management Actions -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-gear-fill text-primary me-2"></i>Card Actions &amp; Lifecycle
+                </h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'id_card_pdf' card.id %}" class="btn btn-success d-flex align-items-center justify-content-between p-2">
+                        <span><i class="bi bi-file-earmark-pdf-fill me-2 fs-5"></i><strong>Download Official PDF</strong></span>
+                        <i class="bi bi-download"></i>
+                    </a>
+
+                    <!-- Re-issue Card -->
+                    <form method="post" action="{% url 'id_card_generate' student.id %}" class="m-0">
+                        {% csrf_token %}
+                        <input type="hidden" name="reissue" value="1">
+                        <button type="submit" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-between p-2 text-start" onclick="return confirm('Re-issuing will mark the current active card as REPLACED and generate a new credential. Proceed?');">
+                            <span><i class="bi bi-arrow-repeat me-2 fs-5"></i><strong>Re-issue New Card</strong></span>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+                    </form>
+
+                    <!-- Direct QR Verification Link Test -->
+                    <a href="{{ data.verify_url }}" target="_blank" class="btn btn-outline-secondary d-flex align-items-center justify-content-between p-2 text-start">
+                        <span><i class="bi bi-qr-code-scan me-2 fs-5"></i><strong>Test QR Verification URL</strong></span>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security & Privacy Guarantee -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-primary border-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-shield-lock-fill text-primary me-2"></i>QR Code Security Design
+                </h6>
+            </div>
+            <div class="card-body p-3">
+                <ul class="list-unstyled mb-0 small text-muted">
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Zero PII Exposure:</strong> Private information (home address, guardian phone, marks, birth date) is NOT stored inside the QR code.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Opaque Verification Token:</strong> Encodes an unguessable UUID (<code>{{ card.card_uuid }}</code>) that resolves strictly on the local school LAN.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Tamper Evident:</strong> Revoked or expired cards immediately scan as invalid on any browser or mobile camera connected to the school LAN.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Metadata & Audit Log Summary -->
+        <div class="card border-0 shadow-sm rounded-3 bg-light">
+            <div class="card-body p-3">
+                <h6 class="fw-bold text-dark mb-2" style="font-size: 0.75rem;">AUDIT METADATA</h6>
+                <div class="small text-muted mb-1">
+                    Created: <strong class="text-dark">{{ card.created_at|date:"M d, Y H:i" }}</strong>
+                </div>
+                <div class="small text-muted mb-1">
+                    Issued By: <strong class="text-dark">{{ card.issued_by.get_full_name|default:card.issued_by.username|default:"System Administrator" }}</strong>
+                </div>
+                <div class="small text-muted mb-1">
+                    Reprint Count: <strong class="text-dark">{{ card.reprint_count }}</strong>
+                </div>
+                {% if card.status == 'REVOKED' %}
+                <div class="small text-danger mt-2 pt-2 border-top">
+                    Revoked: <strong>{{ card.revoked_at|date:"M d, Y" }}</strong><br>
+                    Reason: <em>{{ card.revocation_reason }}</em>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

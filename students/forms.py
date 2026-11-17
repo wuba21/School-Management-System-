@@ -13,8 +13,9 @@ from datetime import date
 from django import forms
 from django.core.exceptions import ValidationError
 
-from students.models import Student, StudentEnrollment
-from academics.models import AcademicYear, Grade, ClassOffering
+from students.models import Student, StudentEnrollment, StudentIDCard, StudentCertificate
+from academics.models import AcademicYear, Grade, ClassOffering, Stream
+from teachers.models import TeacherAssignment
 from students.services import AdmissionNumberService, FileUploadSecurityService
 
 
@@ -330,4 +331,229 @@ class StudentStatusUpdateForm(forms.Form):
         }),
         required=True,
         help_text="Mandatory audit explanation for student status alteration."
+    )
+
+
+class IDCardFilterForm(forms.Form):
+    """
+    Step 22: Search and filter form for Student ID Card Management Hub.
+    Supports teacher class-scoping and multi-parameter filtering.
+    """
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-sm',
+            'placeholder': 'Search student name or admission no...',
+        })
+    )
+    academic_year = forms.ModelChoiceField(
+        queryset=AcademicYear.objects.all().order_by('-start_date'),
+        required=False,
+        empty_label='All Academic Years',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    grade = forms.ModelChoiceField(
+        queryset=Grade.objects.all().order_by('level'),
+        required=False,
+        empty_label='All Grades',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    class_offering = forms.ModelChoiceField(
+        queryset=ClassOffering.objects.all().select_related('grade', 'section', 'stream').order_by('grade__level', 'section__name'),
+        required=False,
+        empty_label='All Classes / Sections',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    status = forms.ChoiceField(
+        choices=[
+            ('ALL', 'All Card Statuses'),
+            ('ACTIVE', 'Active / Valid Cards'),
+            ('REVOKED', 'Revoked Cards'),
+            ('EXPIRED', 'Expired Cards'),
+            ('NOT_ISSUED', 'No Active Card Issued'),
+        ],
+        required=False,
+        initial='ALL',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if teacher:
+            assigned_offering_ids = ClassOffering.objects.filter(
+                teacher_assignments__teacher=teacher
+            ).values_list('id', flat=True)
+            self.fields['class_offering'].queryset = ClassOffering.objects.filter(
+                id__in=assigned_offering_ids
+            ).select_related('grade', 'section', 'stream').order_by('grade__level', 'section__name')
+
+
+class IDCardRevokeForm(forms.Form):
+    """
+    Step 22: Modal form for revoking an invalid or replaced Student ID card.
+    """
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'rows': 3,
+            'placeholder': 'State the official reason (e.g. Card reported lost/stolen, student transferred, photo replaced)...',
+            'required': 'required'
+        }),
+        required=True,
+        label="Revocation Reason",
+        help_text="Mandatory justification for invalidating this ID card credential."
+    )
+
+
+class CertificateRequestForm(forms.ModelForm):
+    """
+    Step 23: Form for requesting a Student Transfer Certificate or Leaving Certificate.
+    """
+    class Meta:
+        model = StudentCertificate
+        fields = [
+            'certificate_type',
+            'academic_year',
+            'last_grade',
+            'section_name',
+            'stream_name',
+            'effective_date',
+            'destination_school',
+            'reason',
+            'academic_standing',
+            'conduct',
+            'remarks',
+        ]
+        widgets = {
+            'certificate_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_certificate_type'}),
+            'academic_year': forms.Select(attrs={'class': 'form-select'}),
+            'last_grade': forms.Select(attrs={'class': 'form-select'}),
+            'section_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Section A'}),
+            'stream_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Natural Science, Social Science, General'}),
+            'effective_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'destination_school': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Receiving school name (Required for transfers)'}),
+            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Reason for transfer or leaving (e.g. Family relocation, completed Grade 12)...'}),
+            'academic_standing': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Promoted to Grade 10, Completed Grade 12 National Examinations'}),
+            'conduct': forms.Select(choices=[
+                ('Excellent', 'Excellent'),
+                ('Very Good', 'Very Good'),
+                ('Good', 'Good'),
+                ('Satisfactory', 'Satisfactory')
+            ], attrs={'class': 'form-select'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Official institutional notes, exam results, or clearance remarks...'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cert_type = cleaned_data.get('certificate_type')
+        dest_school = cleaned_data.get('destination_school')
+
+        if cert_type == 'TRANSFER' and not dest_school:
+            self.add_error('destination_school', "Destination school is required for Student Transfer Certificates.")
+
+        return cleaned_data
+
+
+class CertificateFilterForm(forms.Form):
+    """
+    Step 23: Multi-parameter filter form for Certificate Management Hub.
+    """
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-sm',
+            'placeholder': 'Search student name, admission #, or certificate #...'
+        })
+    )
+    certificate_type = forms.ChoiceField(
+        choices=[
+            ('ALL', 'All Certificate Types'),
+            ('TRANSFER', 'Transfer Certificates'),
+            ('LEAVING', 'Leaving Certificates'),
+        ],
+        required=False,
+        initial='ALL',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    academic_year = forms.ModelChoiceField(
+        queryset=AcademicYear.objects.all().order_by('-start_date'),
+        required=False,
+        empty_label='All Academic Years',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    grade = forms.ModelChoiceField(
+        queryset=Grade.objects.all().order_by('level'),
+        required=False,
+        empty_label='All Grades',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+    status = forms.ChoiceField(
+        choices=[
+            ('ALL', 'All Statuses'),
+            ('DRAFT', 'Draft'),
+            ('SUBMITTED', 'Submitted for Review'),
+            ('APPROVED', 'Approved (Pending Issue)'),
+            ('ISSUED', 'Officially Issued'),
+            ('REJECTED', 'Rejected'),
+            ('REVOKED', 'Revoked / Cancelled'),
+        ],
+        required=False,
+        initial='ALL',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    )
+
+
+class CertificateApprovalForm(forms.Form):
+    """
+    Step 23: Form for Principal or Admin to approve or reject a certificate request.
+    """
+    decision = forms.ChoiceField(
+        choices=[
+            ('APPROVE', 'Approve Certificate Request'),
+            ('REJECT', 'Reject Request'),
+        ],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+    )
+    approval_remarks = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'rows': 2,
+            'placeholder': 'Optional approval remarks or instructions for the registrar...'
+        })
+    )
+    rejection_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'rows': 2,
+            'placeholder': 'Mandatory justification if rejecting this request...'
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        decision = cleaned_data.get('decision')
+        rejection_reason = cleaned_data.get('rejection_reason')
+
+        if decision == 'REJECT' and not rejection_reason:
+            self.add_error('rejection_reason', "A clear justification is required when rejecting a certificate request.")
+
+        return cleaned_data
+
+
+class CertificateRevokeForm(forms.Form):
+    """
+    Step 23: Modal form for revoking an issued or approved certificate.
+    """
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'rows': 3,
+            'placeholder': 'State the official reason for revocation (e.g. Issued in error, student cancelled transfer, incorrect grades)...',
+            'required': 'required'
+        }),
+        required=True,
+        label="Revocation Reason",
+        help_text="Mandatory justification for revoking this official certificate."
     )

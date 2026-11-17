@@ -17,6 +17,15 @@
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'marks_import' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Marks (Excel/CSV)
+        </a>
+        <a href="{% url 'marks_export' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> Export Records
+        </a>
+        <a href="{% url 'report_card_hub' %}" class="btn btn-success btn-sm">
+            <i class="bi bi-file-earmark-person me-1"></i> Student Report Cards
+        </a>
         <a href="{% url 'published_results' %}" class="btn btn-primary btn-sm">
             <i class="bi bi-file-earmark-spreadsheet me-1"></i> Master Gradebook
         </a>
@@ -83,15 +92,20 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            {% if es.status in 'PENDING RETURNED' %}
-                            <a href="{% url 'marks_entry' es.id %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-pencil-square me-1"></i> Enter Marks
-                            </a>
-                            {% else %}
-                            <a href="{% url 'marks_entry' es.id %}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-eye me-1"></i> View Marks
-                            </a>
-                            {% endif %}
+                            <div class="btn-group btn-group-sm">
+                                {% if es.status in 'PENDING RETURNED' %}
+                                <a href="{% url 'marks_entry' es.id %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil-square me-1"></i> Enter Marks
+                                </a>
+                                <a href="{% url 'marks_import' %}?exam_subject={{ es.id }}" class="btn btn-outline-primary" title="Import Excel/CSV Marks">
+                                    <i class="bi bi-upload"></i>
+                                </a>
+                                {% else %}
+                                <a href="{% url 'marks_entry' es.id %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-eye me-1"></i> View Marks
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}

@@ -58,17 +58,36 @@ INSTALLED_APPS = [
     'reports.apps.ReportsConfig',
     'dashboard.apps.DashboardConfig',
     'ai_assistant.apps.AiAssistantConfig',
+    'backup.apps.BackupConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.AuditLoggingMiddleware',  # Step 24: Automatic write-operation audit logging
 ]
+
+# ---------------------------------------------------------------------------
+# Cache — LocMemCache (in-process, no external service required for LAN)
+# Used by the login brute-force protection module (Step 24).
+# ---------------------------------------------------------------------------
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'ssms-security-cache',
+    }
+}
+
+# Login brute-force protection thresholds
+LOGIN_MAX_ATTEMPTS = int(os.getenv('LOGIN_MAX_ATTEMPTS', '5'))      # failures before lockout
+LOGIN_LOCKOUT_DURATION = int(os.getenv('LOGIN_LOCKOUT_DURATION', '900'))  # seconds (15 min)
+
 
 ROOT_URLCONF = 'config.urls'
 
@@ -81,6 +100,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -115,6 +135,10 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                # Increase SQLite timeout to 30 seconds to prevent "database is locked" errors under multi-user concurrency
+                'timeout': 30,
+            },
         }
     }
 
@@ -138,7 +162,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization & Regionalization for Ethiopia
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en'
+
+LANGUAGES = [
+    ('en', 'English'),
+    ('am', 'አማርኛ'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 # Time zone configured for Majang Zone, Gambella Region, Ethiopia
 TIME_ZONE = 'Africa/Addis_Ababa'
@@ -159,6 +192,24 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files (User uploads, student photos, generated PDF report cards)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ---------------------------------------------------------------------------
+# System Backup & Disaster Recovery (Step 17)
+# ---------------------------------------------------------------------------
+# Backup directory is located outside publicly accessible static/media trees
+BACKUP_ROOT = BASE_DIR / 'backups'
+BACKUP_DB_DIR = BACKUP_ROOT / 'database'
+BACKUP_MEDIA_DIR = BACKUP_ROOT / 'media'
+
+# Configurable GFS (Grandfather-Father-Son) Retention Policy
+BACKUP_RETENTION_DAILY = int(os.getenv('BACKUP_RETENTION_DAILY', '7'))
+BACKUP_RETENTION_WEEKLY = int(os.getenv('BACKUP_RETENTION_WEEKLY', '4'))
+BACKUP_RETENTION_MONTHLY = int(os.getenv('BACKUP_RETENTION_MONTHLY', '12'))
+
+# PostgreSQL Utility Executable Paths
+PG_DUMP_PATH = os.getenv('PG_DUMP_PATH', 'pg_dump')
+PG_RESTORE_PATH = os.getenv('PG_RESTORE_PATH', 'pg_restore')
+PSQL_PATH = os.getenv('PSQL_PATH', 'psql')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -183,8 +234,25 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Prevent JavaScript from reading the session cookie (XSS mitigation)
 SESSION_COOKIE_HTTPONLY = True
 
+# Session cookie SameSite policy (CSRF mitigation for cross-site requests)
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # CSRF cookie also restricted to HTTP (not readable by JS)
 CSRF_COOKIE_HTTPONLY = True
+
+# CSRF cookie SameSite policy
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Maximum session age in seconds (8 hours for school LAN — overridden by remember_me)
+SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 hours
+
+# File upload security limits
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10 MB max POST body
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10 MB before temp file
+
+# Content Security Policy header (served by X-Frame-Options middleware)
+# Clickjacking protection: deny all iframe embedding of SSMS pages
+X_FRAME_OPTIONS = 'DENY'
 
 # Message storage — use session-based messages (requires session middleware)
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'

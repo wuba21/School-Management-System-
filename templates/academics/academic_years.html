@@ -1,5 +1,6 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
+{% load ethiopian_calendar_tags %}
 
 {% block title %}Academic Years & Calendar{% endblock %}
 {% block page_title %}Academic Calendar & Year Management{% endblock %}
@@ -99,8 +100,14 @@
                         </div>
                     </td>
                     <td><span class="badge bg-secondary-subtle text-dark border">{{ yr.code }}</span></td>
-                    <td>{{ yr.start_date|date:"M d, Y" }}</td>
-                    <td>{{ yr.end_date|date:"M d, Y" }}</td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ yr.start_date|to_ethiopian }}</div>
+                        <div class="text-xs text-muted">{{ yr.start_date|date:"M d, Y" }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ yr.end_date|to_ethiopian }}</div>
+                        <div class="text-xs text-muted">{{ yr.end_date|date:"M d, Y" }}</div>
+                    </td>
                     <td class="text-center">
                         <span class="badge bg-light text-dark border">{{ yr.offering_count }} classes</span>
                     </td>

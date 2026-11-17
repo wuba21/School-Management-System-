@@ -1,0 +1,346 @@
+{% load static %}
+{% load i18n %}
+
+<!-- ==================== TEACHER DASHBOARD ==================== -->
+
+<!-- 1. Teacher Welcome & Teaching Workload Banner -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff;">
+    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success rounded-pill px-3 py-1 font-monospace" style="font-size: 0.75rem;">
+                    <i class="bi bi-person-workspace me-1"></i>Teacher Workload Dashboard
+                </span>
+                <span class="text-white-50 small">&bull;</span>
+                <span class="text-white-50 small">Majang Secondary School (Grades 9–12)</span>
+            </div>
+            <h4 class="fw-bold mb-1 text-white">
+                {% trans "Welcome back" %}, {{ role_context.teacher_profile.full_name|default:request.user.get_full_name|default:request.user.username }}
+            </h4>
+            <p class="text-light opacity-75 small mb-0">
+                {% trans "Viewing your assigned classrooms, today's teaching timetable, daily attendance logs, and exam marks." %}
+                <span class="d-block mt-1">Assigned Classes: <strong>{{ role_context.teacher_classes_count }}</strong> &bull; Assigned Subjects: <strong>{{ role_context.teacher_subjects_count }}</strong> &bull; Total Enrolled Students Taught: <strong>{{ role_context.teacher_students_count }}</strong></span>
+            </p>
+        </div>
+
+        <!-- Academic Year & Teaching Workload Summary Pill -->
+        <div class="d-flex flex-wrap gap-2 text-md-end text-start">
+            <div class="bg-white bg-opacity-10 border border-white border-opacity-10 rounded-3 p-3">
+                <div class="text-white-50 text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    Academic Year
+                </div>
+                <div class="fw-bold text-white fs-6 mt-1">
+                    {% if kpis.current_year %}
+                    {{ kpis.current_year.name }}
+                    {% else %}
+                    <span class="text-warning">{% trans "No Year Set" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="bg-white bg-opacity-10 border border-white border-opacity-10 rounded-3 p-3">
+                <div class="text-white-50 text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    {% trans "Students Taught" %}
+                </div>
+                <div class="fw-bold text-success fs-6 mt-1">
+                    {{ role_context.teacher_students_count|default:"0" }} {% trans "enrolled" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Teacher Quick Action Toolbar -->
+<div class="card-ssms p-3 mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary border py-2 px-3 fw-semibold">
+                <i class="bi bi-lightning-charge-fill me-1"></i>{% trans "Quick Actions" %}
+            </span>
+            <span class="text-muted small">{% trans "Frequently used teaching workflows" %}</span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'attendance_index' %}" class="btn btn-primary">
+                <i class="bi bi-calendar-check-fill me-1"></i>{% trans "Take Daily Attendance" %}
+            </a>
+            <a href="{% url 'results_index' %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-1"></i>{% trans "Enter Exam Marks" %}
+            </a>
+            <a href="{% url 'timetable_index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-1"></i>{% trans "Weekly Timetable" %}
+            </a>
+            <a href="{% url 'ai_chat_assistant' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-robot me-1"></i>{% trans "Ask AI Assistant" %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Teacher Workload KPI Cards (6 Cards) -->
+<div class="row g-3 mb-4">
+    <!-- Assigned Classes -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Assigned Classes" %}</div>
+                <div class="metric-value text-primary">{{ role_context.teacher_classes_count|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Grade sections" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-building"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Subjects -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Assigned Subjects" %}</div>
+                <div class="metric-value text-dark">{{ role_context.teacher_subjects_count|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Courses taught" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-book-half"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Taught -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Total Students" %}</div>
+                <div class="metric-value text-success">{{ role_context.teacher_students_count|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Active enrollees" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Teaching Periods -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Today's Lessons" %}</div>
+                <div class="metric-value text-dark">{{ role_context.today_timetable|length }}</div>
+                <div class="metric-subtitle">{% trans "Periods today" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-amber">
+                <i class="bi bi-clock-history"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Sessions -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Recent Sessions" %}</div>
+                <div class="metric-value text-info">{{ role_context.recent_teacher_sessions|length }}</div>
+                <div class="metric-subtitle">{% trans "Recorded by you" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Examination Cycles -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Active Exams" %}</div>
+                <div class="metric-value text-secondary">{{ role_context.active_exams|length }}</div>
+                <div class="metric-subtitle">{% trans "Open mark entry" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-purple">
+                <i class="bi bi-journal-text"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Today's Timetable Schedule Table -->
+<div class="card-ssms mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-event text-primary"></i>
+            <span class="fw-semibold">{% trans "Today's Teaching Timetable Schedule" %}</span>
+            <span class="badge bg-primary-subtle text-primary border ms-1 font-monospace" style="font-size: 0.75rem;">
+                {% now "l" %}
+            </span>
+        </div>
+        <a href="{% url 'timetable_index' %}" class="btn btn-outline-secondary btn-sm py-1 px-2">
+            <i class="bi bi-calendar3 me-1"></i>{% trans "Full Weekly Timetable" %}
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-ssms mb-0">
+            <thead>
+                <tr>
+                    <th>{% trans "Period" %}</th>
+                    <th>{% trans "Time Schedule" %}</th>
+                    <th>{% trans "Subject" %}</th>
+                    <th>{% trans "Grade & Section" %}</th>
+                    <th>{% trans "Classroom" %}</th>
+                    <th class="text-end">{% trans "Action" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in role_context.today_timetable %}
+                <tr>
+                    <td class="fw-bold">
+                        <span class="badge bg-light text-dark border">
+                            {% trans "Period" %} {{ entry.period.period_number }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="small font-monospace text-muted">
+                            {{ entry.period.start_time|time:"H:i" }} – {{ entry.period.end_time|time:"H:i" }}
+                        </span>
+                    </td>
+                    <td class="fw-bold text-primary">
+                        {{ entry.subject.name }}
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary border">
+                            {{ entry.class_offering.grade.name }} - {{ entry.class_offering.section.name }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">
+                            <i class="bi bi-geo-alt me-1"></i>{{ entry.classroom.room_number|default:entry.classroom.name|default:"Assigned Room" }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'attendance_index' %}" class="btn btn-sm btn-outline-success py-1 px-2">
+                            <i class="bi bi-check2-circle me-1"></i>{% trans "Record Attendance" %}
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-5">
+                        <i class="bi bi-cup-hot fs-2 d-block mb-2 opacity-50 text-primary"></i>
+                        <h6 class="fw-bold text-dark mb-1">{% trans "No Teaching Periods Scheduled for Today" %}</h6>
+                        <p class="small text-muted mb-3" style="max-width: 420px; margin: 0 auto;">
+                            {% trans "You have no instructional classes on today's schedule. Use this time for lesson planning, grading student assessments, or consult your full weekly timetable." %}
+                        </p>
+                        <a href="{% url 'timetable_index' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-calendar3 me-1"></i>{% trans "View Full Timetable" %}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 5. Assigned Classes & Active Examination Roster Row -->
+<div class="row g-4">
+    <!-- Assigned Classes & Subjects Roster -->
+    <div class="col-lg-7">
+        <div class="card-ssms mb-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-collection-fill text-primary"></i>
+                    <span class="fw-semibold">{% trans "My Assigned Classes & Subjects" %}</span>
+                </div>
+                <span class="badge bg-light text-secondary border">
+                    {{ role_context.teacher_classes_count }} {% trans "Classes" %}
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Grade & Section" %}</th>
+                            <th>{% trans "Subject" %}</th>
+                            <th>{% trans "Stream" %}</th>
+                            <th class="text-end">{% trans "Quick Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assign in role_context.teacher_assignments %}
+                        <tr>
+                            <td class="fw-bold">
+                                {{ assign.class_offering.grade.name }} - {{ assign.class_offering.section.name }}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border">
+                                    {{ assign.subject.name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="small text-muted">{{ assign.class_offering.stream.name|default:"General" }}</span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'attendance_index' %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" title="{% trans 'Record Attendance' %}">
+                                    <i class="bi bi-calendar-check me-1"></i>{% trans "Attendance" %}
+                                </a>
+                                <a href="{% url 'results_index' %}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" title="{% trans 'Enter Exam Marks' %}">
+                                    <i class="bi bi-pencil-square me-1"></i>{% trans "Marks" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-journal-x fs-3 d-block mb-1 opacity-25"></i>
+                                {% trans "No classroom teaching assignments have been configured yet." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Examinations & Mark Entry Cycles -->
+    <div class="col-lg-5">
+        <div class="card-ssms mb-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-warning"></i>
+                    <span class="fw-semibold">{% trans "Open Examination Mark Entry" %}</span>
+                </div>
+                <a href="{% url 'results_index' %}" class="btn btn-outline-secondary btn-sm py-1 px-2">
+                    {% trans "Results Center" %}
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush small">
+                    {% for exam in role_context.active_exams %}
+                    <li class="list-group-item px-3 py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-dark">{{ exam.name }}</div>
+                            <div class="text-muted text-xs">
+                                {{ exam.academic_year.name }} &bull; {{ exam.term|default:"Semester" }} &bull; {% trans "Starts:" %} {{ exam.start_date }}
+                            </div>
+                        </div>
+                        <a href="{% url 'results_index' %}" class="btn btn-sm btn-primary py-1 px-2">
+                            <i class="bi bi-pencil me-1"></i>{% trans "Enter Marks" %}
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center text-muted py-4">
+                        <i class="bi bi-check2-all fs-3 d-block mb-1 opacity-25 text-success"></i>
+                        {% trans "No open examination cycles currently requiring marks entry." %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div class="p-3 border-top bg-light">
+                    <a href="{% url 'ai_chat_assistant' %}" class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-robot"></i>
+                        <span>{% trans "Ask School AI Assistant for Instructional Guidance" %}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

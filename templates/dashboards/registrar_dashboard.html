@@ -1,0 +1,391 @@
+{% load static %}
+{% load i18n %}
+
+<!-- ==================== REGISTRAR DASHBOARD ==================== -->
+
+<!-- 1. Registrar Welcome & Operations Banner -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff;">
+    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-info rounded-pill px-3 py-1 font-monospace" style="font-size: 0.75rem;">
+                    <i class="bi bi-folder-check me-1"></i>Registrar Operations Panel
+                </span>
+                <span class="text-white-50 small">&bull;</span>
+                <span class="text-white-50 small">Majang Secondary School (Grades 9–12)</span>
+            </div>
+            <h4 class="fw-bold mb-1 text-white">
+                {% trans "Welcome back" %}, {{ request.user.get_full_name|default:request.user.username }}
+            </h4>
+            <p class="text-light opacity-75 small mb-0">
+                {% trans "Managing student enrollments, academic records, section placement, and official school transcripts." %}
+                <span class="d-block mt-1">Unassigned / Pending Class Placement: <strong>{{ role_context.unassigned_students_count }} students</strong></span>
+            </p>
+        </div>
+
+        <!-- Academic Year & Placement Status Pill -->
+        <div class="d-flex flex-wrap gap-2 text-md-end text-start">
+            <div class="bg-white bg-opacity-10 border border-white border-opacity-10 rounded-3 p-3">
+                <div class="text-white-50 text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    Academic Year
+                </div>
+                <div class="fw-bold text-white fs-6 mt-1">
+                    {% if kpis.current_year %}
+                    {{ kpis.current_year.name }}
+                    {% else %}
+                    <span class="text-warning">{% trans "No Year Set" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="bg-white bg-opacity-10 border border-white border-opacity-10 rounded-3 p-3">
+                <div class="text-white-50 text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    {% trans "Pending Placement" %}
+                </div>
+                <div class="fw-bold {% if role_context.unassigned_students_count > 0 %}text-warning{% else %}text-success{% endif %} fs-6 mt-1">
+                    {{ role_context.unassigned_students_count }} {% trans "students" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Quick Search & Registration Action Bar -->
+<div class="card-ssms p-3 mb-4">
+    <div class="row g-2 align-items-center">
+        <div class="col-lg-6">
+            <form action="{% url 'students_list' %}" method="get" class="d-flex gap-2">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="{% trans 'Search student by name, admission number, or grade...' %}">
+                    <button type="submit" class="btn btn-primary px-3">
+                        {% trans "Search Student" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-6 d-flex flex-wrap justify-content-lg-end gap-2">
+            <a href="{% url 'student_register' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill me-1"></i>{% trans "Register New Student" %}
+            </a>
+            <a href="{% url 'class_offering_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-building me-1"></i>{% trans "Class Placement" %}
+            </a>
+            <a href="{% url 'reports_students' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-person me-1"></i>{% trans "Transcripts" %}
+            </a>
+            <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-up-right-circle me-1"></i>{% trans "Promotions" %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Registrar KPI Cards (6 Cards) -->
+<div class="row g-3 mb-4">
+    <!-- Total Registered -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Total Registered" %}</div>
+                <div class="metric-value text-primary">{{ role_context.total_registered_students|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Historical records" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-folder-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Students -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Active Enrollees" %}</div>
+                <div class="metric-value text-success">{{ role_context.active_students_count|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Current year" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-green">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unassigned Students -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Unassigned" %}</div>
+                <div class="metric-value {% if role_context.unassigned_students_count > 0 %}text-warning{% else %}text-muted{% endif %}">
+                    {{ role_context.unassigned_students_count|default:"0" }}
+                </div>
+                <div class="metric-subtitle">{% trans "Pending section" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-amber">
+                <i class="bi bi-person-exclamation"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Class Offerings -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Active Classes" %}</div>
+                <div class="metric-value text-dark">{{ kpis.total_active_classes|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Grade sections" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-purple">
+                <i class="bi bi-diagram-3-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Male Students -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Male Students" %}</div>
+                <div class="metric-value text-primary">{{ student_analytics.gender_male|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Enrolled" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-blue">
+                <i class="bi bi-gender-male"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Female Students -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="metric-card h-100">
+            <div>
+                <div class="metric-label">{% trans "Female Students" %}</div>
+                <div class="metric-value text-danger">{{ student_analytics.gender_female|default:"0" }}</div>
+                <div class="metric-subtitle">{% trans "Enrolled" %}</div>
+            </div>
+            <div class="metric-icon-box metric-icon-amber">
+                <i class="bi bi-gender-female"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Class Capacity Utilization Table & Grade Distribution Chart -->
+<div class="row g-4 mb-4">
+    <!-- Class Capacity Utilization Table -->
+    <div class="col-lg-7">
+        <div class="card-ssms h-100 mb-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-building text-primary"></i>
+                    <span class="fw-semibold">{% trans "Class Capacity & Utilization" %}</span>
+                </div>
+                <a href="{% url 'class_offering_list' %}" class="btn btn-outline-secondary btn-sm py-1 px-2">
+                    {% trans "Manage Offerings" %}
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Grade & Section" %}</th>
+                            <th>{% trans "Stream" %}</th>
+                            <th>{% trans "Enrolled / Capacity" %}</th>
+                            <th style="min-width: 140px;">{% trans "Utilization" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_off in role_context.class_capacity_list %}
+                        <tr>
+                            <td class="fw-bold">
+                                {{ class_off.grade.name }} - {{ class_off.section.name }}
+                            </td>
+                            <td>{{ class_off.stream.name|default:"General" }}</td>
+                            <td>
+                                <strong>{{ class_off.enrolled_count }}</strong> / {{ class_off.max_capacity }}
+                            </td>
+                            <td>
+                                {% widthratio class_off.enrolled_count class_off.max_capacity 100 as pct %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 7px;">
+                                        <div class="progress-bar {% if pct|add:0 >= 95 %}bg-danger{% elif pct|add:0 >= 75 %}bg-primary{% else %}bg-success{% endif %}"
+                                            role="progressbar" style="width: {{ pct }}%;" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="small font-monospace" style="font-size: 0.75rem;">{{ pct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                {% trans "No class offerings found for the active academic year." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Enrollment by Grade Level Chart -->
+    <div class="col-lg-5">
+        <div class="card-ssms h-100 mb-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-line-fill text-primary"></i>
+                    <span class="fw-semibold">{% trans "Enrollment by Grade Level" %}</span>
+                </div>
+                <span class="badge bg-light text-secondary border">{% trans "Active Enrollees" %}</span>
+            </div>
+            <div class="card-body">
+                {% if student_analytics.has_student_data %}
+                <div style="height: 250px; position: relative;">
+                    <canvas id="enrollmentChart"></canvas>
+                </div>
+                {% else %}
+                <div class="d-flex flex-column align-items-center justify-content-center text-center py-5 text-muted" style="height: 250px;">
+                    <i class="bi bi-people display-4 text-secondary opacity-25 mb-3"></i>
+                    <h6 class="fw-bold text-secondary">{% trans "No Student Enrollees" %}</h6>
+                    <p class="small text-muted mb-3" style="max-width: 280px;">
+                        {% trans "Enroll students into grade offerings to populate this distribution chart." %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Recent Student Enrollments & Operational Log Row -->
+<div class="row g-4">
+    <!-- Recent Student Registrations Table -->
+    <div class="col-lg-7">
+        <div class="card-ssms mb-0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-secondary"></i>
+                    <span class="fw-semibold">{% trans "Recent Student Registrations & Enrollments" %}</span>
+                </div>
+                <a href="{% url 'students_list' %}" class="btn btn-outline-secondary btn-sm py-1 px-2">
+                    {% trans "All Students" %}
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-ssms mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Student Name" %}</th>
+                            <th>{% trans "Admission No." %}</th>
+                            <th>{% trans "Grade & Section" %}</th>
+                            <th>{% trans "Enrollment Date" %}</th>
+                            <th>{% trans "Status" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enroll in role_context.recent_enrollments %}
+                        <tr>
+                            <td class="fw-bold">
+                                <a href="{% url 'student_detail' enroll.student.id %}" class="text-decoration-none text-dark">
+                                    {{ enroll.student.get_full_name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-secondary border font-monospace">{{ enroll.student.admission_number }}</span>
+                            </td>
+                            <td>
+                                {{ enroll.class_offering.grade.name }} - {{ enroll.class_offering.section.name }}
+                            </td>
+                            <td>
+                                <span class="small text-muted">{{ enroll.enrollment_date }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success border">{% trans "Active" %}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-3 d-block mb-1 opacity-25"></i>
+                                {% trans "No recent student enrollments found." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registry Quick Tools & Operational Audits -->
+    <div class="col-lg-5">
+        <div class="card-ssms mb-0">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-check text-primary"></i>
+                    <span class="fw-semibold">{% trans "Registrar Operations & Shortcuts" %}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'student_register' %}" class="btn btn-outline-primary d-flex align-items-center justify-content-between p-2 text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus-fill fs-5 text-primary"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small">{% trans "Register New Student" %}</div>
+                                <div class="text-muted text-xs">{% trans "Record new admission with personal profile" %}</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'class_offering_list' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-between p-2 text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-diagram-3 fs-5 text-dark"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small">{% trans "Class Offerings & Sections" %}</div>
+                                <div class="text-muted text-xs">{% trans "Manage capacities and grade streams" %}</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'reports_students' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-between p-2 text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-file-earmark-person fs-5 text-success"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small">{% trans "Student Transcripts & Rosters" %}</div>
+                                <div class="text-muted text-xs">{% trans "Printable official student record sheets" %}</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'promotion_index' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-between p-2 text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-up-right-circle fs-5 text-warning"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small">{% trans "Academic Promotion Batches" %}</div>
+                                <div class="text-muted text-xs">{% trans "Process grade progression and retention" %}</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+
+                    <a href="{% url 'reports_exports' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-between p-2 text-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cloud-arrow-down fs-5 text-info"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small">{% trans "Export Registry Data" %}</div>
+                                <div class="text-muted text-xs">{% trans "Export student lists to CSV or print" %}</div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -21,4 +21,9 @@ urlpatterns = [
     path('users/<int:user_id>/edit/', views.user_edit_view, name='user_edit'),
     path('users/<int:user_id>/toggle-active/', views.user_toggle_active_view, name='user_toggle_active'),
     path('users/<int:user_id>/reset-password/', views.admin_password_reset_view, name='user_admin_reset_password'),
+
+    # ---- Security & Monitoring (System Administrator only) — Step 24 ----
+    path('security/', views.security_dashboard_view, name='security_dashboard'),
+    path('security/login-attempts/', views.login_attempt_list_view, name='login_attempt_list'),
 ]
+

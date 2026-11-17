@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Action Controls -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'students_list' %}" class="text-decoration-none">Students</a></li>
+                <li class="breadcrumb-item active" aria-current="page">ID Card Management</li>
+            </ol>
+        </nav>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-person-badge-fill text-primary me-2"></i>Student Identification Card Management
+        </h5>
+        <p class="text-muted small mb-0">
+            Generate, preview, batch-print, and manage official student credentials with secure offline QR verification.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if is_management %}
+        <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#batchGenerateModal">
+            <i class="bi bi-stack me-1"></i> Batch Generate Cards
+        </button>
+        {% endif %}
+        <a href="{% url 'id_card_batch_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-printer-fill me-1"></i> Print Batch Sheet (PDF)
+        </a>
+        <a href="{% url 'students_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-people me-1"></i> Student Directory
+        </a>
+    </div>
+</div>
+
+<!-- KPI Metric Cards -->
+<div class="row g-3 mb-4">
+    <!-- Active ID Cards -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Total Active Cards</div>
+                    <div class="fs-4 fw-bold text-success mt-1">{{ active_cards_count }}</div>
+                    <div class="small text-muted">Valid student credentials</div>
+                </div>
+                <div class="bg-success-subtle text-success rounded-3 p-3">
+                    <i class="bi bi-person-vcard-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Issued Selected Year -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Issued in {{ selected_year.name|default:"Current Year" }}</div>
+                    <div class="fs-4 fw-bold text-primary mt-1">{{ year_cards_count }}</div>
+                    <div class="small text-muted">Active in target academic year</div>
+                </div>
+                <div class="bg-primary-subtle text-primary rounded-3 p-3">
+                    <i class="bi bi-calendar2-check-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revoked Cards -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Revoked Credentials</div>
+                    <div class="fs-4 fw-bold {% if revoked_cards_count > 0 %}text-danger{% else %}text-muted{% endif %} mt-1">
+                        {{ revoked_cards_count }}
+                    </div>
+                    <div class="small text-muted">Lost, stolen, or invalidated</div>
+                </div>
+                <div class="{% if revoked_cards_count > 0 %}bg-danger-subtle text-danger{% else %}bg-light text-muted{% endif %} rounded-3 p-3">
+                    <i class="bi bi-shield-x fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Students in Scope -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Enrolled Cohort</div>
+                    <div class="fs-4 fw-bold text-dark mt-1">{{ total_students_count }}</div>
+                    <div class="small text-muted">Eligible student population</div>
+                </div>
+                <div class="bg-light text-secondary rounded-3 p-3">
+                    <i class="bi bi-mortarboard fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filtering Card -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                {{ form.q }}
+            </div>
+            <div class="col-md-2">
+                {{ form.academic_year }}
+            </div>
+            <div class="col-md-2">
+                {{ form.grade }}
+            </div>
+            <div class="col-md-2">
+                {{ form.class_offering }}
+            </div>
+            <div class="col-md-2">
+                {{ form.status }}
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100" title="Apply Filters">
+                    <i class="bi bi-filter"></i>
+                </button>
+                <a href="{% url 'id_card_hub' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Student ID Card Roster Table -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+            <i class="bi bi-person-lines-fill text-primary me-2"></i>Student Credential Roster ({{ total_students_count }} Total)
+        </h6>
+        <div class="small text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th style="width: 50px;">Photo</th>
+                        <th>Student Name &amp; Admission</th>
+                        <th>Grade &amp; Section</th>
+                        <th>Curriculum Stream</th>
+                        <th>Card Number</th>
+                        <th>Issue Date</th>
+                        <th class="text-center">Credential Status</th>
+                        <th class="text-end" style="min-width: 170px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in student_rows %}
+                    <tr>
+                        <!-- Portrait Photo -->
+                        <td>
+                            {% if row.student.photo %}
+                                <img src="{{ row.student.photo.url }}" alt="{{ row.student.full_name }}" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; font-size: 0.75rem;">
+                                    {{ row.student.first_name|first }}{{ row.student.father_name|first }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Name & Admission -->
+                        <td>
+                            <a href="{% url 'student_detail' row.student.id %}" class="fw-bold text-dark text-decoration-none">
+                                {{ row.student.full_name }}
+                            </a>
+                            <div class="small text-muted font-monospace">{{ row.student.admission_number }}</div>
+                        </td>
+
+                        <!-- Grade & Section -->
+                        <td>
+                            {% if row.class_offering %}
+                                <span class="badge bg-light text-dark border">{{ row.class_offering.grade.name }} - Sec {{ row.class_offering.section.name }}</span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Stream -->
+                        <td>
+                            {% if row.class_offering and row.class_offering.stream %}
+                                <span class="small fw-semibold text-secondary">{{ row.class_offering.stream.name }}</span>
+                            {% else %}
+                                <span class="small text-muted">General Secondary</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Card Number -->
+                        <td>
+                            {% if row.active_card %}
+                                <span class="small font-monospace fw-semibold text-dark">{{ row.active_card.card_number }}</span>
+                                {% if row.active_card.reprint_count > 0 %}
+                                    <span class="badge bg-secondary-subtle text-secondary ms-1" title="Reprinted {{ row.active_card.reprint_count }} times">
+                                        <i class="bi bi-repeat"></i> {{ row.active_card.reprint_count }}
+                                    </span>
+                                {% endif %}
+                            {% elif row.latest_card %}
+                                <span class="small font-monospace text-muted text-decoration-line-through">{{ row.latest_card.card_number }}</span>
+                            {% else %}
+                                <span class="text-muted small italic">Not Generated</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Issue Date -->
+                        <td>
+                            {% if row.active_card %}
+                                <span class="small text-muted">{{ row.active_card.issue_date|date:"M d, Y" }}</span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Credential Status Badge -->
+                        <td class="text-center">
+                            {% if row.active_card %}
+                                {% if row.active_card.is_valid %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Active / Valid
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-clock-history me-1"></i>Expired
+                                    </span>
+                                {% endif %}
+                            {% elif row.latest_card and row.latest_card.status == 'REVOKED' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                    <i class="bi bi-shield-x me-1"></i>Revoked
+                                </span>
+                            {% elif row.latest_card and row.latest_card.status == 'REPLACED' %}
+                                <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Replaced
+                                </span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border px-2 py-1">
+                                    No Active Card
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action Buttons -->
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <!-- Preview Button -->
+                                <a href="{% url 'id_card_preview' row.student.id %}" class="btn btn-outline-primary" title="Preview ID Card">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                {% if row.active_card %}
+                                    <!-- Download Single PDF -->
+                                    <a href="{% url 'id_card_pdf' row.active_card.id %}" class="btn btn-outline-success" title="Download PDF Card">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+
+                                    {% if is_management %}
+                                    <!-- Revoke Button Trigger -->
+                                    <button type="button" class="btn btn-outline-danger" title="Revoke ID Card"
+                                            onclick="openRevokeModal('{{ row.active_card.id }}', '{{ row.student.full_name|escapejs }}', '{{ row.active_card.card_number|escapejs }}');">
+                                        <i class="bi bi-shield-slash"></i>
+                                    </button>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Issue Card Directly -->
+                                    <form method="post" action="{% url 'id_card_generate' row.student.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-primary" title="Issue Student ID Card">
+                                            <i class="bi bi-plus-circle me-1"></i> Issue
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                            <h6>No Students Found</h6>
+                            <p class="small mb-0">No student records match your selected filter criteria.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} students
+        </div>
+        <nav aria-label="ID Card pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal: Revoke ID Card -->
+<div class="modal fade" id="revokeModal" tabindex="-1" aria-labelledby="revokeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" id="revokeForm" action="">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h6 class="modal-title fw-bold" id="revokeModalLabel">
+                        <i class="bi bi-shield-x me-2"></i>Revoke Student ID Card
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        You are about to revoke the official ID card for <strong id="revokeStudentName" class="text-dark"></strong>.
+                        Card Number: <code id="revokeCardNumber" class="text-danger fw-bold"></code>.
+                    </p>
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Once revoked, this QR code will immediately scan as <strong>REVOKED / INVALID</strong> across the school LAN.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Reason for Revocation <span class="text-danger">*</span></label>
+                        {{ revoke_form.reason }}
+                        <div class="form-text text-xs text-muted">This justification is permanently recorded in the security audit trail.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-3">Confirm Revocation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Batch Generate ID Cards -->
+{% if is_management %}
+<div class="modal fade" id="batchGenerateModal" tabindex="-1" aria-labelledby="batchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" action="{% url 'id_card_batch_generate' %}">
+                {% csrf_token %}
+                <div class="modal-header bg-primary text-white">
+                    <h6 class="modal-title fw-bold" id="batchModalLabel">
+                        <i class="bi bi-stack me-2"></i>Batch Generate Student ID Cards
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Issue official credentials for an entire classroom or grade. Students who already possess an active card will not receive duplicate cards unless force re-issuance is checked.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Target Grade</label>
+                        {{ form.grade }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Target Section (Optional)</label>
+                        {{ form.class_offering }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Academic Year</label>
+                        {{ form.academic_year }}
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" name="force_new" value="1" id="forceNewCheck">
+                        <label class="form-check-label small text-muted" for="forceNewCheck">
+                            <strong>Force Re-issuance:</strong> Replace any existing active cards with newly generated credentials.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-3">
+                        <i class="bi bi-check2-circle me-1"></i> Generate Cards
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function openRevokeModal(cardId, studentName, cardNumber) {
+    document.getElementById('revokeStudentName').innerText = studentName;
+    document.getElementById('revokeCardNumber').innerText = cardNumber;
+    document.getElementById('revokeForm').action = "/students/id-cards/revoke/" + cardId + "/";
+    var revokeModal = new bootstrap.Modal(document.getElementById('revokeModal'));
+    revokeModal.show();
+}
+</script>
+{% endblock %}

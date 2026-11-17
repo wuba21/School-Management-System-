@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Breadcrumbs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'results_index' %}" class="text-decoration-none">Results Hub</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Marks Export</li>
+            </ol>
+        </nav>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-arrow-down-fill text-primary me-2"></i>Export Examination Records
+        </h5>
+        <p class="text-muted small mb-0">
+            Export verified student examination records to structured Excel (.xlsx) and CSV (.csv) spreadsheets.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'marks_import' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Marks
+        </a>
+        <a href="{% url 'results_index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Results Hub
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Filter and Export Card -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-funnel text-primary me-2"></i>Filter Marks for Export
+                </h6>
+                <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                    {{ total_matching }} Matching Records
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <form method="get" id="marksExportForm">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Academic Year</label>
+                            {{ form.academic_year }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Examination Cycle</label>
+                            {{ form.examination }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Grade Level</label>
+                            {{ form.grade }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Section / Classroom</label>
+                            {{ form.class_offering }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Curriculum Stream</label>
+                            {{ form.stream }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Subject</label>
+                            {{ form.subject }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Export Format <span class="text-danger">*</span></label>
+                            {{ form.file_format }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center border-top pt-3">
+                        <button type="submit" name="apply_filter" value="1" class="btn btn-outline-secondary">
+                            <i class="bi bi-filter me-1"></i> Apply Filter &amp; Update Count
+                        </button>
+                        <button type="submit" name="export" value="1" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-download me-2"></i>Download Export Spreadsheet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Standards & Info Sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-shield-check text-success me-2"></i>Export Data Integrity
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-unstyled mb-0 small text-muted">
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Actual Database Records:</strong> Generates output exclusively from verified student mark records in the database.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>UTF-8 BOM Support:</strong> CSV exports are encoded with UTF-8 byte-order marks to ensure immediate correct rendering in offline Microsoft Excel.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Role-Based Access:</strong> Teachers can only view and export records for their appointed classes and subjects.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Audit Trail:</strong> Bulk data export operations are recorded in the institutional audit log.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3 bg-light">
+            <div class="card-body p-3 text-center">
+                <i class="bi bi-cloud-arrow-up text-primary fs-3 d-block mb-1"></i>
+                <h6 class="fw-bold mb-1">Need to Enter or Update Marks?</h6>
+                <p class="small text-muted mb-2">Upload your edited spreadsheet directly into SSMS.</p>
+                <a href="{% url 'marks_import' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-upload me-1"></i> Go to Spreadsheet Import
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

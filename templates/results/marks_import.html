@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Smart School Management{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Top Header & Breadcrumbs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'results_index' %}" class="text-decoration-none">Results Hub</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Marks Excel/CSV Import</li>
+            </ol>
+        </nav>
+        <h5 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-file-earmark-arrow-up-fill text-primary me-2"></i>Examination Marks Spreadsheet Import
+        </h5>
+        <p class="text-muted small mb-0">
+            Batch-upload student examination scores using Excel (.xlsx) or CSV (.csv) with rigorous integrity checks.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'marks_export' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> Export Records
+        </a>
+        <a href="{% url 'results_index' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Return to Hub
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Upload Form -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-cloud-upload text-primary me-2 fs-5"></i>Upload Marks Spreadsheet
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" id="marksUploadForm">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small mb-3">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Examination Subject Selector -->
+                    <div class="mb-3">
+                        <label for="{{ form.exam_subject.id_for_label }}" class="form-label fw-semibold text-dark small">
+                            Target Subject &amp; Grade <span class="text-danger">*</span>
+                        </label>
+                        {{ form.exam_subject }}
+                        {% if form.exam_subject.errors %}
+                        <div class="text-danger small mt-1">{{ form.exam_subject.errors }}</div>
+                        {% endif %}
+                        <div class="form-text small text-muted">
+                            {% if user_role == 'TEACHER' %}
+                            Filtered strictly to examination subjects assigned to your teaching schedule.
+                            {% else %}
+                            Select the specific examination subject to import scores for.
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Target Class Offering (Optional) -->
+                    <div class="mb-3">
+                        <label for="{{ form.class_offering.id_for_label }}" class="form-label fw-semibold text-dark small">
+                            Section / Class Offering (Optional)
+                        </label>
+                        {{ form.class_offering }}
+                        {% if form.class_offering.errors %}
+                        <div class="text-danger small mt-1">{{ form.class_offering.errors }}</div>
+                        {% endif %}
+                        <div class="form-text small text-muted">Leave blank to include all sections of the selected grade.</div>
+                    </div>
+
+                    <!-- File Upload Input -->
+                    <div class="mb-4">
+                        <label for="{{ form.file.id_for_label }}" class="form-label fw-semibold text-dark small">
+                            Spreadsheet File (.xlsx or .csv) <span class="text-danger">*</span>
+                        </label>
+                        <div class="p-3 border rounded-3 bg-light text-center">
+                            {{ form.file }}
+                            {% if form.file.errors %}
+                            <div class="text-danger small mt-2">{{ form.file.errors }}</div>
+                            {% endif %}
+                            <div class="small text-muted mt-2">
+                                <i class="bi bi-shield-check text-success me-1"></i>Supported formats:
+                                <span class="badge bg-secondary-subtle text-secondary me-1">.XLSX</span>
+                                <span class="badge bg-secondary-subtle text-secondary me-1">.CSV</span>
+                                &bull; Max file size: <strong>5.0 MB</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-file-earmark-check me-2"></i>Validate &amp; Preview Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Step-by-Step Guide & Template Downloads -->
+    <div class="col-lg-5">
+        <!-- Template Download Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-download text-success me-2 fs-5"></i>Download Official Template
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Download a pre-structured template containing actual active student enrollments for your chosen subject.
+                </p>
+
+                <div class="alert alert-info py-2 px-3 small mb-3">
+                    <i class="bi bi-info-circle me-1"></i> Select a <strong>Target Subject &amp; Grade</strong> on the left, then click below to download:
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success text-start d-flex align-items-center justify-content-between p-2" id="downloadExcelBtn">
+                        <span><i class="bi bi-file-earmark-excel-fill text-success me-2 fs-5"></i><strong>Excel Template (.xlsx)</strong><br><small class="text-muted ms-4">Recommended for offline spreadsheet work</small></span>
+                        <i class="bi bi-box-arrow-down fs-5"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-2" id="downloadCsvBtn">
+                        <span><i class="bi bi-file-earmark-text-fill text-secondary me-2 fs-5"></i><strong>CSV Template (.csv)</strong><br><small class="text-muted ms-4">Standard UTF-8 comma-separated format</small></span>
+                        <i class="bi bi-box-arrow-down fs-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Process Checklist -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-list-check text-primary me-2 fs-5"></i>Safe Import Rules
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-unstyled mb-0 small text-muted">
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>No Unconfirmed Writes:</strong> Files are parsed in preview mode first. You must explicitly review and confirm before marks are written to the database.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Score Range Protection:</strong> Scores must be numeric and between 0.00 and the configured Maximum Mark. Negative values are blocked.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Locked Exam Protection:</strong> Already approved or published examination subjects cannot be overwritten.</div>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <div><strong>Atomic Rollback:</strong> If any database exception occurs during final commitment, the entire transaction is rolled back safely.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const examSubjectSelect = document.getElementById('id_import_exam_subject');
+    const classOfferingSelect = document.getElementById('id_import_class_offering');
+    const excelBtn = document.getElementById('downloadExcelBtn');
+    const csvBtn = document.getElementById('downloadCsvBtn');
+
+    function triggerDownload(format) {
+        const esId = examSubjectSelect.value;
+        if (!esId) {
+            alert('Please select a Target Subject & Grade first to download its template.');
+            examSubjectSelect.focus();
+            return;
+        }
+        let url = "{% url 'marks_template_download' %}?exam_subject=" + encodeURIComponent(esId) + "&format=" + format;
+        if (classOfferingSelect && classOfferingSelect.value) {
+            url += "&class_offering=" + encodeURIComponent(classOfferingSelect.value);
+        }
+        window.location.href = url;
+    }
+
+    if (excelBtn) {
+        excelBtn.addEventListener('click', function() { triggerDownload('xlsx'); });
+    }
+    if (csvBtn) {
+        csvBtn.addEventListener('click', function() { triggerDownload('csv'); });
+    }
+});
+</script>
+{% endblock %}

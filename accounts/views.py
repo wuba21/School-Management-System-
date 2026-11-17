@@ -31,31 +31,72 @@ from accounts.forms import (
     AdminPasswordResetForm,
 )
 from accounts.decorators import sysadmin_required, any_authenticated_role_required
-from core.models import AuditLog
+from accounts.security import (
+    is_ip_locked_out,
+    is_account_locked_out,
+    is_locked_out,
+    get_lockout_reason,
+    record_failed_attempt,
+    clear_failed_attempts,
+    get_remaining_attempts,
+    MAX_ATTEMPTS,
+)
+from core.models import AuditLog, LoginAttempt
+
+
 
 
 # ---------------------------------------------------------------------------
-# Helper: write to AuditLog safely (never crash the main request)
-# ---------------------------------------------------------------------------
+SENSITIVE_AUDIT_KEYS = {'password', 'password1', 'password2', 'new_password', 'old_password', 'token', 'secret', 'csrfmiddlewaretoken'}
+
+
+def sanitize_audit_changes(changes):
+    """
+    Strips passwords, secrets, and auth tokens from audit change payloads.
+    """
+    if not isinstance(changes, dict):
+        return changes or {}
+    sanitized = {}
+    for k, v in changes.items():
+        if any(sens in k.lower() for sens in SENSITIVE_AUDIT_KEYS):
+            sanitized[k] = '[REDACTED]'
+        elif isinstance(v, dict):
+            sanitized[k] = sanitize_audit_changes(v)
+        else:
+            sanitized[k] = v
+    return sanitized
+
 
 def _audit(request, action, entity_name, record_id='', changes=None):
-    """Write an audit log entry; silently suppresses errors."""
+    """Write an audit log entry; sanitizes sensitive fields and suppresses non-critical logging errors."""
     try:
         actor = request.user if request.user.is_authenticated else None
         ip = (
             request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
             or request.META.get('REMOTE_ADDR')
         )
+        safe_changes = sanitize_audit_changes(changes)
         AuditLog.objects.create(
             actor=actor,
             action=action,
             entity_name=entity_name,
             record_id=str(record_id),
             ip_address=ip or None,
-            changes_json=changes or {},
+            changes_json=safe_changes,
         )
     except Exception:
         pass  # Audit logging must never break user-facing requests
+
+
+
+# ---------------------------------------------------------------------------
+# Helper: get client IP from request
+# ---------------------------------------------------------------------------
+
+def _get_client_ip(request) -> str:
+    """Extract client IP from request headers (supports X-Forwarded-For)."""
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    return xff or request.META.get('REMOTE_ADDR', '127.0.0.1')
 
 
 # ---------------------------------------------------------------------------
@@ -64,13 +105,34 @@ def _audit(request, action, entity_name, record_id='', changes=None):
 
 def login_view(request):
     """
-    Staff portal login.
-    Authenticated users are redirected to the dashboard immediately.
+    Staff portal login with brute-force protection.
+    After LOGIN_MAX_ATTEMPTS failed attempts from the same IP, the IP is
+    locked out for LOGIN_LOCKOUT_DURATION seconds (default 5 attempts / 15 min).
     """
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    ip = _get_client_ip(request)
     form = LoginForm(request)
+    attempted_username = request.POST.get('username', '').strip() if request.method == 'POST' else ''
+
+    # ── Lockout check (IP-level or Account-level) ───────────────────────────
+    if is_locked_out(ip, attempted_username):
+        reason = get_lockout_reason(ip, attempted_username)
+        if request.method == 'POST':
+            # Record the blocked attempt
+            LoginAttempt.objects.create(
+                username_attempted=attempted_username[:150],
+                ip_address=ip or None,
+                status=LoginAttempt.STATUS_LOCKED,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
+        return render(request, 'login.html', {
+            'form': form,
+            'locked_out': True,
+            'lockout_reason': reason,
+            'lockout_minutes': 15,
+        })
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
@@ -80,9 +142,21 @@ def login_view(request):
 
             # Honour "Remember this terminal" (extend session to 2 weeks)
             if not request.POST.get('remember_me'):
-                request.session.set_expiry(0)  # Expires when browser closes
+                request.session.set_expiry(0)   # Expires when browser closes
             else:
                 request.session.set_expiry(60 * 60 * 24 * 14)  # 14 days
+
+            # Clear any prior failed attempts for this IP and username
+            clear_failed_attempts(ip, user.username)
+
+            # Persistent login attempt record
+            LoginAttempt.objects.create(
+                username_attempted=user.username,
+                ip_address=ip or None,
+                status=LoginAttempt.STATUS_SUCCESS,
+                user=user,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
 
             # Audit: successful login
             _audit(request, 'LOGIN', 'User', user.pk, {
@@ -102,26 +176,52 @@ def login_view(request):
             return redirect('dashboard')
 
         else:
-            # Log failed attempt (without leaking the password)
-            attempted_username = request.POST.get('username', '')
+            # Failed login: increment counter for IP and username, record attempt
+            attempted_username = request.POST.get('username', '').strip()
+            remaining = get_remaining_attempts(ip, attempted_username)   # read BEFORE incrementing
+            new_count = record_failed_attempt(ip, attempted_username)
+            remaining_after = get_remaining_attempts(ip, attempted_username)
+
+            LoginAttempt.objects.create(
+                username_attempted=attempted_username[:150],
+                ip_address=ip or None,
+                status=LoginAttempt.STATUS_FAILED,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
+
+            # Audit the failure
             _audit(request, 'LOGIN', 'User', '', {
                 'attempted_username': attempted_username,
                 'result': 'FAILED',
+                'failed_count': new_count,
             })
+
+            context = {
+                'form': form,
+                'remaining_attempts': remaining_after,
+                'max_attempts': MAX_ATTEMPTS,
+                'locked_out': is_locked_out(ip, attempted_username),
+            }
+            return render(request, 'login.html', context)
+
 
     return render(request, 'login.html', {'form': form})
 
 
+
+
 # ---------------------------------------------------------------------------
-# 2. LOGOUT
+# 2. LOGOUT (POST-only with CSRF validation)
 # ---------------------------------------------------------------------------
 
+
 @login_required
+@require_POST
 def logout_view(request):
     """
-    Secure logout — supports both GET and POST.
-    POST is preferred (protects against CSRF-based forced logout).
-    GET is accepted for LAN simplicity (logout links in navbar).
+    Secure logout — strictly POST-only with CSRF validation.
+    Protects against CSRF-based forced logout attacks via image tags or links.
+    GET requests are rejected with 405 Method Not Allowed.
     """
     _audit(request, 'LOGIN', 'User', request.user.pk, {
         'username': request.user.username,
@@ -130,6 +230,7 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'You have been signed out successfully.')
     return redirect('login')
+
 
 
 # ---------------------------------------------------------------------------
@@ -401,3 +502,101 @@ def access_denied_view(request, exception=None):
     Renders a friendly error page with the user's role and a back button.
     """
     return render(request, 'accounts/403.html', status=403)
+
+
+# ---------------------------------------------------------------------------
+# 11. SECURITY DASHBOARD  (System Administrator only)
+# ---------------------------------------------------------------------------
+
+@sysadmin_required
+def security_dashboard_view(request):
+    """
+    Security overview dashboard: lockout summary, recent failures, suspicious IPs.
+    """
+    from django.db.models import Count
+    from django.utils import timezone
+    import datetime
+
+    today = timezone.now().date()
+
+    # Recent login attempts (last 200)
+    recent_attempts = LoginAttempt.objects.select_related('user').order_by('-timestamp')[:100]
+
+    # Today's summary stats
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_failed = LoginAttempt.objects.filter(
+        status=LoginAttempt.STATUS_FAILED,
+        timestamp__gte=today_start,
+    ).count()
+    today_success = LoginAttempt.objects.filter(
+        status=LoginAttempt.STATUS_SUCCESS,
+        timestamp__gte=today_start,
+    ).count()
+    today_locked = LoginAttempt.objects.filter(
+        status=LoginAttempt.STATUS_LOCKED,
+        timestamp__gte=today_start,
+    ).count()
+
+    # IPs with 5+ failures in the last 24 hours
+    cutoff = timezone.now() - datetime.timedelta(hours=24)
+    suspicious_ips = (
+        LoginAttempt.objects
+        .filter(status=LoginAttempt.STATUS_FAILED, timestamp__gte=cutoff)
+        .values('ip_address')
+        .annotate(fail_count=Count('id'))
+        .filter(fail_count__gte=5)
+        .order_by('-fail_count')
+    )
+
+    context = {
+        'active_menu': 'security_dashboard',
+        'page_title': 'Security Dashboard',
+        'recent_attempts': recent_attempts,
+        'today_failed': today_failed,
+        'today_success': today_success,
+        'today_locked': today_locked,
+        'suspicious_ips': suspicious_ips,
+    }
+    return render(request, 'core/security_dashboard.html', context)
+
+
+# ---------------------------------------------------------------------------
+# 12. LOGIN ATTEMPT LIST  (System Administrator only)
+# ---------------------------------------------------------------------------
+
+@sysadmin_required
+def login_attempt_list_view(request):
+    """
+    Paginated list of all login attempts with filtering by status, IP, username.
+    """
+    from django.core.paginator import Paginator
+
+    attempts = LoginAttempt.objects.select_related('user').order_by('-timestamp')
+
+    # Filters
+    status_filter = request.GET.get('status', '')
+    ip_filter = request.GET.get('ip', '').strip()
+    username_filter = request.GET.get('username', '').strip()
+
+    if status_filter:
+        attempts = attempts.filter(status=status_filter)
+    if ip_filter:
+        attempts = attempts.filter(ip_address__icontains=ip_filter)
+    if username_filter:
+        attempts = attempts.filter(username_attempted__icontains=username_filter)
+
+    paginator = Paginator(attempts, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'active_menu': 'security_dashboard',
+        'page_title': 'Login Attempt History',
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'ip_filter': ip_filter,
+        'username_filter': username_filter,
+        'status_choices': LoginAttempt.STATUS_CHOICES,
+    }
+    return render(request, 'core/login_attempts.html', context)
+

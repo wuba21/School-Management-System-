@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load ethiopian_calendar_tags %}
 
 {% block title %}Attendance Dashboard{% endblock %}
 {% block page_title %}Student Attendance Operations & Analytics{% endblock %}
@@ -23,7 +24,8 @@
         </h5>
         <p class="text-muted small mb-0">
             Academic Year: <span class="fw-semibold text-dark">{{ current_year.name|default:"Active Academic Year" }}</span>
-            &bull; Date: <span class="fw-semibold text-primary">{{ query_date|date:"l, F j, Y" }}</span>
+            &bull; Date: <span class="fw-semibold text-primary">{{ query_date|to_ethiopian }}</span>
+            <span class="text-muted small">({{ query_date|date:"l, F j, Y" }})</span>
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -203,7 +205,10 @@
             <tbody>
                 {% for session in recent_sessions %}
                 <tr>
-                    <td class="ps-3 font-monospace fw-semibold">{{ session.date|date:"Y-m-d" }}</td>
+                    <td class="ps-3">
+                        <div class="fw-semibold text-dark">{{ session.date|to_ethiopian }}</div>
+                        <div class="text-xs text-muted font-monospace">{{ session.date|date:"Y-m-d" }}</div>
+                    </td>
                     <td>
                         <span class="fw-bold text-dark">{{ session.class_offering.display_name }}</span>
                     </td>

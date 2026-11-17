@@ -37,7 +37,7 @@
     <!-- Lifecycle Action Buttons -->
     <div class="d-flex flex-wrap gap-2">
         {% if can_edit %}
-        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openAddLessonModal('', '')">
             <i class="bi bi-plus-circle me-1"></i> Add Lesson
         </button>
         {% endif %}
@@ -191,12 +191,17 @@
                             {% endif %}
                         </td>
                         {% else %}
-                        <td class="p-2 text-muted small bg-white">
+                        <td class="p-2 timetable-slot-empty">
                             {% if can_edit %}
-                            <button type="button" class="btn btn-outline-light text-muted border-0 btn-sm w-100 py-3"
-                                    data-bs-toggle="modal" data-bs-target="#addLessonModal"
-                                    data-day="{{ col.day.day_of_week }}" data-period="{{ row.period.id }}">
-                                <i class="bi bi-plus-lg"></i>
+                            <button type="button" 
+                                    class="btn timetable-add-btn btn-sm w-100 py-3"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addLessonModal"
+                                    data-day="{{ col.day.day_of_week }}" 
+                                    data-period="{{ row.period.id }}"
+                                    onclick="openAddLessonModal('{{ col.day.day_of_week }}', '{{ row.period.id }}')"
+                                    title="Schedule lesson for {{ col.day.name }} ({{ row.period.name }})">
+                                <i class="bi bi-plus-lg fs-6" style="pointer-events: none;"></i>
                             </button>
                             {% else %}
                             <span class="text-muted">&mdash;</span>
@@ -211,7 +216,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block modals %}
 <!-- Modal 1: Add Lesson Entry Modal -->
 {% if can_edit and entry_form %}
 <div class="modal fade" id="addLessonModal" tabindex="-1" aria-labelledby="addLessonModalLabel" aria-hidden="true">
@@ -306,12 +313,56 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
 
-<!-- Quick modal auto-fill script for empty cell clicks -->
+{% block extra_js %}
+<!-- Modal auto-fill and direct trigger script -->
 <script>
+// Robust modal opener – works whether called from onclick or data-bs-toggle
+window.openAddLessonModal = function(dayVal, periodVal) {
+    const modalEl = document.getElementById('addLessonModal');
+    if (!modalEl) {
+        console.error('[SSMS] #addLessonModal element not found in DOM. Check that can_edit=True and entry_form is set in view context.');
+        return;
+    }
+
+    // Pre-fill selects before the modal opens
+    function prefill() {
+        if (dayVal !== undefined && dayVal !== null && dayVal !== '') {
+            const daySelect = modalEl.querySelector('select[name="day_of_week"]');
+            if (daySelect) daySelect.value = String(dayVal);
+        }
+        if (periodVal !== undefined && periodVal !== null && periodVal !== '') {
+            const periodSelect = modalEl.querySelector('select[name="period"]');
+            if (periodSelect) periodSelect.value = String(periodVal);
+        }
+    }
+
+    prefill();
+
+    // Show via Bootstrap 5 API (most reliable)
+    if (window.bootstrap && bootstrap.Modal) {
+        try {
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+        } catch (e) {
+            console.error('[SSMS] Bootstrap Modal.show() failed:', e);
+            // Fallback: add .show class manually
+            modalEl.style.display = 'block';
+            modalEl.classList.add('show');
+            document.body.classList.add('modal-open');
+        }
+    } else {
+        // Bootstrap not loaded yet — wait and retry
+        console.warn('[SSMS] Bootstrap not ready, retrying in 200ms...');
+        setTimeout(function() { window.openAddLessonModal(dayVal, periodVal); }, 200);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const addLessonModal = document.getElementById('addLessonModal');
     if (addLessonModal) {
+        // Auto-fill when modal is triggered via data-bs-toggle on the grid + buttons
         addLessonModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             if (button && button.hasAttribute('data-day')) {
@@ -323,6 +374,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (periodSelect && periodVal) periodSelect.value = periodVal;
             }
         });
+    } else {
+        // Modal missing from DOM: can_edit or entry_form context variable is falsy
+        const addBtns = document.querySelectorAll('[data-bs-target="#addLessonModal"], [onclick*="openAddLessonModal"]');
+        if (addBtns.length > 0) {
+            console.warn('[SSMS] Add-lesson buttons found but #addLessonModal is missing. Verify timetable.is_editable and user role in view.');
+        }
     }
 });
 </script>
