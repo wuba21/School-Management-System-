@@ -33,6 +33,16 @@ if DEBUG:
     ALLOWED_HOSTS.extend(['testserver', 'localhost', '127.0.0.1'])
     ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
 
+# ---------------------------------------------------------------------------
+# CSRF Trusted Origins — required for Django 4.0+ on HTTPS (Render, production)
+# Without this every POST request (login, forms) returns 403 Forbidden.
+# ---------------------------------------------------------------------------
+_csrf_origins_env = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://*.onrender.com,http://localhost,http://127.0.0.1'
+)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins_env.split(',') if o.strip()]
+
 
 # Application definition
 INSTALLED_APPS = [
