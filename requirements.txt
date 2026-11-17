@@ -12,3 +12,4 @@ sqlparse==0.6.1
 tzdata==2026.6
 waitress==3.0.2
 whitenoise==6.9.0
+gunicorn==23.0.0
