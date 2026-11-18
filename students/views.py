@@ -15,6 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -1018,6 +1019,7 @@ def certificate_submit_view(request, certificate_id):
 
 
 @require_POST
+@login_required
 def certificate_approve_view(request, certificate_id):
     """
     Principal approval view. Enforces RBAC: Only Principal or Admin may approve.
@@ -1042,6 +1044,7 @@ def certificate_approve_view(request, certificate_id):
 
 
 @require_POST
+@login_required
 def certificate_reject_view(request, certificate_id):
     """
     Principal rejection view. Enforces RBAC: Only Principal or Admin may reject.
