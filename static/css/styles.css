@@ -334,6 +334,10 @@ html[lang="am"] body {
     letter-spacing: -0.025em;
     margin: 0;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .page-title-badge {
@@ -810,15 +814,16 @@ html[lang="am"] body {
     }
 
     .navbar-page-title {
-        font-size: 0.92rem !important;
+        font-size: 0.90rem !important;
         font-weight: 600 !important;
         line-height: 1.2 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         max-width: none !important;
-        min-width: 0;
+        min-width: 0 !important;
         flex: 1 1 auto;
+        display: block !important;
     }
 
     /* ---- Fix 2: Navbar-right — ultra-compact on mobile ---- */

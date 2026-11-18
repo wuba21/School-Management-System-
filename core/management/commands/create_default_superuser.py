@@ -1,17 +1,18 @@
 """
 Management command: create_default_superuser
 --------------------------------------------
-Creates a default superuser for the deployment environment if no superuser
-exists yet. Credentials are read from environment variables so they can be
-set safely in Render / any CI environment without hard-coding secrets.
+Creates a superuser for deployment or automated provisioning if no superuser
+exists yet. Credentials must be supplied via CLI arguments or environment
+variables. Never falls back to a predictable or hardcoded password.
 
-Environment variables (all optional — defaults shown):
+Environment variables:
   SUPERUSER_USERNAME  default: admin
   SUPERUSER_EMAIL     default: admin@ssms.local
-  SUPERUSER_PASSWORD  default: Admin@SSMS2024!
+  SUPERUSER_PASSWORD  (required; skips safely if absent)
 
-Run automatically in Render Build Command:
+Usage:
   python manage.py create_default_superuser
+  python manage.py create_default_superuser --username admin --email admin@example.com --password "SecureSecretPass123!"
 """
 
 import os
@@ -20,19 +21,35 @@ from django.contrib.auth import get_user_model
 
 
 class Command(BaseCommand):
-    help = 'Create a default superuser if none exists (safe to run on every deploy)'
+    help = 'Create a default superuser securely if none exists (requires password via argument or env var)'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--username', type=str, help='Administrator username')
+        parser.add_argument('--email', type=str, help='Administrator email')
+        parser.add_argument('--password', type=str, help='Administrator password')
 
     def handle(self, *args, **options):
         User = get_user_model()
 
-        username = os.environ.get('SUPERUSER_USERNAME', 'admin')
-        email    = os.environ.get('SUPERUSER_EMAIL',    'admin@ssms.local')
-        password = os.environ.get('SUPERUSER_PASSWORD', 'Admin@SSMS2024!')
+        username = options.get('username') or os.environ.get('SUPERUSER_USERNAME', 'admin')
+        email    = options.get('email') or os.environ.get('SUPERUSER_EMAIL', 'admin@ssms.local')
+        password = options.get('password') or os.environ.get('SUPERUSER_PASSWORD')
 
         if User.objects.filter(is_superuser=True).exists():
             self.stdout.write(
                 self.style.WARNING(
-                    f'Superuser already exists — skipping creation.'
+                    'Superuser already exists — skipping creation.'
+                )
+            )
+            return
+
+        if not password:
+            self.stdout.write(
+                self.style.WARNING(
+                    'No password provided via --password or SUPERUSER_PASSWORD environment variable.\n'
+                    'Skipping automatic superuser creation for security.\n'
+                    'To manually create an administrator, run:\n'
+                    '    python manage.py createsuperuser'
                 )
             )
             return
@@ -52,3 +69,4 @@ class Command(BaseCommand):
             self.stderr.write(
                 self.style.ERROR(f'❌ Failed to create superuser: {exc}')
             )
+
