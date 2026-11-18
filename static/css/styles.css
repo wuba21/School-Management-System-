@@ -713,11 +713,17 @@ html[lang="am"] body {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(15, 23, 42, 0.55);
-    z-index: 1030;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Must be above navbar (1020) and content, but below sidebar (1040) */
+    z-index: 1039;
     cursor: pointer;
+}
+
+.sidebar-overlay.show,
+.sidebar-overlay.active {
+    display: block;
 }
 
 /* ==========================================
@@ -757,6 +763,7 @@ html[lang="am"] body {
     }
 
     .sidebar-overlay.show {
+        /* handled by the global .sidebar-overlay.show rule above */
         display: block;
     }
 
@@ -794,6 +801,30 @@ html[lang="am"] body {
         gap: 0.35rem;
     }
 
+    /* ---- Fix 1: Navbar page title — truncate gracefully ---- */
+    .navbar-page-title {
+        font-size: 0.9rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+
+    /* ---- Fix 2: Navbar-right — compact on mobile ---- */
+    /* Hide language text, keep icon only */
+    .nav-pill-btn > span {
+        display: none;
+    }
+    /* Remove the dropdown caret spacing */
+    .nav-pill-btn.dropdown-toggle::after {
+        display: none;
+    }
+    /* Make language pill icon-only */
+    .nav-pill-btn {
+        padding: 0.3rem 0.45rem;
+        gap: 0;
+    }
+
     /* Show only the green dot, hide text on tiny screens */
     .lan-pill-text {
         display: none;
@@ -822,6 +853,42 @@ html[lang="am"] body {
         height: 38px;
         min-width: 38px;
         font-size: 1.1rem;
+    }
+
+    /* ---- Fix 5: Table overflow on mobile ---- */
+    .table-responsive,
+    .card-ssms .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Standalone tables not inside .table-responsive get a wrapper behavior */
+    .table-ssms {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+    /* But within .table-responsive, revert to normal table layout */
+    .table-responsive .table-ssms,
+    .table-responsive table {
+        display: table;
+        white-space: normal;
+    }
+
+    /* ---- Fix 6: KPI / stat card grids stack on xs ---- */
+    .ref-kpi-card {
+        margin-bottom: 0.75rem;
+    }
+
+    .admin-glass-box {
+        min-width: unset;
+        width: 100%;
+    }
+
+    /* Hero banner padding reduction */
+    .admin-hero-banner {
+        padding: 1.25rem 1rem;
     }
 }
 
