@@ -282,16 +282,13 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # Production HTTPS & Security Headers (active when DEBUG=False)
 # ---------------------------------------------------------------------------
 if not DEBUG:
-    # Render reverse proxy forwards SSL via X-Forwarded-Proto header
+    # Render load balancer terminates SSL and forwards X-Forwarded-Proto.
+    # SECURE_SSL_REDIRECT must be False to prevent 301 infinite redirect loops.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year HSTS
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+
 
 
 # Fast password hasher during test execution to accelerate test suite runs
