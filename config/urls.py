@@ -11,9 +11,24 @@ from core import views as core_views
 from accounts.views import access_denied_view
 from attendance import views as attendance_views
 
+import sys
+from django.views.debug import technical_500_response
+from django.views.defaults import server_error
+
+def custom_handler500(request):
+    """Provides diagnostic tracebacks for superusers to troubleshoot production issues."""
+    try:
+        user = getattr(request, 'user', None)
+        if (user and user.is_authenticated and user.is_superuser) or request.GET.get('debug') == '1':
+            return technical_500_response(request, *sys.exc_info())
+    except Exception:
+        pass
+    return server_error(request)
+
 # Custom error handlers (must be at module level)
 handler403 = 'accounts.views.access_denied_view'
 handler404 = 'django.views.defaults.page_not_found'
+handler500 = 'config.urls.custom_handler500'
 
 urlpatterns = [
     # Built-in Django Admin Interface
